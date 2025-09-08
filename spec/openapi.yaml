@@ -1,0 +1,127 @@
+openapi: 3.0.3
+info:
+  title: Janlog API
+  version: 0.1.0
+servers:
+  - url: https://api.example.com
+security:
+  - cognitoUserPool: []
+
+paths:
+  /me:
+    get:
+      summary: 現在のユーザー情報を取得
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId: { type: string }
+                  email: { type: string }
+
+  /matches:
+    get:
+      summary: 対局一覧を取得
+      parameters:
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+        - in: query
+          name: mode
+          schema: { type: string, enum: [three, four, all] }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Match'
+
+    post:
+      summary: 対局を登録
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Match'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Match'
+
+  /stats/summary:
+    get:
+      summary: 成績サマリを取得
+      parameters:
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+        - in: query
+          name: mode
+          schema: { type: string, enum: [three, four, all], default: all }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatsSummary'
+
+components:
+  securitySchemes:
+    cognitoUserPool:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Match:
+      type: object
+      required: [matchId, date, gameMode, entryMethod, seats]
+      properties:
+        matchId: { type: string }
+        date: { type: string, format: date-time }
+        gameMode: { type: string, enum: [three, four] }
+        entryMethod: { type: string, enum: [rank_plus_points, rank_plus_raw, provisional_rank_only] }
+        seats:
+          type: array
+          items:
+            type: object
+            properties:
+              displayName: { type: string }
+              rank: { type: integer, minimum: 1, maximum: 4 }
+              finalPoints: { type: number, nullable: true }
+              rawScore: { type: integer, nullable: true }
+              chipCount: { type: integer, nullable: true }
+        provisionalCounts:
+          type: array
+          items: { type: integer }
+          minItems: 3
+          maxItems: 4
+        venueId: { type: string, nullable: true }
+        memo: { type: string, nullable: true }
+
+    StatsSummary:
+      type: object
+      properties:
+        count: { type: integer }
+        avgRank: { type: number }
+        topRate: { type: number }
+        lastRate: { type: number }
+        totalPoints: { type: number }
+        chipTotal: { type: integer }
