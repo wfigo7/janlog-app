@@ -1,0 +1,23 @@
+# Node/Expo
+node_modules/
+*.log
+.expo/
+.expo-shared/
+dist/
+coverage/
+
+# Python (FastAPI)
+__pycache__/
+*.pyc
+.venv/
+.env
+
+# CDK / AWS
+cdk.out/
+cdk.context.json
+
+# OS / Editor
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
