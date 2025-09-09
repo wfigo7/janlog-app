@@ -1,14 +1,84 @@
-# Janlog App
+# Janlog - Personal Mahjong Score Management App
 
-麻雀（3人/4人）の成績を記録・集計するモバイルアプリ（MVP）。  
-フロントエンド: Expo (React Native)  
-バックエンド: FastAPI on AWS Lambda (LWA)  
-データベース: DynamoDB  
+Janlogは、フリー雀荘やセット麻雀の成績を個人用に記録・集計するモバイルアプリです。
 
-## ディレクトリ構成
+## 概要
 
-- /spec … 仕様 (OpenAPI, context.md, ADR)
-- /frontend … Expo RN
-- /backend … FastAPI on Lambda Web Adapter
-- /infra … AWS CDK
-- /shared … 型や共通ロジック
+- 3人麻雀・4人麻雀の対局記録
+- 複数の入力方式（順位+最終スコア、順位+素点、仮スコア）
+- 成績統計表示（対局数、平均順位、トップ率、ラス率等）
+- 招待制ユーザー認証
+- ルールマスタ管理（ウマ・オカ設定）
+
+## 技術スタック
+
+- **フロントエンド**: React Native (Expo)
+- **バックエンド**: FastAPI on AWS Lambda
+- **データベース**: Amazon DynamoDB
+- **認証**: Amazon Cognito
+- **インフラ**: AWS CDK
+- **CI/CD**: GitHub Actions
+
+## プロジェクト構成
+
+```
+/
+├── frontend/       # React Native Expo アプリ
+├── backend/        # FastAPI Lambda アプリケーション
+├── infra/          # AWS CDK インフラコード
+├── shared/         # 共通型定義とユーティリティ
+├── spec/           # API仕様書と設計ドキュメント
+└── .kiro/          # Kiro AI設定
+```
+
+## 開発環境セットアップ
+
+### 前提条件
+
+- Node.js 18+
+- Python 3.11+
+- AWS CLI
+- Expo CLI
+
+### インストール
+
+```bash
+# Node.js依存関係のインストール（frontend, infra, shared）
+npm install
+npm install --workspaces
+
+# Python依存関係のインストール（backend）
+cd backend
+pip install -r requirements.txt -r requirements-dev.txt
+cd ..
+
+# フロントエンド開発サーバー起動
+npm run dev:frontend
+
+# バックエンド開発サーバー起動
+npm run dev:backend
+```
+
+### テスト実行
+
+```bash
+# 全体テスト実行
+npm test
+
+# 個別テスト実行
+npm run test:frontend
+npm run test:backend
+npm run test:infra
+npm run test:shared
+```
+
+### デプロイ
+
+```bash
+# インフラデプロイ
+npm run deploy:infra
+```
+
+## ライセンス
+
+MIT

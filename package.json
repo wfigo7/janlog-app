@@ -1,0 +1,47 @@
+{
+  "name": "janlog-app",
+  "version": "1.0.0",
+  "description": "Janlog - Personal Mahjong Score Management App",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "infra",
+    "shared"
+  ],
+  "scripts": {
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && python -m uvicorn app.main:app --reload",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && pip install -r requirements.txt",
+    "deploy:infra": "cd infra && npm run deploy",
+    "test": "npm run test --workspaces && cd backend && python -m pytest",
+    "test:frontend": "cd frontend && npm test",
+    "test:backend": "cd backend && python -m pytest",
+    "test:infra": "cd infra && npm test",
+    "test:shared": "cd shared && npm test",
+    "lint": "npm run lint --workspaces && cd backend && python -m flake8 app/ tests/",
+    "clean": "npm run clean --workspaces && cd backend && find . -type d -name __pycache__ -delete",
+    "install:all": "npm install && npm install --workspaces && cd backend && pip install -r requirements.txt -r requirements-dev.txt"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/janlog-app.git"
+  },
+  "keywords": [
+    "mahjong",
+    "score-management",
+    "react-native",
+    "fastapi",
+    "aws"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
