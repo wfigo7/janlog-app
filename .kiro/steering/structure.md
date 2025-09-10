@@ -19,31 +19,33 @@
 
 ## フォルダ規約
 
+各ディレクトリの詳細は、それぞれのREADME.mdファイルを参照してください：
+
 ### `/spec`
 - API仕様書とプロジェクトドキュメントを集約
 - OpenAPI仕様がフロントエンド・バックエンド間の契約
 - コンテキストドキュメントでビジネス要件を説明
 - ADRでアーキテクチャ決定を記録
 
-### `/frontend`
+### `/frontend` - #[[file:../../../frontend/README.md]]
 - Expo React Nativeアプリケーション
 - TypeScript使用（型安全性のため）
 - React Native・Expoベストプラクティスに従う
 - 共通コンポーネントとユーティリティ
 
-### `/backend`
+### `/backend` - #[[file:../../../backend/README.md]]
 - AWS Lambda用FastAPIアプリケーション
 - Python（型ヒント使用）
 - Lambda Web Adapter (LWA)でHTTP処理
 - DynamoDBシングルテーブル設計
 
-### `/infra`
+### `/infra` - #[[file:../../../infra/README.md]]
 - AWS CDKによるInfrastructure as Code
 - TypeScript/Python CDK構成
 - 環境別設定
 - コスト最適化されたリソース定義
 
-### `/shared`
+### `/shared` - #[[file:../../../shared/README.md]]
 - 共通TypeScript型定義・インターフェース
 - 共通ビジネスロジック
 - APIクライアント定義
