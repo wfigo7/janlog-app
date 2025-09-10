@@ -40,7 +40,7 @@ class DynamoDBClient:
         
         self.table = self.dynamodb.Table(settings.DYNAMODB_TABLE_NAME)
     
-    async def put_item(self, item: Dict[str, Any]) -> bool:
+    async def put_item(self, table_name: str, item: Dict[str, Any]) -> bool:
         """アイテムを追加"""
         try:
             self.table.put_item(Item=item)
@@ -49,7 +49,7 @@ class DynamoDBClient:
             logger.error(f"DynamoDB put_item error: {e}")
             return False
     
-    async def get_item(self, pk: str, sk: str) -> Optional[Dict[str, Any]]:
+    async def get_item(self, table_name: str, pk: str, sk: str) -> Optional[Dict[str, Any]]:
         """アイテムを取得"""
         try:
             response = self.table.get_item(
@@ -62,20 +62,25 @@ class DynamoDBClient:
     
     async def query_items(
         self, 
-        pk: str, 
-        sk_prefix: Optional[str] = None,
+        table_name: str,
+        key_condition_expression: str,
+        expression_attribute_values: Dict[str, Any],
+        filter_expression: Optional[str] = None,
+        expression_attribute_names: Optional[Dict[str, str]] = None,
         limit: Optional[int] = None
     ) -> List[Dict[str, Any]]:
         """アイテムをクエリ"""
         try:
-            key_condition = Key('PK').eq(pk)
-            
-            if sk_prefix:
-                key_condition = key_condition & Key('SK').begins_with(sk_prefix)
-            
             query_params = {
-                'KeyConditionExpression': key_condition
+                'KeyConditionExpression': key_condition_expression,
+                'ExpressionAttributeValues': expression_attribute_values
             }
+            
+            if filter_expression:
+                query_params['FilterExpression'] = filter_expression
+            
+            if expression_attribute_names:
+                query_params['ExpressionAttributeNames'] = expression_attribute_names
             
             if limit:
                 query_params['Limit'] = limit
@@ -105,7 +110,7 @@ class DynamoDBClient:
             logger.error(f"DynamoDB update_item error: {e}")
             return False
     
-    async def delete_item(self, pk: str, sk: str) -> bool:
+    async def delete_item(self, table_name: str, pk: str, sk: str) -> bool:
         """アイテムを削除"""
         try:
             self.table.delete_item(

@@ -92,27 +92,17 @@ components:
   schemas:
     Match:
       type: object
-      required: [matchId, date, gameMode, entryMethod, seats]
+      required: [matchId, date, gameMode, entryMethod, rank]
       properties:
         matchId: { type: string }
         date: { type: string, format: date-time }
         gameMode: { type: string, enum: [three, four] }
         entryMethod: { type: string, enum: [rank_plus_points, rank_plus_raw, provisional_rank_only] }
-        seats:
-          type: array
-          items:
-            type: object
-            properties:
-              displayName: { type: string }
-              rank: { type: integer, minimum: 1, maximum: 4 }
-              finalPoints: { type: number, nullable: true }
-              rawScore: { type: integer, nullable: true }
-              chipCount: { type: integer, nullable: true }
-        provisionalCounts:
-          type: array
-          items: { type: integer }
-          minItems: 3
-          maxItems: 4
+        rulesetId: { type: string, nullable: true }
+        rank: { type: integer, minimum: 1, maximum: 4 }
+        finalPoints: { type: number, nullable: true }
+        rawScore: { type: integer, nullable: true }
+        chipCount: { type: integer, nullable: true }
         venueId: { type: string, nullable: true }
         memo: { type: string, nullable: true }
 

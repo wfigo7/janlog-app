@@ -1,14 +1,22 @@
 """
 Janlog Backend - FastAPI Application with Lambda Web Adapter
 """
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
 from datetime import datetime
-from typing import Dict, Any
+from typing import Dict, Any, Optional
+from dotenv import load_dotenv
+
+# 環境変数の読み込み（開発環境用）
+if os.path.exists('.env.local'):
+    load_dotenv('.env.local')
+
 from app.config.settings import settings
 from app.utils.dynamodb_utils import get_dynamodb_client
+from app.models.match import MatchRequest, MatchListResponse
+from app.services.match_service import get_match_service
 
 # FastAPIアプリケーションの初期化
 app = FastAPI(
@@ -89,3 +97,217 @@ async def not_found_handler(request, exc):
 @app.exception_handler(500)
 async def internal_error_handler(request, exc):
     return JSONResponse(status_code=500, content={"detail": "内部サーバーエラーが発生しました"})
+
+
+# 対局記録API（認証なし、固定ユーザーID使用）
+FIXED_USER_ID = "test-user-001"  # 開発用固定ユーザーID
+
+
+@app.post("/matches", response_model=dict)
+async def create_match(match_request: MatchRequest) -> dict:
+    """
+    対局を登録する（認証なし、固定ユーザーID使用）
+    """
+    try:
+        match_service = get_match_service()
+        match = await match_service.create_match(match_request, FIXED_USER_ID)
+        return match.to_api_response()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/matches", response_model=MatchListResponse)
+async def get_matches(
+    from_date: Optional[str] = Query(None, description="開始日（ISO形式）"),
+    to_date: Optional[str] = Query(None, description="終了日（ISO形式）"),
+    mode: Optional[str] = Query("all", description="ゲームモード（three/four/all）"),
+) -> MatchListResponse:
+    """
+    対局一覧を取得する（認証なし、固定ユーザーID使用）
+    """
+    try:
+        match_service = get_match_service()
+        matches = await match_service.get_matches(
+            user_id=FIXED_USER_ID,
+            from_date=from_date,
+            to_date=to_date,
+            mode=mode,
+        )
+        return MatchListResponse(matches=matches, total=len(matches))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/matches/{match_id}", response_model=dict)
+async def get_match(match_id: str) -> dict:
+    """
+    特定の対局を取得する（認証なし、固定ユーザーID使用）
+    """
+    try:
+        match_service = get_match_service()
+        match = await match_service.get_match_by_id(FIXED_USER_ID, match_id)
+        if not match:
+            raise HTTPException(status_code=404, detail="対局が見つかりません")
+        return match.to_api_response()
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.put("/matches/{match_id}", response_model=dict)
+async def update_match(match_id: str, match_request: MatchRequest) -> dict:
+    """
+    対局を更新する（認証なし、固定ユーザーID使用）
+    """
+    try:
+        match_service = get_match_service()
+        match = await match_service.update_match(FIXED_USER_ID, match_id, match_request)
+        if not match:
+            raise HTTPException(status_code=404, detail="対局が見つかりません")
+        return match.to_api_response()
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.delete("/matches/{match_id}")
+async def delete_match(match_id: str) -> dict:
+    """
+    対局を削除する（認証なし、固定ユーザーID使用）
+    """
+    try:
+        match_service = get_match_service()
+        success = await match_service.delete_match(FIXED_USER_ID, match_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="対局が見つかりません")
+        return {"message": "対局を削除しました"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# 対局関連エンドポイント
+# 認証なし版（固定ユーザーID使用）
+FIXED_USER_ID = "test-user-001"  # 開発用固定ユーザーID
+
+
+@app.post("/matches", status_code=201)
+async def create_match(request: MatchRequest) -> Dict[str, Any]:
+    """
+    対局を登録（認証なし、固定ユーザーID使用）
+    """
+    try:
+        match_service = get_match_service()
+        match = await match_service.create_match(request, FIXED_USER_ID)
+        
+        return {
+            "success": True,
+            "message": "対局を登録しました",
+            "data": match.to_api_response()
+        }
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="対局登録に失敗しました")
+
+
+@app.get("/matches")
+async def get_matches(
+    from_date: Optional[str] = Query(None, alias="from", description="開始日（YYYY-MM-DD形式）"),
+    to_date: Optional[str] = Query(None, alias="to", description="終了日（YYYY-MM-DD形式）"),
+    mode: Optional[str] = Query("all", description="ゲームモード（three/four/all）"),
+    limit: Optional[int] = Query(100, description="取得件数上限")
+) -> MatchListResponse:
+    """
+    対局一覧を取得（認証なし、固定ユーザーID使用）
+    """
+    try:
+        match_service = get_match_service()
+        result = await match_service.get_matches(
+            user_id=FIXED_USER_ID,
+            from_date=from_date,
+            to_date=to_date,
+            game_mode=mode,
+            limit=limit
+        )
+        
+        return result
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="対局一覧取得に失敗しました")
+
+
+@app.get("/matches/{match_id}")
+async def get_match(match_id: str) -> Dict[str, Any]:
+    """
+    対局詳細を取得（認証なし、固定ユーザーID使用）
+    """
+    try:
+        match_service = get_match_service()
+        match = await match_service.get_match(match_id, FIXED_USER_ID)
+        
+        if not match:
+            raise HTTPException(status_code=404, detail="対局が見つかりません")
+        
+        return {
+            "success": True,
+            "data": match.to_api_response()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="対局取得に失敗しました")
+
+
+@app.put("/matches/{match_id}")
+async def update_match(match_id: str, request: MatchRequest) -> Dict[str, Any]:
+    """
+    対局を更新（認証なし、固定ユーザーID使用）
+    """
+    try:
+        match_service = get_match_service()
+        match = await match_service.update_match(match_id, FIXED_USER_ID, request)
+        
+        if not match:
+            raise HTTPException(status_code=404, detail="対局が見つかりません")
+        
+        return {
+            "success": True,
+            "message": "対局を更新しました",
+            "data": match.to_api_response()
+        }
+        
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="対局更新に失敗しました")
+
+
+@app.delete("/matches/{match_id}")
+async def delete_match(match_id: str) -> Dict[str, Any]:
+    """
+    対局を削除（認証なし、固定ユーザーID使用）
+    """
+    try:
+        match_service = get_match_service()
+        success = await match_service.delete_match(match_id, FIXED_USER_ID)
+        
+        if not success:
+            raise HTTPException(status_code=404, detail="対局が見つかりません")
+        
+        return {
+            "success": True,
+            "message": "対局を削除しました"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="対局削除に失敗しました")
