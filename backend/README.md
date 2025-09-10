@@ -58,8 +58,9 @@ python run_local.py
 ### 5. API動作確認
 
 ```bash
-# 別ターミナルでテスト実行
-python test_api.py
+# 別ターミナルで手動テスト実行
+python manual_tests/test_api.py
+python manual_tests/match/test_match_api.py
 
 # または直接curl
 curl http://localhost:8080/health
@@ -102,7 +103,20 @@ JWT_SECRET_KEY=development-secret-key-for-local-testing
 
 - `scripts/create_local_tables.py` - DynamoDBテーブル作成
 - `run_local.py` - ローカル開発サーバー起動
-- `test_api.py` - API動作確認テスト
+
+## 手動テストスクリプト
+
+手動テスト用のスクリプトは `manual_tests/` ディレクトリに整理されています：
+
+### 基本APIテスト
+- `manual_tests/test_api.py` - ヘルスチェック、ルートエンドポイント
+
+### 対局記録APIテスト
+- `manual_tests/match/test_match_api.py` - 対局CRUD操作の基本テスト
+- `manual_tests/match/test_match_validation.py` - バリデーション機能テスト
+- `manual_tests/match/test_match_crud.py` - 完全なCRUD操作テスト
+
+詳細は `manual_tests/README.md` を参照してください。
 
 ## トラブルシューティング
 

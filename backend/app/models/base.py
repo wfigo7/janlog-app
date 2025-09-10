@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 from abc import ABC, abstractmethod
+from decimal import Decimal
 
 
 class BaseEntity(BaseModel):
@@ -24,7 +25,7 @@ class BaseEntity(BaseModel):
         """Pydantic設定"""
 
         # DynamoDBの属性名をそのまま使用
-        allow_population_by_field_name = True
+        populate_by_name = True
         # 追加フィールドを許可
         extra = "allow"
 
@@ -40,10 +41,16 @@ class BaseEntity(BaseModel):
 
     def to_dynamodb_item(self) -> dict:
         """DynamoDB用のアイテム形式に変換"""
-        item = self.dict()
+        item = self.model_dump()
         item["PK"] = self.get_pk()
         item["SK"] = self.get_sk()
         item["updatedAt"] = datetime.utcnow().isoformat()
+        
+        # float値をDecimalに変換（DynamoDB対応）
+        for key, value in item.items():
+            if isinstance(value, float):
+                item[key] = Decimal(str(value))
+        
         return item
 
 
