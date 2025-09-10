@@ -70,3 +70,7 @@ pids
 *.pid
 *.seed
 *.pid.lock
+
+# DynamoDB Local data
+docker/dynamodb/data/
+docker/dynamodb/*.db

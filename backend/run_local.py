@@ -1,18 +1,31 @@
+#!/usr/bin/env python3
 """
-ローカル開発用のuvicornサーバー起動スクリプト
+ローカル開発環境用のFastAPIサーバー起動スクリプト
 """
-import uvicorn
 import os
+import uvicorn
+from dotenv import load_dotenv
 
-if __name__ == "__main__":
-    # 環境変数を設定
-    os.environ.setdefault("ENVIRONMENT", "development")
+def main():
+    """ローカル開発サーバーを起動"""
+    # .env.localファイルを読み込み
+    load_dotenv('.env.local')
     
-    # uvicornサーバーを起動
+    # 環境変数の確認
+    print("=== Janlog Backend ローカル開発サーバー ===")
+    print(f"環境: {os.getenv('ENVIRONMENT', 'development')}")
+    print(f"DynamoDB Endpoint: {os.getenv('DYNAMODB_ENDPOINT_URL', 'http://localhost:8000')}")
+    print(f"テーブル名: {os.getenv('DYNAMODB_TABLE_NAME', 'janlog-table')}")
+    print()
+    
+    # FastAPIサーバーを起動
     uvicorn.run(
         "app.main:app",
         host="0.0.0.0",
-        port=8000,
+        port=8080,
         reload=True,
-        log_level="info"
+        log_level="debug"
     )
+
+if __name__ == "__main__":
+    main()
