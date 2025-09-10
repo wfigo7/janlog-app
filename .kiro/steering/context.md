@@ -1,12 +1,13 @@
 # プロジェクトコンテキスト
 
-## チャット言語
-
-チャットやタスク処理の言語は全て日本語にすること
-
 既存のコンテキスト情報を参照します。
 
 #[[file:../../../spec/context.md]]
+
+## Kiroの動作上の注意点
+- チャットやタスク処理の言語は全て日本語にすること
+- workspaceはWSL配下にあるため、内部のshellでcdする場合は「~/workspace2/janlog-app」か「/home/notubo/workspace2/janlog-app」を起点にすること
+- backendはvenv経由でpythonを動作させること
 
 ## 補足情報
 
