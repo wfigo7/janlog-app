@@ -31,6 +31,14 @@ Janlogは、フリー雀荘やセット麻雀の成績を個人用に記録・�
 └── .kiro/          # Kiro AI設定
 ```
 
+### 各ディレクトリの詳細
+
+- **[frontend/](frontend/README.md)** - React Native (Expo) モバイルアプリケーション
+- **[backend/](backend/README.md)** - FastAPI バックエンドAPI（Lambda + DynamoDB）
+- **[infra/](infra/README.md)** - AWS CDK インフラストラクチャ定義
+- **[shared/](shared/README.md)** - 共通型定義とユーティリティライブラリ
+- **[spec/](spec/)** - OpenAPI仕様書とアーキテクチャドキュメント
+
 ## 開発環境セットアップ
 
 ### 前提条件
