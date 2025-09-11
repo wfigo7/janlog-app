@@ -16,7 +16,9 @@ if os.path.exists('.env.local'):
 from app.config.settings import settings
 from app.utils.dynamodb_utils import get_dynamodb_client
 from app.models.match import MatchRequest, MatchListResponse
+from app.models.stats import StatsSummary
 from app.services.match_service import get_match_service
+from app.services.stats_service import get_stats_service
 
 # FastAPIアプリケーションの初期化
 app = FastAPI(
@@ -311,3 +313,31 @@ async def delete_match(match_id: str) -> Dict[str, Any]:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail="対局削除に失敗しました")
+
+
+# 統計API
+@app.get("/stats/summary")
+async def get_stats_summary(
+    from_date: Optional[str] = Query(None, alias="from", description="開始日（YYYY-MM-DD形式）"),
+    to_date: Optional[str] = Query(None, alias="to", description="終了日（YYYY-MM-DD形式）"),
+    mode: Optional[str] = Query("four", description="ゲームモード（three/four）"),
+) -> Dict[str, Any]:
+    """
+    成績サマリを取得（認証なし、固定ユーザーID使用）
+    """
+    try:
+        stats_service = get_stats_service()
+        stats = await stats_service.calculate_stats_summary(
+            user_id=FIXED_USER_ID,
+            from_date=from_date,
+            to_date=to_date,
+            game_mode=mode,
+        )
+        
+        return {
+            "success": True,
+            "data": stats.to_api_response()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="統計取得に失敗しました")

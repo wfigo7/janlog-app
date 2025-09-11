@@ -1,172 +1,269 @@
+/**
+ * 統計画面（トップ画面）
+ */
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  ScrollView, 
+  RefreshControl, 
   Alert,
+  ActivityIndicator 
 } from 'react-native';
-import { StatsSummary } from '../../types/stats';
-import { GameMode } from '../../types/match';
+import { StatsCard } from './StatsCard';
+import { GameModeTab } from './GameModeTab';
+import { RankDistributionCard } from './RankDistributionCard';
+import { StatsService } from '../../services/statsService';
+import { StatsSummary, GameMode } from '../../types/stats';
 
-const StatsScreen: React.FC = () => {
-  const [selectedMode, setSelectedMode] = useState<GameMode>('four');
+export default function StatsScreen() {
   const [stats, setStats] = useState<StatsSummary | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedMode, setSelectedMode] = useState<GameMode>('four');
 
-  // 統計データを取得する関数（現在はモックデータ）
-  const fetchStats = async (gameMode: GameMode) => {
-    setLoading(true);
+  const loadStats = async (showRefresh = false) => {
     try {
-      // TODO: 実際のAPI呼び出しに置き換える
-      // 現在はモックデータを返す
-      const mockStats: StatsSummary = {
-        count: 0,
-        avgRank: 0,
-        topRate: 0,
-        lastRate: 0,
-        totalPoints: 0,
-        chipTotal: 0,
-      };
-      setStats(mockStats);
+      if (showRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+
+      const response = await StatsService.getStatsSummary({
+        mode: selectedMode,
+      });
+
+      if (response.success) {
+        setStats(response.data);
+      } else {
+        throw new Error('統計データの取得に失敗しました');
+      }
     } catch (error) {
+      console.error('統計データ取得エラー:', error);
       Alert.alert('エラー', '統計データの取得に失敗しました');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
   useEffect(() => {
-    fetchStats(selectedMode);
+    loadStats();
   }, [selectedMode]);
 
-  const renderStatsCard = (title: string, value: string | number, unit?: string) => (
-    <View style={styles.statsCard}>
-      <Text style={styles.statsTitle}>{title}</Text>
-      <Text style={styles.statsValue}>
-        {value}{unit && <Text style={styles.statsUnit}>{unit}</Text>}
-      </Text>
-    </View>
-  );
+  const onRefresh = () => {
+    loadStats(true);
+  };
+
+  const onModeChange = (mode: GameMode) => {
+    setSelectedMode(mode);
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={styles.loadingText}>統計データを読み込み中...</Text>
+      </View>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>統計データがありません</Text>
+        <Text style={styles.emptySubtext}>対局を登録してください</Text>
+      </View>
+    );
+  }
 
   return (
-    <ScrollView style={styles.container}>
-      {/* ゲームモード選択タブ */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tab, selectedMode === 'four' && styles.activeTab]}
-          onPress={() => setSelectedMode('four')}
-        >
-          <Text style={[styles.tabText, selectedMode === 'four' && styles.activeTabText]}>
-            4人麻雀
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, selectedMode === 'three' && styles.activeTab]}
-          onPress={() => setSelectedMode('three')}
-        >
-          <Text style={[styles.tabText, selectedMode === 'three' && styles.activeTabText]}>
-            3人麻雀
-          </Text>
-        </TouchableOpacity>
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
+      <View style={styles.header}>
+        <Text style={styles.title}>成績統計</Text>
+        <GameModeTab selectedMode={selectedMode} onModeChange={onModeChange} />
       </View>
 
-      {/* 統計カード */}
-      <View style={styles.statsContainer}>
-        {stats ? (
-          <>
-            {renderStatsCard('対局数', stats.count, '回')}
-            {renderStatsCard('平均順位', stats.avgRank.toFixed(2), '位')}
-            {renderStatsCard('トップ率', (stats.topRate * 100).toFixed(1), '%')}
-            {renderStatsCard('ラス率', (stats.lastRate * 100).toFixed(1), '%')}
-            {renderStatsCard('累積ポイント', stats.totalPoints.toFixed(0), 'pt')}
-            {renderStatsCard('チップ合計', stats.chipTotal, '枚')}
-          </>
-        ) : (
-          <View style={styles.noDataContainer}>
-            <Text style={styles.noDataText}>
-              {loading ? '読み込み中...' : 'データがありません'}
-            </Text>
+      <View style={styles.content}>
+        {/* 基本統計 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>基本統計</Text>
+          <View style={styles.statsGrid}>
+            <View style={styles.statsRow}>
+              <StatsCard
+                title="対局数"
+                value={stats.count}
+                subtitle="半荘"
+              />
+              <StatsCard
+                title="平均順位"
+                value={stats.avgRank.toFixed(2)}
+                color="#FF6B6B"
+              />
+            </View>
+            <View style={styles.statsRow}>
+              <StatsCard
+                title="累積ポイント"
+                value={stats.totalPoints > 0 ? `+${stats.totalPoints.toFixed(1)}` : stats.totalPoints.toFixed(1)}
+                color={stats.totalPoints >= 0 ? "#4ECDC4" : "#FF6B6B"}
+              />
+              <StatsCard
+                title="平均スコア"
+                value={stats.avgScore > 0 ? `+${stats.avgScore.toFixed(1)}` : stats.avgScore.toFixed(1)}
+                color={stats.avgScore >= 0 ? "#4ECDC4" : "#FF6B6B"}
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* 順位分布 */}
+        <View style={styles.section}>
+          <RankDistributionCard
+            distribution={stats.rankDistribution}
+            totalCount={stats.count}
+            gameMode={selectedMode}
+          />
+        </View>
+
+        {/* 率統計 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>率統計</Text>
+          <View style={styles.statsGrid}>
+            <View style={styles.statsRow}>
+              <StatsCard
+                title="トップ率"
+                value={`${stats.topRate.toFixed(1)}%`}
+                color="#FFD700"
+              />
+              <StatsCard
+                title="ラス率"
+                value={`${stats.lastRate.toFixed(1)}%`}
+                color="#FF6B6B"
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* 記録 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>記録</Text>
+          <View style={styles.statsGrid}>
+            <View style={styles.statsRow}>
+              <StatsCard
+                title="連続トップ"
+                value={`${stats.maxConsecutiveFirst}回`}
+                color="#FFD700"
+              />
+              <StatsCard
+                title="連続ラス"
+                value={`${stats.maxConsecutiveLast}回`}
+                color="#FF6B6B"
+              />
+            </View>
+            <View style={styles.statsRow}>
+              <StatsCard
+                title="最高得点"
+                value={stats.maxScore > -Infinity ? `+${stats.maxScore.toFixed(1)}` : '---'}
+                color="#4ECDC4"
+              />
+              <StatsCard
+                title="最低得点"
+                value={stats.minScore < Infinity ? stats.minScore.toFixed(1) : '---'}
+                color="#FF6B6B"
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* その他 */}
+        {stats.chipTotal > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>その他</Text>
+            <View style={styles.statsGrid}>
+              <StatsCard
+                title="チップ合計"
+                value={stats.chipTotal}
+                color="#9B59B6"
+              />
+            </View>
           </View>
         )}
       </View>
     </ScrollView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F8F9FA',
   },
-  tabContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  tab: {
+  loadingContainer: {
     flex: 1,
-    paddingVertical: 12,
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#F8F9FA',
   },
-  activeTab: {
-    backgroundColor: '#2196F3',
-  },
-  tabText: {
+  loadingText: {
+    marginTop: 16,
     fontSize: 16,
-    fontWeight: '500',
-    color: '#666',
+    color: '#666666',
   },
-  activeTabText: {
-    color: '#fff',
-  },
-  statsContainer: {
-    padding: 16,
-  },
-  statsCard: {
-    backgroundColor: '#fff',
-    padding: 16,
-    marginBottom: 12,
-    borderRadius: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    backgroundColor: '#F8F9FA',
+    padding: 32,
   },
-  statsTitle: {
-    fontSize: 16,
-    color: '#333',
-  },
-  statsValue: {
+  emptyText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#2196F3',
+    color: '#333333',
+    marginBottom: 8,
   },
-  statsUnit: {
+  emptySubtext: {
     fontSize: 14,
-    fontWeight: 'normal',
-    color: '#666',
+    color: '#666666',
   },
-  noDataContainer: {
-    alignItems: 'center',
-    paddingVertical: 40,
+  header: {
+    backgroundColor: '#FFFFFF',
+    paddingTop: 60,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5E5',
   },
-  noDataText: {
-    fontSize: 16,
-    color: '#666',
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginBottom: 20,
+  },
+  content: {
+    padding: 20,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginBottom: 12,
+  },
+  statsGrid: {
+    gap: 12,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 12,
   },
 });
-
-export default StatsScreen;
