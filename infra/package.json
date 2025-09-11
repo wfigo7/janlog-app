@@ -2,6 +2,9 @@
   "name": "@janlog/infra",
   "version": "1.0.0",
   "description": "Janlog Infrastructure - AWS CDK",
+  "bin": {
+    "janlog": "bin/janlog-infra.js"
+  },
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
