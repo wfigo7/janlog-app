@@ -69,19 +69,17 @@ npx cdk deploy --all --context environment=production
 
 ## スタック構成
 
-### JanlogApiStack
+### JanlogS3Stack (現在実装済み)
 
-- API Gateway HTTP API
-- Lambda Function (FastAPI)
-- DynamoDB Table
-- Cognito User Pool
-- IAM Roles & Policies
+- S3 Bucket (テスト用)
+- 自動削除設定 (開発環境)
 
-### JanlogMonitoringStack
+### 今後実装予定
 
-- CloudWatch Dashboards
-- CloudWatch Alarms
-- SNS Topics (アラート通知)
+- **JanlogApiStack**: API Gateway HTTP API, Lambda Function (FastAPI)
+- **JanlogDatabaseStack**: DynamoDB Table
+- **JanlogAuthStack**: Cognito User Pool
+- **JanlogMonitoringStack**: CloudWatch Dashboards, Alarms
 
 ## 環境管理
 
@@ -124,11 +122,12 @@ npm test
 ```
 infra/
 ├── lib/
-│   ├── janlog-api-stack.ts      # メインAPIスタック
-│   ├── janlog-monitoring-stack.ts # 監視スタック
-│   └── constructs/              # 再利用可能なコンストラクト
+│   ├── common/
+│   │   └── stack-props.ts       # 共通スタックプロパティ
+│   └── stacks/
+│       └── s3-stack.ts          # S3スタック (実装済み)
 ├── bin/
-│   └── infra.ts                 # CDKアプリエントリーポイント
+│   └── janlog-infra.ts          # CDKアプリエントリーポイント
 └── test/                        # テストファイル
 ```
 

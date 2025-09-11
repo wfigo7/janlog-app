@@ -43,6 +43,12 @@ build/
 cdk.out/
 cdk.context.json
 
+# TypeScript build outputs
+*.js
+*.d.ts
+!jest.config.js
+!*.config.js
+
 # OS / Editor
 .DS_Store
 .idea/
@@ -74,3 +80,6 @@ pids
 # DynamoDB Local data
 docker/dynamodb/data/
 docker/dynamodb/*.db
+
+# direnv
+.envrc
