@@ -34,7 +34,7 @@ paths:
           schema: { type: string, format: date }
         - in: query
           name: mode
-          schema: { type: string, enum: [three, four, all] }
+          schema: { type: string, enum: [three, four] }
       responses:
         '200':
           description: OK
@@ -73,7 +73,7 @@ paths:
           schema: { type: string, format: date }
         - in: query
           name: mode
-          schema: { type: string, enum: [three, four, all], default: all }
+          schema: { type: string, enum: [three, four], default: four }
       responses:
         '200':
           description: OK
