@@ -17,10 +17,10 @@ Janlogのフロントエンドは、React Native + Expoを使用したクロス�
 
 - **フレームワーク**: React Native + Expo
 - **言語**: TypeScript
-- **ナビゲーション**: React Navigation
+- **ナビゲーション**: Expo Router (ファイルベースルーティング)
 - **状態管理**: React Hooks + Context API
 - **認証**: AWS Amplify (Cognito)
-- **テスト**: Jest + React Native Testing Library
+- **テスト**: Jest + Expo Testing Library
 
 ## 開発環境セットアップ
 
@@ -49,7 +49,12 @@ npm run dev:frontend
 
 # または直接このディレクトリで
 cd frontend
-npx expo start
+npm start
+
+# 特定のプラットフォームで起動
+npm run android  # Android
+npm run ios      # iOS
+npm run web      # Web
 ```
 
 ### テスト実行
@@ -67,29 +72,38 @@ npm test
 
 ```
 frontend/
+├── app/                # Expo Router ページ
+│   ├── (tabs)/        # タブナビゲーション
+│   │   ├── index.tsx  # 統計画面
+│   │   ├── history.tsx # 履歴画面
+│   │   └── register.tsx # 対局登録画面
+│   └── _layout.tsx    # ルートレイアウト
 ├── src/
-│   ├── components/     # 共通コンポーネント
-│   ├── screens/        # 画面コンポーネント
-│   ├── navigation/     # ナビゲーション設定
+│   ├── components/     # 画面コンポーネント
+│   │   ├── stats/     # 統計関連
+│   │   ├── history/   # 履歴関連
+│   │   └── match/     # 対局登録関連
 │   ├── services/       # API通信
 │   ├── hooks/          # カスタムフック
 │   ├── types/          # TypeScript型定義
 │   └── utils/          # ユーティリティ関数
 ├── assets/             # 画像・フォント等
-└── __tests__/          # テストファイル
+├── components/         # Expo共通コンポーネント
+├── constants/          # 定数定義
+└── hooks/              # Expo共通フック
 ```
 
 ## ビルド・デプロイ
 
 ```bash
-# Android APK ビルド
-npx expo build:android
-
-# iOS IPA ビルド
-npx expo build:ios
-
 # Expo Application Services (EAS) ビルド
-npx eas build --platform all
+npm run build:android  # Android
+npm run build:ios      # iOS
+npm run build          # 全プラットフォーム
+
+# 開発ビルド
+npx expo run:android   # Android
+npx expo run:ios       # iOS
 ```
 
 ## 環境設定
@@ -99,5 +113,6 @@ npx eas build --platform all
 ## 関連ドキュメント
 
 - [Expo Documentation](https://docs.expo.dev/)
+- [Expo Router Documentation](https://docs.expo.dev/router/introduction/)
 - [React Native Documentation](https://reactnative.dev/docs/getting-started)
-- [React Navigation](https://reactnavigation.org/docs/getting-started)
+- [AWS Amplify for React Native](https://docs.amplify.aws/react-native/)
