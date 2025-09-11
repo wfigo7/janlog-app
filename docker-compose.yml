@@ -11,12 +11,18 @@ services:
       - "./docker/dynamodb:/home/dynamodblocal/data"
     working_dir: /home/dynamodblocal
     environment:
-      - AWS_ACCESS_KEY_ID=dummy
-      - AWS_SECRET_ACCESS_KEY=dummy
-      - AWS_DEFAULT_REGION=ap-northeast-1
-    networks:
-      - janlog-network
+      AWS_REGION: ap-northeast-1
+      AWS_ACCESS_KEY_ID: dummy
+      AWS_SECRET_ACCESS_KEY: dummy
 
-networks:
-  janlog-network:
-    driver: bridge
+  dynamodb-admin:
+    image: "aaronshaf/dynamodb-admin:latest"
+    ports:
+      - "8001:8001"
+    environment:
+      DYNAMO_ENDPOINT: "http://dynamodb-local:8000"
+      AWS_REGION: ap-northeast-1
+      AWS_ACCESS_KEY_ID: dummy
+      AWS_SECRET_ACCESS_KEY: dummy
+    depends_on:
+      - dynamodb-local
