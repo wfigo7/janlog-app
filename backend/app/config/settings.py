@@ -24,6 +24,10 @@ class Settings:
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 60 * 24  # 24時間
     
+    # local環境用JWT設定
+    JWT_ISSUER: Optional[str] = os.getenv("JWT_ISSUER")
+    JWT_AUDIENCE: Optional[str] = os.getenv("JWT_AUDIENCE")
+    
     @property
     def is_development(self) -> bool:
         """開発環境かどうかを判定"""
@@ -33,6 +37,16 @@ class Settings:
     def is_production(self) -> bool:
         """本番環境かどうかを判定"""
         return self.ENVIRONMENT == "production"
+    
+    @property
+    def is_local(self) -> bool:
+        """ローカル環境かどうかを判定"""
+        return self.ENVIRONMENT == "local"
+    
+    @property
+    def use_mock_jwt(self) -> bool:
+        """モックJWTを使用するかどうかを判定"""
+        return self.is_local and self.JWT_ISSUER == "mock-issuer"
 
 # グローバル設定インスタンス
 settings = Settings()

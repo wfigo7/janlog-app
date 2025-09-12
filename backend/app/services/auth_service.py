@@ -15,7 +15,13 @@ class AuthService:
         self.region = settings.AWS_REGION
         self.user_pool_id = settings.COGNITO_USER_POOL_ID
         self.client_id = settings.COGNITO_CLIENT_ID
-        self.jwks_url = f"https://cognito-idp.{self.region}.amazonaws.com/{self.user_pool_id}/.well-known/jwks.json"
+        
+        # local環境の場合はJWKS URLを設定しない
+        if settings.is_local:
+            self.jwks_url = None
+        else:
+            self.jwks_url = f"https://cognito-idp.{self.region}.amazonaws.com/{self.user_pool_id}/.well-known/jwks.json"
+        
         self._jwks_cache: Optional[Dict[str, Any]] = None
 
     def _get_jwks(self) -> Dict[str, Any]:
@@ -71,6 +77,10 @@ class AuthService:
         JWTトークンを検証してペイロードを返す
         """
         try:
+            # local環境の場合は静的JWT検証
+            if settings.is_local:
+                return self._verify_mock_token(token)
+            
             # 署名キーを取得
             signing_key = self._get_signing_key(token)
             
@@ -89,6 +99,27 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail=f"トークンの検証に失敗しました: {str(e)}"
+            )
+
+    def _verify_mock_token(self, token: str) -> Dict[str, Any]:
+        """
+        local環境用の静的JWT検証
+        """
+        try:
+            payload = jwt.decode(
+                token,
+                settings.JWT_SECRET_KEY,
+                algorithms=['HS256'],
+                audience=settings.JWT_AUDIENCE,
+                issuer=settings.JWT_ISSUER
+            )
+            
+            return payload
+            
+        except JWTError as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"モックトークンの検証に失敗しました: {str(e)}"
             )
 
     def get_user_from_token(self, token: str) -> Dict[str, Any]:

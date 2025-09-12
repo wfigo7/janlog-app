@@ -19,7 +19,7 @@ class DynamoDBClient:
         if settings.ENVIRONMENT == "test":
             # テスト環境用（moto使用）
             self.dynamodb = boto3.resource('dynamodb', region_name=settings.AWS_REGION)
-        elif settings.is_development:
+        elif settings.is_development or settings.is_local:
             # ローカル開発環境用（DynamoDB Local使用時）
             endpoint_url = os.getenv('DYNAMODB_ENDPOINT_URL')
             if endpoint_url:

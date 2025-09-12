@@ -48,3 +48,20 @@
 - `/spec/adr/` - アーキテクチャ決定記録
 
 **理由**: フロント/バック/インフラ横断での仕様共有、Kiroツール対応
+
+## ADR-0005: 環境分離戦略
+
+**決定**: local/development/production の3環境分離
+
+**環境構成**:
+- **local**: 静的JWT認証、DynamoDB Local（開発効率重視）
+- **development**: Cognito認証、AWS DynamoDB（MVP公開用）
+- **production**: Cognito認証、AWS DynamoDB（将来実装）
+
+**認証方式**:
+- local: 静的JWT注入（`mock-issuer`, `janlog-local`）
+- development/production: Cognito User Pool JWT認証
+
+**リソース命名**: `janlog-{resource}-{environment}`（略称なし）
+
+**理由**: 本番データ汚染防止、開発効率と本番互換性の両立、MVP戦略対応
