@@ -40,3 +40,9 @@
 1. **順位+最終スコア**: 順位と最終ポイントを直接入力
 2. **順位+素点**: 順位と素点を入力、ルールに基づいて自動計算
 3. **仮スコア**: 順位のみ入力、ルールに基づいて仮スコア計算
+
+### 環境分離戦略
+- **local環境**: 開発者ローカル、静的JWT認証、DynamoDB Local
+- **development環境**: MVP公開用、実際のCognito認証、AWS DynamoDB
+- **production環境**: 本番用（将来実装）、セキュリティ最優先
+- 詳細は #[[file:../../../spec/adr/ADR-0005-environment-strategy.md]] と #[[file:../../../spec/env-matrix.md]] を参照

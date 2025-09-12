@@ -1,10 +1,15 @@
 # Janlog 開発用Makefile
 
-.PHONY: help setup start-db stop-db create-tables start-backend test-backend clean
+.PHONY: help setup start start-local start-dev start-db stop-db create-tables start-backend test-backend clean
 
 # デフォルトターゲット
 help:
 	@echo "Janlog 開発用コマンド"
+	@echo ""
+	@echo "クイックスタート:"
+	@echo "  make start          - Local環境起動（DB + Backend）"
+	@echo "  make start-local    - Local環境起動（同上）"
+	@echo "  make start-dev      - Development環境用（AWS Lambda）"
 	@echo ""
 	@echo "セットアップ:"
 	@echo "  make setup          - 初回セットアップ（Docker起動 + テーブル作成）"
@@ -20,6 +25,28 @@ help:
 	@echo ""
 	@echo "その他:"
 	@echo "  make clean          - Docker環境クリーンアップ"
+
+# クイックスタート（Local環境）
+start: start-local
+
+start-local:
+	@echo "=== Janlog Local環境起動 ==="
+	@echo "🗄️  DynamoDB Localを起動中..."
+	@docker-compose up -d dynamodb-local dynamodb-admin
+	@sleep 2
+	@echo "🚀 バックエンドサーバーを起動中..."
+	@echo "📖 API ドキュメント: http://localhost:8080/docs"
+	@echo "🗄️  DynamoDB管理画面: http://localhost:8001"
+	@echo ""
+	cd backend && \
+	source venv/bin/activate && \
+	export JANLOG_ENV=local && \
+	python run_local.py
+
+start-dev:
+	@echo "=== Development環境 ==="
+	@echo "Development環境はAWS Lambdaで動作します"
+	@echo "デプロイ: cd infra && npm run deploy -- --context environment=development"
 
 # 初回セットアップ
 setup:
@@ -50,6 +77,7 @@ start-backend:
 	@echo "バックエンドサーバー起動中..."
 	cd backend && \
 	source venv/bin/activate && \
+	export JANLOG_ENV=local && \
 	python run_local.py
 
 # バックエンドテスト実行

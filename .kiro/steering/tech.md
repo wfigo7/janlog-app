@@ -22,17 +22,25 @@
 - **設計**: シングルテーブル設計（コスト最適化）
 - **アクセスパターン**: GSI活用による効率的なクエリ
 
-### 認証（ADR-0003）
+### 認証（ADR-0003, ADR-0005）
 - **サービス**: Amazon Cognito User Pool
 - **方式**: メール+パスワード
 - **招待**: AdminCreateUser API使用
 - **認可**: JWT Authorizer
+- **環境分離**: 
+  - local: 静的JWT（`mock-issuer`）
+  - development: Cognito User Pool（ap-northeast-1_XBTxTbEZF）
+  - production: Cognito User Pool（将来実装）
 
 ### インフラ
 - **IaC**: AWS CDK
 - **クラウドプロバイダー**: AWS
 - **デプロイ**: GitHub Actions CI/CD
 - **コスト制約**: 月額1,500円以内
+- **環境分離**: 
+  - local: S3スタックのみ
+  - development: S3 + Cognito + API Gateway
+  - production: S3 + Cognito + API Gateway（将来）
 
 ## 開発コマンド
 
@@ -56,8 +64,11 @@ npx expo build:ios
 # 依存関係インストール
 pip install -r requirements.txt
 
-# ローカル実行
+# ローカル実行（local環境）
 uvicorn main:app --reload
+
+# 静的JWT生成（local環境用）
+python scripts/generate_mock_jwt.py
 
 # テスト実行
 pytest
@@ -74,11 +85,16 @@ npm install
 # CDK初期化（初回のみ）
 cdk bootstrap
 
-# スタックデプロイ
-cdk deploy
+# 環境別スタックデプロイ
+cdk deploy --context environment=local      # local環境
+cdk deploy --context environment=development # development環境
+cdk deploy --context environment=production  # production環境
 
-# スタック削除
-cdk destroy
+# 環境別スタック削除
+cdk destroy --context environment=local
+
+# 環境別構文チェック
+cdk synth --context environment=local
 ```
 
 ## データモデル設計

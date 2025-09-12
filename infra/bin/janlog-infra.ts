@@ -12,6 +12,12 @@ const app = new cdk.App();
 // 環境設定
 const environment = app.node.tryGetContext('environment') || 'development';
 
+// 環境の検証
+const validEnvironments = ['local', 'development', 'production'];
+if (!validEnvironments.includes(environment)) {
+  throw new Error(`Invalid environment: ${environment}. Must be one of: ${validEnvironments.join(', ')}`);
+}
+
 // タグの設定
 cdk.Tags.of(app).add('Project', defaultStackProps.project!);
 cdk.Tags.of(app).add('Environment', environment);
@@ -24,16 +30,19 @@ new S3Stack(app, `JanlogS3Stack-${environment}`, {
   environment,
 });
 
-// Cognitoスタック
-const cognitoStack = new CognitoStack(app, `JanlogCognitoStack-${environment}`, {
-  ...defaultStackProps,
-  environment,
-});
+// Cognito・API Gatewayスタックはlocal環境では作成しない
+if (environment !== 'local') {
+  // Cognitoスタック
+  const cognitoStack = new CognitoStack(app, `JanlogCognitoStack-${environment}`, {
+    ...defaultStackProps,
+    environment,
+  });
 
-// API Gatewayスタック（Cognitoに依存）
-new ApiGatewayStack(app, `JanlogApiGatewayStack-${environment}`, {
-  ...defaultStackProps,
-  environment,
-  userPool: cognitoStack.userPool,
-  userPoolClient: cognitoStack.userPoolClient,
-});
+  // API Gatewayスタック（Cognitoに依存）
+  new ApiGatewayStack(app, `JanlogApiGatewayStack-${environment}`, {
+    ...defaultStackProps,
+    environment,
+    userPool: cognitoStack.userPool,
+    userPoolClient: cognitoStack.userPoolClient,
+  });
+}
