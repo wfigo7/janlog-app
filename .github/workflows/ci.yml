@@ -2,13 +2,13 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 env:
-  NODE_VERSION: '18'
-  PYTHON_VERSION: '3.11'
+  NODE_VERSION: "22"
+  PYTHON_VERSION: "3.12"
 
 jobs:
   # Frontend Tests
@@ -17,28 +17,28 @@ jobs:
     defaults:
       run:
         working-directory: ./frontend
-    
+
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: frontend/package-lock.json
-    
-    - name: Install dependencies
-      run: npm ci
-    
-    - name: Run type check
-      run: npm run type-check
-    
-    - name: Run linter
-      run: npm run lint
-    
-    - name: Run tests
-      run: npm test -- --coverage --watchAll=false
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run type check
+        run: npm run type-check
+
+      - name: Run linter
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test -- --coverage --watchAll=false
 
   # Backend Tests
   backend-test:
@@ -46,29 +46,29 @@ jobs:
     defaults:
       run:
         working-directory: ./backend
-    
+
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install -r requirements-dev.txt
-    
-    - name: Run type check
-      run: python -m mypy app/
-    
-    - name: Run linter
-      run: python -m flake8 app/ tests/
-    
-    - name: Run tests
-      run: python -m pytest tests/ -v --cov=app
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Run type check
+        run: python -m mypy app/
+
+      - name: Run linter
+        run: python -m flake8 app/ tests/
+
+      - name: Run tests
+        run: python -m pytest tests/ -v --cov=app
 
   # Infrastructure Tests
   infra-test:
@@ -76,127 +76,127 @@ jobs:
     defaults:
       run:
         working-directory: ./infra
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: infra/package-lock.json
-    
-    - name: Install dependencies
-      run: npm ci
-    
-    - name: Build
-      run: npm run build
-    
-    - name: Run tests
-      run: npm test
-    
-    - name: CDK Synth
-      run: npm run synth
 
-  # Shared Package Tests
-  shared-test:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./shared
-    
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: shared/package-lock.json
-    
-    - name: Install dependencies
-      run: npm ci
-    
-    - name: Run type check
-      run: npm run type-check
-    
-    - name: Run linter
-      run: npm run lint
-    
-    - name: Build
-      run: npm run build
-    
-    - name: Run tests
-      run: npm test
+      - uses: actions/checkout@v4
 
-  # Deploy to Development (only on develop branch)
-  deploy-dev:
-    needs: [frontend-test, backend-test, infra-test, shared-test]
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-    
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ap-northeast-1
-    
-    - name: Install dependencies
-      run: |
-        npm install
-        npm install --workspaces
-    
-    - name: Deploy infrastructure
-      working-directory: ./infra
-      run: |
-        npm run build
-        npm run deploy -- --require-approval never
-      env:
-        ENVIRONMENT: development
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: infra/package-lock.json
 
-  # Deploy to Production (only on main branch)
-  deploy-prod:
-    needs: [frontend-test, backend-test, infra-test, shared-test]
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-    
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ap-northeast-1
-    
-    - name: Install dependencies
-      run: |
-        npm install
-        npm install --workspaces
-    
-    - name: Deploy infrastructure
-      working-directory: ./infra
-      run: |
-        npm run build
-        npm run deploy -- --require-approval never
-      env:
-        ENVIRONMENT: production
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
+
+      - name: CDK Synth
+        run: npm run synth
+
+  # Shared Package Tests (TODO: 実装後に有効化)
+  # shared-test:
+  #   runs-on: ubuntu-latest
+  #   defaults:
+  #     run:
+  #       working-directory: ./shared
+  #
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: ${{ env.NODE_VERSION }}
+  #         cache: "npm"
+  #         cache-dependency-path: shared/package-lock.json
+  #
+  #     - name: Install dependencies
+  #       run: npm ci
+  #
+  #     - name: Run type check
+  #       run: npm run type-check
+  #
+  #     - name: Run linter
+  #       run: npm run lint
+  #
+  #     - name: Build
+  #       run: npm run build
+  #
+  #     - name: Run tests
+  #       run: npm test
+
+  # Deploy to Development (TODO: デプロイ先確定後に有効化)
+  # deploy-dev:
+  #   needs: [frontend-test, backend-test, infra-test]
+  #   runs-on: ubuntu-latest
+  #   if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+  #
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: ${{ env.NODE_VERSION }}
+  #         cache: "npm"
+  #
+  #     - name: Configure AWS credentials
+  #       uses: aws-actions/configure-aws-credentials@v4
+  #       with:
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: ap-northeast-1
+  #
+  #     - name: Install dependencies
+  #       run: |
+  #         npm install
+  #         npm install --workspaces
+  #
+  #     - name: Deploy infrastructure
+  #       working-directory: ./infra
+  #       run: |
+  #         npm run build
+  #         npm run deploy -- --require-approval never
+  #       env:
+  #         ENVIRONMENT: development
+
+  # Deploy to Production (TODO: デプロイ先確定後に有効化)
+  # deploy-prod:
+  #   needs: [frontend-test, backend-test, infra-test]
+  #   runs-on: ubuntu-latest
+  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  #
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: ${{ env.NODE_VERSION }}
+  #         cache: "npm"
+  #
+  #     - name: Configure AWS credentials
+  #       uses: aws-actions/configure-aws-credentials@v4
+  #       with:
+  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         aws-region: ap-northeast-1
+  #
+  #     - name: Install dependencies
+  #       run: |
+  #         npm install
+  #         npm install --workspaces
+  #
+  #     - name: Deploy infrastructure
+  #       working-directory: ./infra
+  #       run: |
+  #         npm run build
+  #         npm run deploy -- --require-approval never
+  #       env:
+  #         ENVIRONMENT: production
