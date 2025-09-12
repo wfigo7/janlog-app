@@ -1,7 +1,7 @@
 """
 Janlog Backend - FastAPI Application with Lambda Web Adapter
 """
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
@@ -15,10 +15,13 @@ if os.path.exists('.env.local'):
 
 from app.config.settings import settings
 from app.utils.dynamodb_utils import get_dynamodb_client
+from app.utils.auth_utils import get_current_user, get_current_user_id
 from app.models.match import MatchRequest, MatchListResponse
 from app.models.stats import StatsSummary
+from app.models.user import UserResponse
 from app.services.match_service import get_match_service
 from app.services.stats_service import get_stats_service
+from app.services.cognito_service import get_cognito_service
 
 # FastAPIアプリケーションの初期化
 app = FastAPI(
@@ -329,6 +332,118 @@ async def get_stats_summary(
         stats_service = get_stats_service()
         stats = await stats_service.calculate_stats_summary(
             user_id=FIXED_USER_ID,
+            from_date=from_date,
+            to_date=to_date,
+            game_mode=mode,
+        )
+        
+        return {
+            "success": True,
+            "data": stats.to_api_response()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="統計取得に失敗しました")
+
+
+# 認証関連エンドポイント
+@app.get("/me", response_model=UserResponse)
+async def get_current_user_info(
+    current_user: Dict[str, Any] = Depends(get_current_user)
+) -> UserResponse:
+    """
+    現在のユーザー情報を取得する
+    """
+    try:
+        cognito_service = get_cognito_service()
+        user_info = await cognito_service.get_user_info(current_user['user_id'])
+        
+        if not user_info:
+            raise HTTPException(status_code=404, detail="ユーザー情報が見つかりません")
+        
+        return UserResponse(
+            user_id=user_info['user_id'],
+            email=user_info['email'],
+            display_name=user_info.get('display_name'),
+            role=user_info.get('role', 'user'),
+            last_login_at=user_info.get('last_modified_date')
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="ユーザー情報の取得に失敗しました")
+
+
+# 招待機能はCognitoコンソールから直接実行するため、APIエンドポイントは不要
+
+
+# 認証付きエンドポイント（将来フェーズ2で使用）
+@app.post("/api/v1/matches", status_code=201)
+async def create_match_authenticated(
+    request: MatchRequest,
+    user_id: str = Depends(get_current_user_id)
+) -> Dict[str, Any]:
+    """
+    対局を登録（認証付き）
+    """
+    try:
+        match_service = get_match_service()
+        match = await match_service.create_match(request, user_id)
+        
+        return {
+            "success": True,
+            "message": "対局を登録しました",
+            "data": match.to_api_response()
+        }
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="対局登録に失敗しました")
+
+
+@app.get("/api/v1/matches")
+async def get_matches_authenticated(
+    user_id: str = Depends(get_current_user_id),
+    from_date: Optional[str] = Query(None, alias="from", description="開始日（YYYY-MM-DD形式）"),
+    to_date: Optional[str] = Query(None, alias="to", description="終了日（YYYY-MM-DD形式）"),
+    mode: Optional[str] = Query("all", description="ゲームモード（three/four/all）"),
+    limit: Optional[int] = Query(100, description="取得件数上限")
+) -> MatchListResponse:
+    """
+    対局一覧を取得（認証付き）
+    """
+    try:
+        match_service = get_match_service()
+        result = await match_service.get_matches(
+            user_id=user_id,
+            from_date=from_date,
+            to_date=to_date,
+            game_mode=mode,
+            limit=limit
+        )
+        
+        return result
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="対局一覧取得に失敗しました")
+
+
+@app.get("/api/v1/stats/summary")
+async def get_stats_summary_authenticated(
+    user_id: str = Depends(get_current_user_id),
+    from_date: Optional[str] = Query(None, alias="from", description="開始日（YYYY-MM-DD形式）"),
+    to_date: Optional[str] = Query(None, alias="to", description="終了日（YYYY-MM-DD形式）"),
+    mode: Optional[str] = Query("four", description="ゲームモード（three/four）"),
+) -> Dict[str, Any]:
+    """
+    成績サマリを取得（認証付き）
+    """
+    try:
+        stats_service = get_stats_service()
+        stats = await stats_service.calculate_stats_summary(
+            user_id=user_id,
             from_date=from_date,
             to_date=to_date,
             game_mode=mode,

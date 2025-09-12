@@ -53,7 +53,7 @@
 
 ## フェーズ2: 認証とユーザー管理
 
-- [ ] 7. Cognito認証の実装
+- [x] 7. Cognito認証の実装
   - Cognito User Poolの作成とAWS CDK設定
   - JWT Authorizerの設定
   - バックエンドでのJWT検証実装
