@@ -12,7 +12,7 @@ paths:
     get:
       summary: 現在のユーザー情報を取得
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
@@ -21,6 +21,35 @@ paths:
                 properties:
                   userId: { type: string }
                   email: { type: string }
+                  displayName: { type: string }
+                  role: { type: string, enum: [user, admin] }
+
+  /auth/invite:
+    post:
+      summary: Cognito招待（管理者のみ）
+      security:
+        - cognitoUserPool: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+                displayName: { type: string, nullable: true }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId: { type: string }
+                  email: { type: string }
+                  status: { type: string }
 
   /matches:
     get:
@@ -36,14 +65,14 @@ paths:
           name: mode
           schema: { type: string, enum: [three, four] }
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Match'
+                  $ref: "#/components/schemas/Match"
 
     post:
       summary: 対局を登録
@@ -52,14 +81,47 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Match'
+              $ref: "#/components/schemas/MatchInput"
       responses:
-        '201':
+        "201":
           description: Created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Match'
+                $ref: "#/components/schemas/Match"
+
+  /matches/{matchId}:
+    put:
+      summary: 対局を更新
+      parameters:
+        - in: path
+          name: matchId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MatchInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Match"
+
+    delete:
+      summary: 対局を削除
+      parameters:
+        - in: path
+          name: matchId
+          required: true
+          schema: { type: string }
+      responses:
+        "204":
+          description: No Content
 
   /stats/summary:
     get:
@@ -75,12 +137,148 @@ paths:
           name: mode
           schema: { type: string, enum: [three, four], default: four }
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StatsSummary'
+                $ref: "#/components/schemas/StatsSummary"
+
+  /rulesets:
+    get:
+      summary: ルールセット一覧を取得（グローバル+個人）
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Ruleset"
+
+    post:
+      summary: ルールセットを作成
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RulesetInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ruleset"
+
+  /rulesets/{rulesetId}:
+    put:
+      summary: ルールセットを更新
+      parameters:
+        - in: path
+          name: rulesetId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RulesetInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ruleset"
+
+    delete:
+      summary: ルールセットを削除
+      parameters:
+        - in: path
+          name: rulesetId
+          required: true
+          schema: { type: string }
+      responses:
+        "204":
+          description: No Content
+
+  /rulesets/calculate:
+    post:
+      summary: ポイント計算（プレビュー用）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rulesetId, players]
+              properties:
+                rulesetId: { type: string }
+                players:
+                  type: array
+                  items:
+                    type: object
+                    required: [rank, rawScore]
+                    properties:
+                      rank: { type: integer, minimum: 1, maximum: 4 }
+                      rawScore: { type: integer }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    rank: { type: integer }
+                    rawScore: { type: integer }
+                    finalPoints: { type: number }
+
+  /rulesets/templates:
+    get:
+      summary: ルールテンプレート一覧を取得
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Ruleset"
+
+  /rulesets/rule-options:
+    get:
+      summary: ルール選択肢一覧を取得（UI用）
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  basicRules:
+                    type: object
+                    description: 基本ルールの選択肢とデフォルト値
+                  gameplayRules:
+                    type: object
+                    description: 進行ルールの選択肢とデフォルト値
+                  additionalRules:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name: { type: string }
+                        type: { type: string, enum: [boolean, string, number] }
+                        defaultValue: {}
+                        options: { type: array }
 
 components:
   securitySchemes:
@@ -97,7 +295,37 @@ components:
         matchId: { type: string }
         date: { type: string, format: date-time }
         gameMode: { type: string, enum: [three, four] }
-        entryMethod: { type: string, enum: [rank_plus_points, rank_plus_raw, provisional_rank_only] }
+        entryMethod:
+          {
+            type: string,
+            enum: [rank_plus_points, rank_plus_raw, provisional_rank_only],
+          }
+        rulesetId: { type: string, nullable: true }
+        rank: { type: integer, minimum: 1, maximum: 4 }
+        finalPoints:
+          {
+            type: number,
+            nullable: true,
+            description: "小数点第1位まで（例：+50.0, +11.2）",
+          }
+        rawScore: { type: integer, nullable: true }
+        chipCount: { type: integer, nullable: true }
+        venueId: { type: string, nullable: true }
+        memo: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    MatchInput:
+      type: object
+      required: [date, gameMode, entryMethod, rank]
+      properties:
+        date: { type: string, format: date-time }
+        gameMode: { type: string, enum: [three, four] }
+        entryMethod:
+          {
+            type: string,
+            enum: [rank_plus_points, rank_plus_raw, provisional_rank_only],
+          }
         rulesetId: { type: string, nullable: true }
         rank: { type: integer, minimum: 1, maximum: 4 }
         finalPoints: { type: number, nullable: true }
@@ -115,3 +343,122 @@ components:
         lastRate: { type: number }
         totalPoints: { type: number }
         chipTotal: { type: integer }
+
+    Ruleset:
+      type: object
+      required:
+        [
+          rulesetId,
+          ruleName,
+          gameMode,
+          startingPoints,
+          basePoints,
+          uma,
+          oka,
+          isGlobal,
+          createdBy,
+        ]
+      properties:
+        rulesetId: { type: string }
+        ruleName: { type: string }
+        gameMode: { type: string, enum: [three, four] }
+
+        # ポイント計算関連ルール
+        startingPoints: { type: integer, description: "開始点（例：25000）" }
+        basePoints: { type: integer, description: "基準点（例：30000）" }
+        useFloatingUma:
+          {
+            type: boolean,
+            default: false,
+            description: "浮きウマを使用するかどうか",
+          }
+        uma:
+          type: array
+          items: { type: integer }
+          description: "標準ウマ配列（整数）3人:[+20, 0, -20] 4人:[+30, +10, -10, -30]"
+        umaMatrix:
+          type: object
+          nullable: true
+          description: "浮き人数別ウマ表（useFloatingUma=trueの場合に使用）"
+          additionalProperties:
+            type: array
+            items: { type: integer }
+        oka:
+          {
+            type: integer,
+            description: "オカポイント（整数、1位が総取り、通常+20 or +15）",
+          }
+
+        # 階層化されたルール（将来拡張用）
+        basicRules:
+          type: object
+          nullable: true
+          description: "基本ルール（卓につく前に確認する重要ルール）"
+          additionalProperties: true
+        gameplayRules:
+          type: object
+          nullable: true
+          description: "進行ルール（卓で進行中に気になる細かいルール）"
+          additionalProperties: true
+        additionalRules:
+          type: array
+          nullable: true
+          items:
+            type: object
+            required: [name, value, enabled]
+            properties:
+              name: { type: string }
+              value: { type: string }
+              enabled: { type: boolean }
+          description: "追加ルール（その他の細かい設定）"
+
+        memo:
+          {
+            type: string,
+            nullable: true,
+            description: "任意メモ（例：「○○店ルール」）",
+          }
+        isGlobal: { type: boolean, description: "管理者作成の全員共通ルール" }
+        createdBy: { type: string, description: "作成者ID" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    RulesetInput:
+      type: object
+      required: [ruleName, gameMode, startingPoints, basePoints, uma, oka]
+      properties:
+        ruleName: { type: string }
+        gameMode: { type: string, enum: [three, four] }
+        startingPoints: { type: integer }
+        basePoints: { type: integer }
+        useFloatingUma: { type: boolean, default: false }
+        uma:
+          type: array
+          items: { type: integer }
+        umaMatrix:
+          type: object
+          nullable: true
+          additionalProperties:
+            type: array
+            items: { type: integer }
+        oka: { type: integer }
+        basicRules:
+          type: object
+          nullable: true
+          additionalProperties: true
+        gameplayRules:
+          type: object
+          nullable: true
+          additionalProperties: true
+        additionalRules:
+          type: array
+          nullable: true
+          items:
+            type: object
+            required: [name, value, enabled]
+            properties:
+              name: { type: string }
+              value: { type: string }
+              enabled: { type: boolean }
+        memo: { type: string, nullable: true }
+        isGlobal: { type: boolean, default: false }
