@@ -33,7 +33,7 @@ const HistoryScreen: React.FC = () => {
         mode: selectedMode,
       });
 
-      if (response.success) {
+      if (response.success && response.data) {
         setMatches(response.data);
       } else {
         throw new Error(response.message || '履歴データの取得に失敗しました');
