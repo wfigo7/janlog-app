@@ -146,141 +146,47 @@ def create_sample_data():
         "lastLoginAt": now,
     }
 
-    # サンプルルールセット（4人麻雀）
-    sample_ruleset_4p = {
-        "PK": "USER#test-user-001",
-        "SK": "RULESET#default-4p",
-        "entityType": "RULESET",
-        "rulesetId": "default-4p",
-        "ruleName": "デフォルト4人麻雀",
-        "gameMode": "four",
-        "uma": {"first": 20, "second": 10, "third": -10, "fourth": -20},
-        "oka": 25,
-        "isDefault": True,
-        "createdAt": now,
-        "updatedAt": now,
-    }
-
-    # サンプルルールセット（3人麻雀）
-    sample_ruleset_3p = {
-        "PK": "USER#test-user-001",
-        "SK": "RULESET#default-3p",
-        "entityType": "RULESET",
-        "rulesetId": "default-3p",
-        "ruleName": "デフォルト3人麻雀",
-        "gameMode": "three",
-        "uma": {"first": 15, "second": 0, "third": -15},
-        "oka": 20,
-        "isDefault": True,
-        "createdAt": now,
-        "updatedAt": now,
-    }
-
-    # サンプル対局データ（複数パターン）
-    sample_matches = []
-
-    # 1. 順位+最終スコア（4人麻雀）
-    match_id_1 = str(uuid.uuid4())
-    sample_matches.append(
-        {
-            "PK": "USER#test-user-001",
-            "SK": f"MATCH#{match_id_1}",
-            "entityType": "MATCH",
-            "matchId": match_id_1,
-            "userId": "test-user-001",
-            "date": "2024-01-15T14:30:00Z",
-            "gameMode": "four",
-            "entryMethod": "rank_plus_points",
-            "rulesetId": "default-4p",
-            "rank": 2,
-            "finalPoints": 25000,
-            "rawScore": None,
-            "chipCount": 5,
-            "venueId": None,
-            "memo": "順位+最終スコアのテスト",
-            "createdAt": now,
-            "updatedAt": now,
-            # GSI用属性
-            "GSI1PK": "USER#test-user-001#MATCH",
-            "GSI1SK": "2024-01-15T14:30:00Z",
-        }
-    )
-
-    # 2. 順位+素点（3人麻雀）
-    match_id_2 = str(uuid.uuid4())
-    sample_matches.append(
-        {
-            "PK": "USER#test-user-001",
-            "SK": f"MATCH#{match_id_2}",
-            "entityType": "MATCH",
-            "matchId": match_id_2,
-            "userId": "test-user-001",
-            "date": "2024-01-20T19:00:00Z",
-            "gameMode": "three",
-            "entryMethod": "rank_plus_raw",
-            "rulesetId": "default-3p",
-            "rank": 1,
-            "finalPoints": None,
-            "rawScore": 35000,
-            "chipCount": 10,
-            "venueId": None,
-            "memo": "順位+素点のテスト",
-            "createdAt": now,
-            "updatedAt": now,
-            # GSI用属性
-            "GSI1PK": "USER#test-user-001#MATCH",
-            "GSI1SK": "2024-01-20T19:00:00Z",
-        }
-    )
-
-    # 3. 仮スコア（4人麻雀）
-    match_id_3 = str(uuid.uuid4())
-    sample_matches.append(
-        {
-            "PK": "USER#test-user-001",
-            "SK": f"MATCH#{match_id_3}",
-            "entityType": "MATCH",
-            "matchId": match_id_3,
-            "userId": "test-user-001",
-            "date": "2024-01-25T16:45:00Z",
-            "gameMode": "four",
-            "entryMethod": "provisional_rank_only",
-            "rulesetId": None,
-            "rank": 3,
-            "finalPoints": None,
-            "rawScore": None,
-            "chipCount": None,
-            "venueId": None,
-            "memo": "仮スコアのテスト",
-            "createdAt": now,
-            "updatedAt": now,
-            # GSI用属性
-            "GSI1PK": "USER#test-user-001#MATCH",
-            "GSI1SK": "2024-01-25T16:45:00Z",
-        }
-    )
-
     try:
-        # サンプルデータを挿入
+        # サンプルユーザープロフィールを挿入
         table.put_item(Item=sample_profile)
-        table.put_item(Item=sample_ruleset_4p)
-        table.put_item(Item=sample_ruleset_3p)
-
-        for match in sample_matches:
-            table.put_item(Item=match)
 
         print("サンプルデータを作成しました:")
         print("- テストユーザープロフィール (test-user-001)")
-        print("- デフォルトルールセット（4人麻雀・3人麻雀）")
-        print(f"- サンプル対局データ ({len(sample_matches)}件)")
-        print("  - 順位+最終スコア（4人麻雀）")
-        print("  - 順位+素点（3人麻雀）")
-        print("  - 仮スコア（4人麻雀）")
 
         return True
 
     except ClientError as e:
         print(f"サンプルデータ作成エラー: {e}")
+        return False
+
+
+def create_default_rulesets():
+    """
+    デフォルトのグローバルルールセットを作成する
+    """
+    import subprocess
+    import sys
+
+    print("デフォルトのグローバルルールセットを作成中...")
+
+    try:
+        # create_default_rulesets.pyを実行
+        result = subprocess.run(
+            [sys.executable, "create_default_rulesets.py"],
+            cwd=os.path.dirname(__file__),
+            capture_output=True,
+            text=True,
+        )
+
+        if result.returncode == 0:
+            print("✅ デフォルトルールセットの作成が完了しました")
+            return True
+        else:
+            print(f"❌ デフォルトルールセット作成エラー: {result.stderr}")
+            return False
+
+    except Exception as e:
+        print(f"❌ デフォルトルールセット作成エラー: {e}")
         return False
 
 
@@ -329,17 +235,24 @@ def main():
         print("テーブル作成に失敗しました")
         sys.exit(1)
 
-    # サンプルデータ作成（デフォルトで作成）
-    print("\n3. サンプルデータ作成中...")
+    # サンプルデータ作成
+    print("\n3. サンプルユーザー作成中...")
     if not create_sample_data():
         print("サンプルデータ作成に失敗しました")
+        sys.exit(1)
+
+    # デフォルトルールセット作成
+    print("\n4. デフォルトルールセット作成中...")
+    if not create_default_rulesets():
+        print("デフォルトルールセット作成に失敗しました")
         sys.exit(1)
 
     print("\n✅ セットアップ完了!")
     print("\n作成されたデータ:")
     print("- ユーザー: test-user-001")
-    print("- ルールセット: default-4p, default-3p")
-    print("- 対局データ: 3件（各入力方式のサンプル）")
+    print(
+        "- グローバルルールセット: Mリーグルール、フリー雀荘標準、競技麻雀、3人麻雀標準、3人麻雀（高レート）"
+    )
     print(f"\nテーブル確認:")
     print(
         f"  aws dynamodb scan --table-name {table_name} --endpoint-url {endpoint_url}"
