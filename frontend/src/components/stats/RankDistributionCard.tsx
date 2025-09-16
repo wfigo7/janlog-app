@@ -3,7 +3,8 @@
  */
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { RankDistribution, GameMode } from '../../types/stats';
+import { RankDistribution } from '../../types/stats';
+import { GameMode } from '../../types/common';
 
 interface RankDistributionCardProps {
   distribution: RankDistribution;

@@ -6,50 +6,96 @@ import {
   FlatList,
   TouchableOpacity,
   Alert,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
-import { Match, GameMode } from '../../types/match';
+import { Match } from '../../types/match';
+import { GameMode } from '../../types/common';
+import { GameModeTab } from '../common/GameModeTab';
+import { MatchService } from '../../services/matchService';
 
 const HistoryScreen: React.FC = () => {
   const [selectedMode, setSelectedMode] = useState<GameMode>('four');
   const [matches, setMatches] = useState<Match[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // 対局履歴を取得する関数（現在はモックデータ）
-  const fetchMatches = async (gameMode: GameMode) => {
-    setLoading(true);
+  // 対局履歴を取得する関数
+  const fetchMatches = async (showRefresh = false) => {
     try {
-      // TODO: 実際のAPI呼び出しに置き換える
-      // 現在は空の配列を返す
-      const mockMatches: Match[] = [];
-      setMatches(mockMatches);
+      if (showRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+
+      const response = await MatchService.getMatches({
+        mode: selectedMode,
+      });
+
+      if (response.success) {
+        setMatches(response.data);
+      } else {
+        throw new Error(response.message || '履歴データの取得に失敗しました');
+      }
     } catch (error) {
+      console.error('履歴データ取得エラー:', error);
       Alert.alert('エラー', '履歴データの取得に失敗しました');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
   useEffect(() => {
-    fetchMatches(selectedMode);
+    fetchMatches();
   }, [selectedMode]);
+
+  const onRefresh = () => {
+    fetchMatches(true);
+  };
+
+  const onModeChange = (mode: GameMode) => {
+    setSelectedMode(mode);
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
   };
 
-  const getRankText = (rank: number) => {
-    const rankTexts = ['', '1位', '2位', '3位', '4位'];
-    return rankTexts[rank] || `${rank}位`;
+  const getRankText = (rank: number, gameMode: GameMode) => {
+    if (gameMode === 'three') {
+      const rankTexts = ['', '1位', '2位', '3位'];
+      return rankTexts[rank] || `${rank}位`;
+    } else {
+      const rankTexts = ['', '1位', '2位', '3位', '4位'];
+      return rankTexts[rank] || `${rank}位`;
+    }
+  };
+
+  const getRankColor = (rank: number, gameMode: GameMode) => {
+    if (rank === 1) return '#4CAF50'; // 1位は緑
+    
+    if (gameMode === 'three') {
+      return rank === 3 ? '#F44336' : '#666666'; // 3人麻雀では3位がラス
+    } else {
+      return rank === 4 ? '#F44336' : '#666666'; // 4人麻雀では4位がラス
+    }
   };
 
   const renderMatchItem = ({ item }: { item: Match }) => (
     <TouchableOpacity style={styles.matchItem}>
       <View style={styles.matchHeader}>
         <Text style={styles.matchDate}>{formatDate(item.date)}</Text>
-        <Text style={[styles.matchRank, { color: item.rank === 1 ? '#4CAF50' : item.rank === 4 ? '#F44336' : '#666' }]}>
-          {getRankText(item.rank)}
-        </Text>
+        <View style={styles.matchRankContainer}>
+          <Text style={styles.matchMode}>
+            {item.gameMode === 'three' ? '3麻' : '4麻'}
+          </Text>
+          <Text style={[styles.matchRank, { color: getRankColor(item.rank, item.gameMode) }]}>
+            {getRankText(item.rank, item.gameMode)}
+          </Text>
+        </View>
       </View>
       <View style={styles.matchDetails}>
         <Text style={styles.matchPoints}>
@@ -67,26 +113,21 @@ const HistoryScreen: React.FC = () => {
     </TouchableOpacity>
   );
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={styles.loadingText}>履歴データを読み込み中...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      {/* ゲームモード選択タブ */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tab, selectedMode === 'four' && styles.activeTab]}
-          onPress={() => setSelectedMode('four')}
-        >
-          <Text style={[styles.tabText, selectedMode === 'four' && styles.activeTabText]}>
-            4人麻雀
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, selectedMode === 'three' && styles.activeTab]}
-          onPress={() => setSelectedMode('three')}
-        >
-          <Text style={[styles.tabText, selectedMode === 'three' && styles.activeTabText]}>
-            3人麻雀
-          </Text>
-        </TouchableOpacity>
+      {/* ヘッダー */}
+      <View style={styles.header}>
+        <Text style={styles.title}>対局履歴</Text>
+        <GameModeTab selectedMode={selectedMode} onModeChange={onModeChange} />
       </View>
 
       {/* 対局履歴リスト */}
@@ -96,11 +137,13 @@ const HistoryScreen: React.FC = () => {
         keyExtractor={(item) => item.matchId}
         style={styles.matchList}
         contentContainerStyle={matches.length === 0 ? styles.emptyContainer : undefined}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>
-              {loading ? '読み込み中...' : '履歴がありません'}
-            </Text>
+            <Text style={styles.emptyText}>履歴がありません</Text>
+            <Text style={styles.emptySubtext}>対局を登録してください</Text>
           </View>
         }
       />
@@ -111,50 +154,50 @@ const HistoryScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F8F9FA',
   },
-  tabContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  tab: {
+  loadingContainer: {
     flex: 1,
-    paddingVertical: 12,
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#F8F9FA',
   },
-  activeTab: {
-    backgroundColor: '#2196F3',
-  },
-  tabText: {
+  loadingText: {
+    marginTop: 16,
     fontSize: 16,
-    fontWeight: '500',
-    color: '#666',
+    color: '#666666',
   },
-  activeTabText: {
-    color: '#fff',
+  header: {
+    backgroundColor: '#FFFFFF',
+    paddingTop: 60,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5E5',
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginBottom: 20,
   },
   matchList: {
     flex: 1,
-    padding: 16,
+    padding: 20,
   },
   matchItem: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     padding: 16,
-    marginBottom: 8,
-    borderRadius: 8,
+    marginBottom: 12,
+    borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 1,
+      height: 2,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   matchHeader: {
     flexDirection: 'row',
@@ -164,7 +207,20 @@ const styles = StyleSheet.create({
   },
   matchDate: {
     fontSize: 14,
-    color: '#666',
+    color: '#666666',
+  },
+  matchRankContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  matchMode: {
+    fontSize: 12,
+    color: '#999999',
+    backgroundColor: '#F0F0F0',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
   matchRank: {
     fontSize: 16,
@@ -178,15 +234,15 @@ const styles = StyleSheet.create({
   matchPoints: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#333',
+    color: '#333333',
   },
   matchChips: {
     fontSize: 14,
-    color: '#666',
+    color: '#666666',
   },
   matchMemo: {
     fontSize: 12,
-    color: '#999',
+    color: '#999999',
     marginTop: 4,
   },
   emptyContainer: {
@@ -196,8 +252,14 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
   },
   emptyText: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#666666',
   },
 });
 

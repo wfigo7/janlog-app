@@ -1,5 +1,4 @@
-export type GameMode = 'three' | 'four';
-export type EntryMethod = 'rank_plus_points' | 'rank_plus_raw' | 'provisional_rank_only';
+import { GameMode, EntryMethod } from './common';
 
 export interface Match {
   matchId: string;

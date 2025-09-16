@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { GameMode } from '../../types/stats';
+import { GameMode } from '../../types/common';
 
 interface GameModeTabProps {
   selectedMode: GameMode;
