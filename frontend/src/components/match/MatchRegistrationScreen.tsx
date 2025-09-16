@@ -10,7 +10,8 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { GameMode, MatchInput } from '../../types/match';
+import { MatchInput } from '../../types/match';
+import { GameMode } from '../../types/common';
 
 const MatchRegistrationScreen: React.FC = () => {
   const [gameMode, setGameMode] = useState<GameMode>('four');

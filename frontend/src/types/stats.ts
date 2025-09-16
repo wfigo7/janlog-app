@@ -38,7 +38,7 @@ export interface StatsResponse {
   data: StatsSummary;
 }
 
-export type GameMode = 'three' | 'four';
+import { GameMode } from './common';
 
 export interface StatsFilters {
   from?: string;    // 開始日（YYYY-MM-DD）

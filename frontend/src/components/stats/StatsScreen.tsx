@@ -12,10 +12,11 @@ import {
   ActivityIndicator 
 } from 'react-native';
 import { StatsCard } from './StatsCard';
-import { GameModeTab } from './GameModeTab';
+import { GameModeTab } from '../common/GameModeTab';
 import { RankDistributionCard } from './RankDistributionCard';
 import { StatsService } from '../../services/statsService';
-import { StatsSummary, GameMode } from '../../types/stats';
+import { StatsSummary } from '../../types/stats';
+import { GameMode } from '../../types/common';
 
 export default function StatsScreen() {
   const [stats, setStats] = useState<StatsSummary | null>(null);
