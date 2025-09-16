@@ -12,9 +12,13 @@ import {
 } from 'react-native';
 import { MatchInput } from '../../types/match';
 import { GameMode } from '../../types/common';
+import { Ruleset } from '../../types/ruleset';
+import { MatchService } from '../../services/matchService';
+import RuleSelector from './RuleSelector';
 
 const MatchRegistrationScreen: React.FC = () => {
   const [gameMode, setGameMode] = useState<GameMode>('four');
+  const [selectedRuleset, setSelectedRuleset] = useState<Ruleset | null>(null);
   const [rank, setRank] = useState<string>('');
   const [finalPoints, setFinalPoints] = useState<string>('');
   const [chipCount, setChipCount] = useState<string>('');
@@ -23,8 +27,23 @@ const MatchRegistrationScreen: React.FC = () => {
 
   const maxRank = gameMode === 'four' ? 4 : 3;
 
+  const handleGameModeChange = (newGameMode: GameMode) => {
+    setGameMode(newGameMode);
+    // ゲームモード変更時は選択されたルールセットをクリア
+    setSelectedRuleset(null);
+  };
+
+  const handleRulesetSelect = (ruleset: Ruleset) => {
+    setSelectedRuleset(ruleset);
+  };
+
   const handleSubmit = async () => {
     // バリデーション
+    if (!selectedRuleset) {
+      Alert.alert('エラー', 'ルールを選択してください');
+      return;
+    }
+
     if (!rank || parseInt(rank) < 1 || parseInt(rank) > maxRank) {
       Alert.alert('エラー', `順位は1〜${maxRank}位で入力してください`);
       return;
@@ -40,29 +59,38 @@ const MatchRegistrationScreen: React.FC = () => {
       const matchData: MatchInput = {
         gameMode,
         entryMethod: 'rank_plus_points',
-        rulesetId: 'default', // TODO: ルール選択機能実装時に変更
+        rulesetId: selectedRuleset.rulesetId,
         rank: parseInt(rank),
         finalPoints: parseFloat(finalPoints),
         chipCount: chipCount ? parseInt(chipCount) : undefined,
         memo: memo || undefined,
       };
 
-      // TODO: 実際のAPI呼び出しに置き換える
-      console.log('対局データ:', matchData);
-      
-      Alert.alert('成功', '対局を登録しました', [
-        {
-          text: 'OK',
-          onPress: () => {
-            // フォームをリセット
-            setRank('');
-            setFinalPoints('');
-            setChipCount('');
-            setMemo('');
+      console.log('対局データを送信中:', matchData);
+      console.log('選択されたルール:', selectedRuleset);
+
+      // 実際のAPI呼び出し
+      const result = await MatchService.createMatch(matchData);
+
+      if (result.success) {
+        Alert.alert('成功', '対局を登録しました', [
+          {
+            text: 'OK',
+            onPress: () => {
+              // フォームをリセット
+              setRank('');
+              setFinalPoints('');
+              setChipCount('');
+              setMemo('');
+              // ルールセットはリセットしない（同じルールで連続登録することが多いため）
+            },
           },
-        },
-      ]);
+        ]);
+      } else {
+        Alert.alert('エラー', result.message || '対局の登録に失敗しました');
+      }
     } catch (error) {
+      console.error('対局登録エラー:', error);
       Alert.alert('エラー', '対局の登録に失敗しました');
     } finally {
       setLoading(false);
@@ -70,7 +98,7 @@ const MatchRegistrationScreen: React.FC = () => {
   };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
@@ -81,7 +109,7 @@ const MatchRegistrationScreen: React.FC = () => {
           <View style={styles.tabContainer}>
             <TouchableOpacity
               style={[styles.tab, gameMode === 'four' && styles.activeTab]}
-              onPress={() => setGameMode('four')}
+              onPress={() => handleGameModeChange('four')}
             >
               <Text style={[styles.tabText, gameMode === 'four' && styles.activeTabText]}>
                 4人麻雀
@@ -89,13 +117,22 @@ const MatchRegistrationScreen: React.FC = () => {
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.tab, gameMode === 'three' && styles.activeTab]}
-              onPress={() => setGameMode('three')}
+              onPress={() => handleGameModeChange('three')}
             >
               <Text style={[styles.tabText, gameMode === 'three' && styles.activeTabText]}>
                 3人麻雀
               </Text>
             </TouchableOpacity>
           </View>
+        </View>
+
+        {/* ルール選択 */}
+        <View style={styles.section}>
+          <RuleSelector
+            gameMode={gameMode}
+            selectedRulesetId={selectedRuleset?.rulesetId}
+            onRulesetSelect={handleRulesetSelect}
+          />
         </View>
 
         {/* 順位入力 */}

@@ -1,10 +1,10 @@
 /**
  * 対局データ取得・操作サービス
  */
-import { Match } from '../types/match';
+import { Match, MatchInput } from '../types/match';
 import { GameMode } from '../types/common';
-
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080';
+import { apiClient } from '../utils/apiClient';
+import { ApiResponse } from '../types/api';
 
 export interface MatchFilters {
   mode?: GameMode;
@@ -12,46 +12,60 @@ export interface MatchFilters {
   to?: string;
 }
 
-export interface MatchListResponse {
-  success: boolean;
-  data: Match[];
-  message?: string;
-}
+export interface MatchListResponse extends ApiResponse<Match[]> {}
+
+export interface MatchCreateResponse extends ApiResponse<Match> {}
 
 export class MatchService {
+  /**
+   * 対局を登録
+   */
+  static async createMatch(matchInput: MatchInput): Promise<MatchCreateResponse> {
+    try {
+      // 現在の日時をISO形式で設定
+      const matchData = {
+        ...matchInput,
+        date: new Date().toISOString(),
+      };
+
+      const result = await apiClient.post<MatchCreateResponse>('/matches', matchData);
+      
+      return {
+        success: true,
+        data: result.data,
+        message: result.message,
+      };
+
+    } catch (error) {
+      console.error('対局登録エラー:', error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : '対局の登録に失敗しました',
+      };
+    }
+  }
+
   /**
    * 対局履歴を取得
    */
   static async getMatches(filters: MatchFilters = {}): Promise<MatchListResponse> {
     try {
-      const params = new URLSearchParams();
+      const params: Record<string, string> = {};
       
       if (filters.from) {
-        params.append('from', filters.from);
+        params.from = filters.from;
       }
       
       if (filters.to) {
-        params.append('to', filters.to);
+        params.to = filters.to;
       }
       
       if (filters.mode) {
-        params.append('mode', filters.mode);
+        params.mode = filters.mode;
       }
       
-      const url = `${API_BASE_URL}/matches?${params.toString()}`;
+      const data = await apiClient.get<Match[]>('/matches', params);
       
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
       return {
         success: true,
         data: data,
