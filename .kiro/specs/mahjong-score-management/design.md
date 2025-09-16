@@ -120,11 +120,62 @@ src/
 ├── stats/
 │   └── GET /summary          # 成績サマリ取得
 └── rulesets/
-    ├── GET    /              # ルールセット一覧取得
-    ├── POST   /              # ルールセット作成（管理者のみ）
-    ├── PUT    /{rulesetId}   # ルールセット更新（管理者のみ）
-    └── DELETE /{rulesetId}   # ルールセット削除（管理者のみ）
+    ├── GET    /              # ルールセット一覧取得（グローバル+個人）
+    ├── POST   /              # ルールセット作成
+    ├── PUT    /{rulesetId}   # ルールセット更新
+    ├── DELETE /{rulesetId}   # ルールセット削除
+    ├── POST /calculate       # ポイント計算（プレビュー用）
+    ├── GET  /templates       # ルールテンプレート一覧取得
+    └── GET  /rule-options    # ルール選択肢一覧取得（UI用）
 ```
+
+#### ポイント計算ロジック
+
+**基本計算式：**
+```
+最終ポイント = (素点 - 基準点) / 1000 + ウマ + オカ
+```
+
+**ウマとオカの概念：**
+- **ウマ**: 順位間の点数差（整数、例：「10-30」= [+30, +10, -10, -30]）
+- **オカ**: トップ者が総取りするボーナスポイント（整数、通常は (基準点-開始点)×人数）
+- 最終ポイントは1000点単位で計算し、小数点第1位まで表示
+
+**ウマ計算方式：**
+- **useFloatingUma=false**: 固定ウマ配列を使用（Mリーグ、フリー雀荘など）
+- **useFloatingUma=true**: 浮き人数（基準点以上の人数）によってウマが変動（日本プロ麻雀連盟）
+
+**将来拡張（浮きウマルール）:**
+- 浮き人数を計算: 基準点以上の素点を持つ人数をカウント
+- useFloatingUma=trueの場合、umaMatrixから該当する浮き人数のウマ配列を取得
+- useFloatingUma=falseの場合、標準のuma配列を使用
+
+**ルール管理API拡張:**
+- **GET /rulesets/templates**: よく使われるルールセットのテンプレート一覧
+  - Mリーグルール、フリー雀荘標準ルール、競技麻雀ルールなど
+- **GET /rulesets/rule-options**: UI用のルール選択肢一覧
+  - 戦略ルール、進行ルール、追加ルールの選択肢とデフォルト値
+
+**Mリーグルール（4人麻雀）の具体例：**
+- ルール: 25000点持ち30000点返し、ウマ「10-30」（ワンスリー）、オカ+20
+- オカ計算: (30000-25000)×4人 / 1000 = +20
+
+**計算例1（4人麻雀）:**
+1位: 素点45100点 → (45100-30000)/1000 + 30 + 20 = 15.1 + 30 + 20 = +65.1pt
+2位: 素点32400点 → (32400-30000)/1000 + 10 + 0 = 2.4 + 10 + 0 = +12.4pt
+3位: 素点14700点 → (14700-30000)/1000 + (-10) + 0 = -15.3 + (-10) + 0 = -25.3pt
+4位: 素点7800点 → (7800-30000)/1000 + (-30) + 0 = -22.2 + (-30) + 0 = -52.2pt
+※点数合計: 100000点、ポイント合計: 0pt
+
+**計算例2（3人麻雀）:**
+- ルール: 35000点持ち40000点返し、ウマ「20」、オカ+15
+- オカ計算: (40000-35000)×3人 / 1000 = +15
+- ウマ配列: [+20, 0, -20]
+
+1位: 素点52300点 → (52300-40000)/1000 + 20 + 15 = 12.3 + 20 + 15 = +47.3pt
+2位: 素点38900点 → (38900-40000)/1000 + 0 + 0 = -1.1 + 0 + 0 = -1.1pt
+3位: 素点13800点 → (13800-40000)/1000 + (-20) + 0 = -26.2 + (-20) + 0 = -46.2pt
+※点数合計: 105000点、ポイント合計: 0pt
 
 #### サービス層設計
 
@@ -165,12 +216,12 @@ ADR-0002に基づき、シングルテーブル設計を採用します。
 #### メインテーブル（janlog-table）
 
 ```
-PK (Partition Key) | SK (Sort Key) | エンティティタイプ
--------------------|---------------|------------------
-USER#{userId}      | MATCH#{matchId} | 対局データ
-USER#{userId}      | RULESET#{rulesetId} | ルールセット
-USER#{userId}      | VENUE#{venueId} | 会場データ
-USER#{userId}      | PROFILE | ユーザープロフィール
+| PK (Partition Key) | SK (Sort Key)       | エンティティタイプ   |
+| ------------------ | ------------------- | -------------------- |
+| USER#{userId}      | MATCH#{matchId}     | 対局データ           |
+| USER#{userId}      | RULESET#{rulesetId} | ルールセット         |
+| USER#{userId}      | VENUE#{venueId}     | 会場データ           |
+| USER#{userId}      | PROFILE             | ユーザープロフィール |
 ```
 
 #### 対局データ（MATCH）
@@ -185,7 +236,7 @@ Attributes:
 - entryMethod (rank_plus_points | rank_plus_raw | provisional_rank_only)
 - rulesetId (ルールセットID)
 - rank (1-4)
-- finalPoints (number, nullable)
+- finalPoints (number, nullable) # 小数点第1位まで（例：+50.0, +11.2）
 - rawScore (integer, nullable)
 - chipCount (integer, nullable)
 - venueId (string, nullable)
@@ -197,22 +248,59 @@ Attributes:
 #### ルールセットデータ（RULESET）
 
 ```
-PK: USER#{userId}
+PK: USER#{userId} | GLOBAL
 SK: RULESET#{rulesetId}
 Attributes:
 - entityType: "RULESET"
 - ruleName (string)
 - gameMode (three | four)
-- uma (object)
-  - first: number
-  - second: number
-  - third: number
-  - fourth: number (4人麻雀のみ)
-- oka (number)
-- isDefault (boolean)
+
+# ポイント計算関連ルール
+- startingPoints (number) # 開始点（例：25000）
+- basePoints (number) # 基準点（例：30000）
+- useFloatingUma (boolean) # 浮きウマを使用するかどうか（false=固定ウマ、true=浮き人数別ウマ）
+- uma (array of numbers) # 標準ウマ配列（整数）3人:[+20, 0, -20] 4人:[+30, +10, -10, -30]
+- umaMatrix (object, nullable) # 浮き人数別ウマ表（useFloatingUma=trueの場合に使用）
+- oka (number) # オカポイント（整数、1位が総取り、通常+20 or +15）
+
+# 基本ルール（卓につく前に確認する重要ルール）
+- basicRules (object, nullable) # 戦略に影響する基本ルール（例：赤牌、喰いタンなど）
+
+# 進行ルール（卓で進行中に気になる細かいルール）
+- gameplayRules (object, nullable) # ゲーム進行の細かいルール（例：途中流局、ダブロンなど）
+
+# 追加ルール（その他の細かい設定）
+- additionalRules (array of objects, nullable) # 自由設定可能な追加ルール
+
+**データ拡張の考慮事項：**
+- 各ルールオブジェクトはnullable設計
+- 既存データは各ルールフィールドがnullまたは空オブジェクト
+- 将来の項目追加時は、既存データに影響なし（デフォルト値で補完）
+- アプリケーション側でnullチェックとデフォルト値設定を実装
+
+- memo (string, nullable) # 任意メモ（例：「○○店ルール」）
+- isGlobal (boolean) # 管理者作成の全員共通ルール
+- createdBy (userId) # 作成者ID
 - createdAt (ISO datetime)
 - updatedAt (ISO datetime)
 ```
+
+**umaMatrix構造例（将来拡張用）:**
+```json
+{
+  "0": [0, 0, 0, 0],      // 浮き0人
+  "1": [12, -1, -3, -8],  // 浮き1人
+  "2": [8, 4, -4, -8],    // 浮き2人
+  "3": [8, 3, 1, -12],    // 浮き3人
+  "4": [0, 0, 0, 0]       // 浮き4人
+}
+```
+
+**ルール階層の考え方:**
+1. **ポイント計算ルール**: 成績に直接影響（ウマ、オカ、基準点など）
+2. **戦略ルール**: 打ち方に大きく影響（赤牌、喰いタン、後付けなど）
+3. **進行ルール**: ゲーム進行の詳細（途中流局、ダブロンなど）
+4. **追加ルール**: その他の自由設定項目
 
 #### ユーザープロフィール（PROFILE）
 
@@ -275,22 +363,48 @@ interface Match extends BaseEntity {
   memo?: string;
 }
 
+// 基本ルール型（将来拡張用）
+interface BasicRules {
+  [key: string]: any; // 柔軟な拡張に対応（例：redTiles, openTanyao等）
+}
+
+// 進行ルール型（将来拡張用）
+interface GameplayRules {
+  [key: string]: any; // 柔軟な拡張に対応（例：abortiveDraw, doubleRon等）
+}
+
+// 追加ルール項目型
+interface AdditionalRule {
+  name: string; // ルール名
+  value: string; // 設定値
+  enabled: boolean; // 有効/無効
+}
+
 // Ruleset型
 interface Ruleset extends BaseEntity {
   entityType: 'RULESET';
-  PK: `USER#${string}`;
+  PK: `USER#${string}` | 'GLOBAL';
   SK: `RULESET#${string}`;
   rulesetId: string;
   ruleName: string;
   gameMode: 'three' | 'four';
-  uma: {
-    first: number;
-    second: number;
-    third: number;
-    fourth?: number;
-  };
-  oka: number;
-  isDefault: boolean;
+  
+  // ポイント計算関連
+  startingPoints: number; // 開始点（例：25000）
+  basePoints: number; // 基準点（例：30000）
+  useFloatingUma: boolean; // 浮きウマを使用するかどうか
+  uma: number[]; // 標準ウマ配列（整数）3人:[+20, 0, -20] 4人:[+30, +10, -10, -30]
+  umaMatrix?: Record<string, number[]>; // 浮き人数別ウマ表（useFloatingUma=trueの場合に使用）
+  oka: number; // オカポイント（整数、1位が総取り、通常+20 or +15）
+  
+  // 階層化されたルール（将来拡張用）
+  basicRules?: BasicRules; // 基本ルール（卓につく前に確認する重要ルール）
+  gameplayRules?: GameplayRules; // 進行ルール（卓で進行中に気になる細かいルール）
+  additionalRules?: AdditionalRule[]; // 追加ルール（その他の細かい設定）
+  
+  memo?: string; // 任意メモ
+  isGlobal: boolean; // 管理者作成の全員共通ルール
+  createdBy: string; // 作成者ID
 }
 
 // UserProfile型
