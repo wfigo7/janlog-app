@@ -1,11 +1,12 @@
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
-# dependencies
+# Node/Expo
 node_modules/
-
-# Expo
+*.log
 .expo/
+.expo-shared/
 dist/
+coverage/
 web-build/
 expo-env.d.ts
 
@@ -32,6 +33,13 @@ yarn-error.*
 
 # local env files
 .env*.local
+
+# TypeScript build outputs
+*.js
+*.d.ts
+!jest.config.js
+!jest.setup.js
+!*.config.js
 
 # typescript
 *.tsbuildinfo
