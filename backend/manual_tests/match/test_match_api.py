@@ -7,25 +7,26 @@ import json
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
+
 def test_match_api():
     """対局記録APIをテスト"""
-    load_dotenv('.env.local')
-    
+    load_dotenv(".env.local")
+
     base_url = "http://localhost:8080"
-    
+
     print("=== 対局記録API テスト ===")
-    
+
     # テスト用対局データ（個人成績用）
     test_match = {
         "date": datetime.now().isoformat(),
         "gameMode": "four",
         "entryMethod": "rank_plus_points",
         "rank": 2,
-        "finalPoints": 25000,
+        "finalPoints": 250.0,
         "chipCount": 5,
-        "memo": "テスト対局"
+        "memo": "テスト対局",
     }
-    
+
     # 1. 対局登録テスト
     print("\n1. 対局登録テスト")
     try:
@@ -33,7 +34,7 @@ def test_match_api():
             f"{base_url}/matches",
             json=test_match,
             headers={"Content-Type": "application/json"},
-            timeout=10
+            timeout=10,
         )
         print(f"   ステータス: {response.status_code}")
         if response.status_code == 200:
@@ -44,11 +45,11 @@ def test_match_api():
             print("   ✅ 対局登録成功")
         else:
             print(f"   ❌ エラー: {response.text}")
-            return False
+            assert False, f"対局登録エラー: {response.text}"
     except requests.exceptions.RequestException as e:
         print(f"   ❌ 対局登録失敗: {e}")
-        return False
-    
+        assert False, f"対局登録失敗: {e}"
+
     # 2. 対局一覧取得テスト
     print("\n2. 対局一覧取得テスト")
     try:
@@ -64,11 +65,11 @@ def test_match_api():
             print("   ✅ 対局一覧取得成功")
         else:
             print(f"   ❌ エラー: {response.text}")
-            return False
+            assert False, f"対局一覧取得エラー: {response.text}"
     except requests.exceptions.RequestException as e:
         print(f"   ❌ 対局一覧取得失敗: {e}")
-        return False
-    
+        assert False, f"対局一覧取得失敗: {e}"
+
     # 3. 特定対局取得テスト
     if match_id:
         print("\n3. 特定対局取得テスト")
@@ -84,7 +85,7 @@ def test_match_api():
                 print(f"   ❌ エラー: {response.text}")
         except requests.exceptions.RequestException as e:
             print(f"   ❌ 特定対局取得失敗: {e}")
-    
+
     # 4. フィルター付き対局一覧取得テスト
     print("\n4. フィルター付き対局一覧取得テスト")
     try:
@@ -100,9 +101,10 @@ def test_match_api():
             print(f"   ❌ エラー: {response.text}")
     except requests.exceptions.RequestException as e:
         print(f"   ❌ フィルター付き取得失敗: {e}")
-    
+
     print("\n✅ 対局記録APIテストが完了しました！")
-    return True
+    assert True  # pytest用のアサーション
+
 
 if __name__ == "__main__":
     test_match_api()

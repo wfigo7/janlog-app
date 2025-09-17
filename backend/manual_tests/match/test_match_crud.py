@@ -22,7 +22,7 @@ def test_crud_operations():
         "gameMode": "four",
         "entryMethod": "rank_plus_points",
         "rank": 3,
-        "finalPoints": 15000,
+        "finalPoints": 150.0,
         "chipCount": 2,
         "memo": "CRUD テスト対局"
     }
@@ -43,14 +43,14 @@ def test_crud_operations():
             print("   ✅ 対局作成成功")
         else:
             print(f"   ❌ エラー: {response.text}")
-            return False
+            assert False, f"対局作成エラー: {response.text}"
     except requests.exceptions.RequestException as e:
         print(f"   ❌ 対局作成失敗: {e}")
-        return False
+        assert False, f"対局作成失敗: {e}"
     
     if not match_id:
         print("対局IDが取得できませんでした")
-        return False
+        assert False, "対局IDが取得できませんでした"
     
     # 2. 対局取得
     print("\n2. 対局取得テスト")
@@ -75,7 +75,7 @@ def test_crud_operations():
         "gameMode": "four",
         "entryMethod": "rank_plus_points",
         "rank": 1,  # 3位から1位に変更
-        "finalPoints": 45000,  # ポイントも変更
+        "finalPoints": 450.0,  # ポイントも変更
         "chipCount": 8,
         "memo": "更新されたテスト対局"
     }
@@ -168,7 +168,7 @@ def test_crud_operations():
         print(f"   ❌ リクエスト失敗: {e}")
     
     print("\n✅ CRUD操作テストが完了しました！")
-    return True
+    assert True  # pytest用のアサーション
 
 if __name__ == "__main__":
     test_crud_operations()
