@@ -34,6 +34,9 @@ const MatchRegistrationScreen: React.FC = () => {
   const [calculationDetails, setCalculationDetails] = useState<any>(null);
   const [showCalculation, setShowCalculation] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [provisionalPoints, setProvisionalPoints] = useState<number | null>(null);
+  const [provisionalDetails, setProvisionalDetails] = useState<any>(null);
+  const [showProvisionalCalculation, setShowProvisionalCalculation] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationType, setNotificationType] = useState<'success' | 'error'>('success');
@@ -62,6 +65,9 @@ const MatchRegistrationScreen: React.FC = () => {
     setCalculatedPoints(null);
     setCalculationDetails(null);
     setShowCalculation(false);
+    setProvisionalPoints(null);
+    setProvisionalDetails(null);
+    setShowProvisionalCalculation(false);
     setRawScoreError(null);
     setRankError(null);
     setFinalPointsError(null);
@@ -97,6 +103,9 @@ const MatchRegistrationScreen: React.FC = () => {
     setCalculatedPoints(null);
     setCalculationDetails(null);
     setShowCalculation(false);
+    setProvisionalPoints(null);
+    setProvisionalDetails(null);
+    setShowProvisionalCalculation(false);
     setRawScoreError(null);
     setRankError(null);
   };
@@ -233,6 +242,71 @@ const MatchRegistrationScreen: React.FC = () => {
     }
   };
 
+  const calculateProvisionalPointsAutomatically = async (
+    ruleset: Ruleset,
+    rankValue: string
+  ) => {
+    const rankNum = parseInt(rankValue);
+
+    // 基本バリデーション
+    if (!ruleset || !rankValue || rankNum < 1 || rankNum > maxRank) {
+      setProvisionalPoints(null);
+      setProvisionalDetails(null);
+      setShowProvisionalCalculation(false);
+      return;
+    }
+
+    setIsCalculating(true);
+    try {
+      // 仮の素点を計算（開始点からの増減）
+      let provisionalRawScore: number;
+
+      if (gameMode === 'three') {
+        // 3人麻雀: +15000, 0, -15000
+        if (rankNum === 1) {
+          provisionalRawScore = ruleset.startingPoints + 15000;
+        } else if (rankNum === 2) {
+          provisionalRawScore = ruleset.startingPoints;
+        } else { // rankNum === 3
+          provisionalRawScore = ruleset.startingPoints - 15000;
+        }
+      } else {
+        // 4人麻雀: +15000, +5000, -5000, -15000
+        if (rankNum === 1) {
+          provisionalRawScore = ruleset.startingPoints + 15000;
+        } else if (rankNum === 2) {
+          provisionalRawScore = ruleset.startingPoints + 5000;
+        } else if (rankNum === 3) {
+          provisionalRawScore = ruleset.startingPoints - 5000;
+        } else { // rankNum === 4
+          provisionalRawScore = ruleset.startingPoints - 15000;
+        }
+      }
+
+      const request: PointCalculationRequest = {
+        rulesetId: ruleset.rulesetId,
+        rank: rankNum,
+        rawScore: provisionalRawScore,
+      };
+
+      const response = await rulesetService.calculatePoints(request);
+      setProvisionalPoints(response.finalPoints);
+      setProvisionalDetails({
+        ...response.calculation,
+        isProvisional: true,
+        provisionalRawScore: provisionalRawScore,
+      });
+      setShowProvisionalCalculation(true);
+    } catch (error) {
+      console.error('仮スコア計算エラー:', error);
+      setProvisionalPoints(null);
+      setProvisionalDetails(null);
+      setShowProvisionalCalculation(false);
+    } finally {
+      setIsCalculating(false);
+    }
+  };
+
   // 自動計算のためのuseEffect
   useEffect(() => {
     if (entryMethod === 'rank_plus_raw' && selectedRuleset) {
@@ -243,6 +317,17 @@ const MatchRegistrationScreen: React.FC = () => {
       return () => clearTimeout(timeoutId);
     }
   }, [selectedRuleset, rank, rawScore, entryMethod, maxRank]);
+
+  // 仮スコア計算のためのuseEffect
+  useEffect(() => {
+    if (entryMethod === 'provisional_rank_only' && selectedRuleset) {
+      const timeoutId = setTimeout(() => {
+        calculateProvisionalPointsAutomatically(selectedRuleset, rank);
+      }, 300); // 300ms のデバウンス
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [selectedRuleset, rank, entryMethod, maxRank]);
 
   const showNotificationMessage = (message: string, type: 'success' | 'error' = 'success') => {
     setNotificationMessage(message);
@@ -321,8 +406,8 @@ const MatchRegistrationScreen: React.FC = () => {
       rawScoreValue = parseInt(rawScore);
       finalPointsValue = calculatedPoints;
     } else if (entryMethod === 'provisional_rank_only') {
-      // 仮スコア方式は順位のみでOK
-      finalPointsValue = undefined; // バックエンドで計算される
+      // 仮スコア方式は順位のみでOK（バックエンドで計算される）
+      finalPointsValue = undefined;
     }
 
     setLoading(true);
@@ -354,6 +439,9 @@ const MatchRegistrationScreen: React.FC = () => {
         setCalculatedPoints(null);
         setCalculationDetails(null);
         setShowCalculation(false);
+        setProvisionalPoints(null);
+        setProvisionalDetails(null);
+        setShowProvisionalCalculation(false);
         // ルールセットはリセットしない（同じルールで連続登録することが多いため）
 
         // 成功通知を表示
@@ -468,7 +556,7 @@ const MatchRegistrationScreen: React.FC = () => {
                   entryMethod === 'provisional_rank_only' && styles.activeEntryMethodText,
                 ]}
               >
-                仮スコア
+                順位のみ
               </Text>
             </TouchableOpacity>
           </View>
@@ -573,13 +661,57 @@ const MatchRegistrationScreen: React.FC = () => {
         )}
 
         {entryMethod === 'provisional_rank_only' && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>仮スコア方式</Text>
-            <Text style={styles.provisionalNote}>
-              順位のみで仮のスコアを計算します。{'\n'}
-              選択されたルールに基づいて自動計算されます。
-            </Text>
-          </View>
+          <>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>順位のみ入力</Text>
+              <Text style={styles.provisionalNote}>
+                順位のみで仮のスコアを計算します。{'\n'}
+                {gameMode === 'three'
+                  ? '3人麻雀: 1位(+15000), 2位(±0), 3位(-15000)'
+                  : '4人麻雀: 1位(+15000), 2位(+5000), 3位(-5000), 4位(-15000)'
+                }{'\n'}
+                開始点からの増減で仮素点を設定し、選択されたルールでポイント計算します。
+              </Text>
+              {isCalculating && (
+                <Text style={styles.calculatingText}>計算中...</Text>
+              )}
+            </View>
+
+            {/* 仮スコア計算結果表示 */}
+            {showProvisionalCalculation && provisionalDetails && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>計算結果（順位のみ）</Text>
+                <View style={styles.calculationResult}>
+                  <Text style={styles.calculationTitle}>
+                    仮ポイント: {provisionalPoints}pt
+                  </Text>
+                  <Text style={styles.calculationFormula}>
+                    {provisionalDetails.formula}
+                  </Text>
+                  <View style={styles.calculationDetails}>
+                    <Text style={styles.calculationDetailText}>
+                      仮素点: {provisionalDetails.provisionalRawScore}点
+                    </Text>
+                    <Text style={styles.calculationDetailText}>
+                      基準点: {provisionalDetails.basePoints}点
+                    </Text>
+                    <Text style={styles.calculationDetailText}>
+                      基本計算: {provisionalDetails.baseCalculation}pt
+                    </Text>
+                    <Text style={styles.calculationDetailText}>
+                      ウマ: {provisionalDetails.umaPoints}pt
+                    </Text>
+                    <Text style={styles.calculationDetailText}>
+                      オカ: {provisionalDetails.okaPoints}pt
+                    </Text>
+                  </View>
+                  <Text style={styles.provisionalWarning}>
+                    ※ これは仮の計算結果です。実際の素点とは異なる場合があります。
+                  </Text>
+                </View>
+              </View>
+            )}
+          </>
         )}
 
         {/* チップ数入力 */}
@@ -758,6 +890,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#e9ecef',
+  },
+  provisionalWarning: {
+    fontSize: 12,
+    color: '#FF9800',
+    fontStyle: 'italic',
+    marginTop: 8,
+    textAlign: 'center',
   },
   notificationContainer: {
     position: 'absolute',

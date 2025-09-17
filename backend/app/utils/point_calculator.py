@@ -71,6 +71,7 @@ class PointCalculator:
     ) -> Dict[str, Any]:
         """
         仮スコア（順位のみ）からポイントを計算する
+        開始点からの増減で仮の素点を設定
         
         Args:
             ruleset: ルールセット
@@ -79,15 +80,16 @@ class PointCalculator:
         Returns:
             計算結果辞書
         """
-        # 仮の素点を設定（基準点ベース）
+        # 仮の素点を設定（開始点からの固定増減値）
+        # ゲームモードに関係なく統一された増減値を使用
         if rank == 1:
-            provisional_raw_score = ruleset.basePoints + 15000  # +15000点
+            provisional_raw_score = ruleset.startingPoints + 15000
         elif rank == 2:
-            provisional_raw_score = ruleset.basePoints + 5000   # +5000点
+            provisional_raw_score = ruleset.startingPoints + 5000
         elif rank == 3:
-            provisional_raw_score = ruleset.basePoints - 5000   # -5000点
+            provisional_raw_score = ruleset.startingPoints - 5000
         else:  # rank == 4
-            provisional_raw_score = ruleset.basePoints - 15000  # -15000点
+            provisional_raw_score = ruleset.startingPoints - 15000
         
         # 通常の計算を実行
         result = PointCalculator.calculate_final_points(
