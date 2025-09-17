@@ -19,6 +19,10 @@ class MatchService:
 
     async def create_match(self, match_request: MatchRequest, user_id: str) -> Match:
         """対局を作成"""
+        # 仮スコア方式の場合は自動計算
+        if match_request.entryMethod == "provisional_rank_only":
+            match_request = await self._calculate_provisional_score(match_request, user_id)
+        
         # リクエストから対局データを作成
         match = Match.from_request(match_request, user_id)
         
@@ -29,6 +33,30 @@ class MatchService:
             return match
         except Exception as e:
             raise Exception(f"対局の作成に失敗しました: {str(e)}")
+
+    async def _calculate_provisional_score(self, match_request: MatchRequest, user_id: str) -> MatchRequest:
+        """仮スコア方式の場合の自動計算"""
+        from app.services.ruleset_service import get_ruleset_service
+        from app.utils.point_calculator import PointCalculator
+        
+        # ルールセットを取得
+        if not match_request.rulesetId:
+            raise ValueError("仮スコア方式ではルールセットの選択が必要です")
+        
+        ruleset_service = get_ruleset_service()
+        ruleset = await ruleset_service.get_ruleset(match_request.rulesetId, user_id)
+        
+        if not ruleset:
+            raise ValueError("指定されたルールセットが見つかりません")
+        
+        # 仮スコア計算
+        result = PointCalculator.calculate_provisional_points(ruleset, match_request.rank)
+        
+        # リクエストを更新
+        match_request.finalPoints = result["finalPoints"]
+        match_request.rawScore = result["calculation"]["provisionalRawScore"]
+        
+        return match_request
 
     async def get_matches(
         self,
