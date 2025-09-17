@@ -81,15 +81,25 @@ class PointCalculator:
             計算結果辞書
         """
         # 仮の素点を設定（開始点からの固定増減値）
-        # ゲームモードに関係なく統一された増減値を使用
-        if rank == 1:
-            provisional_raw_score = ruleset.startingPoints + 15000
-        elif rank == 2:
-            provisional_raw_score = ruleset.startingPoints + 5000
-        elif rank == 3:
-            provisional_raw_score = ruleset.startingPoints - 5000
-        else:  # rank == 4
-            provisional_raw_score = ruleset.startingPoints - 15000
+        # ゲームモードに応じて異なる増減値を使用
+        if ruleset.gameMode == "three":
+            # 3人麻雀の場合
+            if rank == 1:
+                provisional_raw_score = ruleset.startingPoints + 15000
+            elif rank == 2:
+                provisional_raw_score = ruleset.startingPoints + 0
+            else:  # rank == 3
+                provisional_raw_score = ruleset.startingPoints - 15000
+        else:
+            # 4人麻雀の場合
+            if rank == 1:
+                provisional_raw_score = ruleset.startingPoints + 15000
+            elif rank == 2:
+                provisional_raw_score = ruleset.startingPoints + 5000
+            elif rank == 3:
+                provisional_raw_score = ruleset.startingPoints - 5000
+            else:  # rank == 4
+                provisional_raw_score = ruleset.startingPoints - 15000
         
         # 通常の計算を実行
         result = PointCalculator.calculate_final_points(
