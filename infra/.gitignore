@@ -1,0 +1,12 @@
+# CDK / AWS
+cdk.out/
+cdk.context.json
+
+# TypeScript build outputs
+*.js
+*.d.ts
+!jest.config.js
+!jest.setup.js
+!*.config.js
+coverage/
+
