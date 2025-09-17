@@ -112,34 +112,26 @@ const MatchRegistrationScreen: React.FC = () => {
 
   // 素点のバリデーション関数
   const validateRawScore = (score: string): { isValid: boolean; message?: string } => {
-    console.log('validateRawScore called with:', score);
-
     if (!score) {
-      console.log('score is empty');
       return { isValid: false };
     }
 
     const num = parseInt(score);
-    console.log('parsed score:', num);
 
     if (isNaN(num)) {
-      console.log('score is NaN');
       return { isValid: false, message: '数値を入力してください' };
     }
 
     // -999900〜999900の範囲チェック
     if (num < -999900 || num > 999900) {
-      console.log('score out of range:', num);
       return { isValid: false, message: '6桁までの数値を入力してください（下2桁は00）' };
     }
 
     // 下2桁が00でない場合はエラー
     if (Math.abs(num) % 100 !== 0) {
-      console.log('score not divisible by 100:', num, 'remainder:', Math.abs(num) % 100);
       return { isValid: false, message: '6桁までの数値を入力してください（下2桁は00）' };
     }
 
-    console.log('score validation passed');
     return { isValid: true };
   };
 
@@ -159,7 +151,6 @@ const MatchRegistrationScreen: React.FC = () => {
       return { isValid: false, message: `1〜${maxRank}位で入力してください` };
     }
 
-    console.log('rank validation passed');
     return { isValid: true };
   };
 
@@ -339,10 +330,7 @@ const MatchRegistrationScreen: React.FC = () => {
   };
 
   const scrollToErrorField = (sectionType: 'rank' | 'finalPoints' | 'rawScore') => {
-    console.log('scrollToErrorField called for:', sectionType);
-
     if (!scrollViewRef.current) {
-      console.log('ScrollView ref not available');
       return;
     }
 
@@ -354,7 +342,6 @@ const MatchRegistrationScreen: React.FC = () => {
     };
 
     const targetY = positions[sectionType];
-    console.log('Scrolling to position:', targetY);
 
     scrollViewRef.current.scrollTo({
       y: targetY,
@@ -422,9 +409,6 @@ const MatchRegistrationScreen: React.FC = () => {
         chipCount: chipCount ? parseInt(chipCount) : undefined,
         memo: memo || undefined,
       };
-
-      console.log('対局データを送信中:', matchData);
-      console.log('選択されたルール:', selectedRuleset);
 
       // 実際のAPI呼び出し
       const result = await MatchService.createMatch(matchData);

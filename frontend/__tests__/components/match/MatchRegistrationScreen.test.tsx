@@ -48,13 +48,14 @@ jest.mock('../../../src/services/matchService', () => ({
 
 jest.mock('../../../src/components/match/RuleSelector', () => {
   return function MockRuleSelector({ onRulesetSelect }: { onRulesetSelect: (ruleset: any) => void }) {
+    const { TouchableOpacity, Text } = require('react-native');
     return (
-      <button
+      <TouchableOpacity
         testID="mock-rule-selector"
         onPress={() => onRulesetSelect(mockRuleset)}
       >
-        ルール選択
-      </button>
+        <Text>ルール選択</Text>
+      </TouchableOpacity>
     );
   };
 });
@@ -99,7 +100,7 @@ describe('MatchRegistrationScreen', () => {
     // 順位のみ入力の説明が表示される
     expect(getByText('順位のみ入力')).toBeTruthy();
     expect(getByText(/順位のみで仮のスコアを計算します/)).toBeTruthy();
-    expect(getByText(/開始点からの増減: 1位\(\+15000\), 2位\(\+5000\), 3位\(-5000\), 4位\(-15000\)/)).toBeTruthy();
+    expect(getByText(/4人麻雀: 1位\(\+15000\), 2位\(\+5000\), 3位\(-5000\), 4位\(-15000\)/)).toBeTruthy();
   });
 
   it('順位のみ方式で仮スコア計算が実行される', async () => {

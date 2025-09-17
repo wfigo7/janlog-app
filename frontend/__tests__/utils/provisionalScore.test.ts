@@ -112,7 +112,7 @@ describe('ProvisionalScore Utilities', () => {
 
       // 計算結果が一致することを確認
       Object.keys(fourPlayerAdjustments).forEach(rank => {
-        const rankNum = parseInt(rank);
+        const rankNum = parseInt(rank) as keyof typeof fourPlayerAdjustments;
         const expectedScore = startingPoints + fourPlayerAdjustments[rankNum];
         expect(expectedScore).toBeGreaterThan(0);
         expect(expectedScore % 100).toBe(0);
