@@ -2,7 +2,7 @@
 対局データモデル
 """
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import Optional, Literal
 from datetime import datetime
 import uuid
@@ -25,38 +25,66 @@ class MatchRequest(BaseModel):
     venueId: Optional[str] = Field(None, description="会場ID")
     memo: Optional[str] = Field(None, description="メモ")
 
-    @validator("rank")
-    def validate_rank(cls, v, values):
-        """順位のバリデーション"""
-        game_mode = values.get("gameMode")
-        max_rank = 3 if game_mode == "three" else 4
+    @field_validator("date")
+    @classmethod
+    def validate_date(cls, v):
+        """日付のバリデーション"""
+        try:
+            datetime.fromisoformat(v.replace("Z", "+00:00"))
+        except ValueError:
+            raise ValueError("日付はISO形式で入力してください")
 
-        if v > max_rank:
+        return v
+
+    @field_validator("chipCount")
+    @classmethod
+    def validate_chip_count(cls, v):
+        """チップ数のバリデーション"""
+        if v is not None and v < 0:
+            raise ValueError("チップ数は0以上で入力してください")
+
+        return v
+
+    @model_validator(mode="after")
+    def validate_match_data(self):
+        """複数フィールドの組み合わせバリデーション"""
+        # 順位のゲームモード別バリデーション
+        max_rank = 3 if self.gameMode == "three" else 4
+        if self.rank > max_rank:
             raise ValueError(
-                f"{game_mode}麻雀では順位は{max_rank}以下である必要があります"
+                f"{self.gameMode}麻雀では順位は{max_rank}以下である必要があります"
             )
 
-        return v
+        # 入力方式別バリデーション
+        if self.entryMethod == "rank_plus_points":
+            if self.finalPoints is None:
+                raise ValueError("順位+最終スコア方式では最終ポイントが必要です")
 
-    @validator("finalPoints", always=True)
-    def validate_final_points(cls, v, values):
-        """最終ポイントのバリデーション"""
-        entry_method = values.get("entryMethod")
+            # 範囲チェック: -999.9〜999.9
+            if self.finalPoints < -999.9 or self.finalPoints > 999.9:
+                raise ValueError(
+                    "-999.9から999.9の範囲で入力してください（小数点第1位まで）"
+                )
 
-        if entry_method == "rank_plus_points" and v is None:
-            raise ValueError("順位+最終スコア方式では最終ポイントが必要です")
+            # 小数点第1位までかチェック
+            if round(self.finalPoints, 1) != self.finalPoints:
+                raise ValueError(
+                    "-999.9から999.9の範囲で入力してください（小数点第1位まで）"
+                )
 
-        return v
+        elif self.entryMethod == "rank_plus_raw":
+            if self.rawScore is None:
+                raise ValueError("順位+素点方式では素点が必要です")
 
-    @validator("rawScore", always=True)
-    def validate_raw_score(cls, v, values):
-        """素点のバリデーション"""
-        entry_method = values.get("entryMethod")
+            # 範囲チェック: -999900〜999900
+            if self.rawScore < -999900 or self.rawScore > 999900:
+                raise ValueError("6桁までの数値を入力してください（下2桁は00）")
 
-        if entry_method == "rank_plus_raw" and v is None:
-            raise ValueError("順位+素点方式では素点が必要です")
+            # 100点単位チェック
+            if abs(self.rawScore) % 100 != 0:
+                raise ValueError("6桁までの数値を入力してください（下2桁は00）")
 
-        return v
+        return self
 
 
 class Match(BaseEntity):
