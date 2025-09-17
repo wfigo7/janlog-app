@@ -1,0 +1,23 @@
+{
+  "enabled": true,
+  "name": "フロントエンドJestテスト実行",
+  "description": "frontendディレクトリのJestテストを実行し、結果を日本語で要約します。実行時間、テスト数、失敗テストの詳細、対処案を含む包括的なレポートを提供します。",
+  "version": "1",
+  "when": {
+    "type": "userTriggered",
+    "patterns": [
+      "frontend/src/**/*.ts",
+      "frontend/src/**/*.tsx",
+      "frontend/__tests__/**/*.ts",
+      "frontend/__tests__/**/*.tsx",
+      "frontend/components/**/*.ts",
+      "frontend/components/**/*.tsx",
+      "frontend/app/**/*.ts",
+      "frontend/app/**/*.tsx"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "以下の手順でJestテストを実行し、結果を日本語で要約してください：\n\n1) /frontendディレクトリでターミナルを開く\n2) テスト実行：npm test -- --ci --watchAll=false\n3) 結果の要約を日本語で出力：\n   - 実行時間、合計/成功/失敗テスト数\n   - 失敗テストのファイルパスとテスト名（先頭3件程度）、代表的なエラーメッセージ\n   - よくある対処案（例：npx jest --findRelatedTests <失敗ファイル>、スナップショット更新の提案など）\n4) ファイル変更は行わず、要約のみを表示する\n\n注意：workspaceはWSL配下にあるため、cdする場合は「~/workspace2/janlog-app」を起点にしてください。"
+  }
+}

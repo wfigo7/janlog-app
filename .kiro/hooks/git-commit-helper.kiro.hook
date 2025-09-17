@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Gitコミットヘルパー",
+  "description": "Git status確認、差分要約、コミット対象提案、承認後のadd/commit/push実行を日本語で対話的に行う",
+  "version": "1",
+  "when": {
+    "type": "userTriggered",
+    "patterns": [
+      "**/*"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "以下の手順でGitワークフローを実行してください：\n1) ルート判定：ROOT=$(git rev-parse --show-toplevel || pwd)\n2) 変更要約を収集して日本語で表示：\n   - git status --porcelain=v1 で変更ファイル一覧取得\n   - git diff --stat で差分統計表示\n   - 変更内容を日本語で要約\n3) コミット候補を提示し、ユーザーに以下を尋ねる：\n   - 「含めるファイル一覧」（ファイルパスで指定）\n   - 「コミットメッセージ」\n   - メッセージ雛形例：feat|fix|chore(scope): 概要\n4) 承認後に実行：\n   - git add <選択されたファイル群>\n   - git commit -m \"<3で作成したメッセージ>\"\n   - push するか最終確認。YES の場合：git push\n5) 結果を要約して終了\n注意：\n- インタラクティブな patch 選択は使わず、ファイル単位での選択にする\n- 何も変更がなければ、その旨を出して終了\n- 全ての出力とやり取りは日本語で行う\n- ワークスペースは WSL 配下の ~/workspace2/janlog-app または /home/notubo/workspace2/janlog-app を起点とする"
+  }
+}

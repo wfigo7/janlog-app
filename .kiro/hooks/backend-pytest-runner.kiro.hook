@@ -1,0 +1,20 @@
+{
+  "enabled": true,
+  "name": "バックエンドPytest実行",
+  "description": "backendディレクトリのPytestテストを実行し、結果を日本語で要約します。実行時間、テスト数、失敗テストの詳細、対処案を含む包括的なレポートを提供します。",
+  "version": "1",
+  "when": {
+    "type": "userTriggered",
+    "patterns": [
+      "backend/**/*.py",
+      "backend/tests/**/*.py",
+      "backend/pyproject.toml",
+      "backend/pytest.ini",
+      "backend/requirements*.txt"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "目的：\nbackend ディレクトリの pytest を実行し、日本語で結果を要約する。\n手順：\n1) /backendディレクトリでターミナルを開く\n2) 仮想環境があれば有効化、なければ存在確認のみ（自動作成はしない）：\n   - [ -d venv ] && source venv/bin/activate || echo \"venv なし（そのまま実行）\"\n3) テスト実行：pytest -q\n4) 日本語要約を出力：\n   - 実行時間、合計/成功/失敗テスト数\n   - 失敗テスト名とファイル（先頭3件）、代表エラーメッセージ\n   - よくある次の一手：`pytest -q <失敗ファイル> -k <名前>` / ログ詳細の付与 `-vv`\n5) このフックはコード変更を行わない。"
+  }
+}
