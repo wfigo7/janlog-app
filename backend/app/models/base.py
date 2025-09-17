@@ -1,9 +1,9 @@
 """
 基本データモデル
 """
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone, timezone
 from abc import ABC, abstractmethod
 from decimal import Decimal
 
@@ -15,19 +15,18 @@ class BaseEntity(BaseModel):
     SK: str = Field(..., description="ソートキー")
     entityType: str = Field(..., description="エンティティタイプ")
     createdAt: str = Field(
-        default_factory=lambda: datetime.utcnow().isoformat(), description="作成日時"
+        default_factory=lambda: datetime.now(timezone.utc).isoformat(), description="作成日時"
     )
     updatedAt: str = Field(
-        default_factory=lambda: datetime.utcnow().isoformat(), description="更新日時"
+        default_factory=lambda: datetime.now(timezone.utc).isoformat(), description="更新日時"
     )
 
-    class Config:
-        """Pydantic設定"""
-
+    model_config = ConfigDict(
         # DynamoDBの属性名をそのまま使用
-        populate_by_name = True
+        populate_by_name=True,
         # 追加フィールドを許可
-        extra = "allow"
+        extra="allow"
+    )
 
     @abstractmethod
     def get_pk(self) -> str:
@@ -44,7 +43,7 @@ class BaseEntity(BaseModel):
         item = self.model_dump()
         item["PK"] = self.get_pk()
         item["SK"] = self.get_sk()
-        item["updatedAt"] = datetime.utcnow().isoformat()
+        item["updatedAt"] = datetime.now(timezone.utc).isoformat()
         
         # float値をDecimalに変換（DynamoDB対応）
         for key, value in item.items():
@@ -67,5 +66,5 @@ class ErrorResponse(BaseModel):
 
     success: bool = False
     error: dict = Field(..., description="エラー情報")
-    timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     path: Optional[str] = None

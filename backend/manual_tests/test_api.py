@@ -30,7 +30,7 @@ def test_api():
             print(f"   エラー: {response.text}")
     except requests.exceptions.RequestException as e:
         print(f"❌ ヘルスチェック失敗: {e}")
-        return False
+        assert False, f"ヘルスチェック失敗: {e}"
     
     # ルートエンドポイント
     try:
@@ -43,10 +43,10 @@ def test_api():
             print(f"   エラー: {response.text}")
     except requests.exceptions.RequestException as e:
         print(f"❌ ルートエンドポイント失敗: {e}")
-        return False
+        assert False, f"ルートエンドポイント失敗: {e}"
     
     print("\n✅ 全てのテストが成功しました！")
-    return True
+    assert True  # pytest用のアサーション
 
 if __name__ == "__main__":
     test_api()

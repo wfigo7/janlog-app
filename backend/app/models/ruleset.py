@@ -2,7 +2,7 @@
 ルールセットデータモデル
 """
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, Literal, Dict, List, Any
 import uuid
 from .base import BaseEntity
@@ -41,10 +41,11 @@ class RulesetRequest(BaseModel):
     gameplayRules: Optional[Dict[str, Any]] = Field(None, description="進行ルール")
     additionalRules: Optional[List[AdditionalRule]] = Field(None, description="追加ルール")
 
-    @validator("uma")
-    def validate_uma(cls, v, values):
+    @field_validator("uma")
+    @classmethod
+    def validate_uma(cls, v, info):
         """ウマ配列のバリデーション"""
-        game_mode = values.get("gameMode")
+        game_mode = info.data.get("gameMode")
         
         if game_mode == "three" and len(v) != 3:
             raise ValueError("3人麻雀のウマ配列は3要素である必要があります")
@@ -57,10 +58,11 @@ class RulesetRequest(BaseModel):
         
         return v
 
-    @validator("basePoints")
-    def validate_base_points(cls, v, values):
+    @field_validator("basePoints")
+    @classmethod
+    def validate_base_points(cls, v, info):
         """基準点のバリデーション"""
-        starting_points = values.get("startingPoints")
+        starting_points = info.data.get("startingPoints")
         
         if starting_points and v < starting_points:
             raise ValueError("基準点は開始点以上である必要があります")
