@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,20 +10,37 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { MatchInput } from '../../types/match';
+import { MatchInput, EntryMethod } from '../../types/match';
 import { GameMode } from '../../types/common';
-import { Ruleset } from '../../types/ruleset';
+import { Ruleset, PointCalculationRequest } from '../../types/ruleset';
 import { MatchService } from '../../services/matchService';
+import { rulesetService } from '../../services/rulesetService';
 import RuleSelector from './RuleSelector';
 
 const MatchRegistrationScreen: React.FC = () => {
+  const scrollViewRef = useRef<ScrollView>(null);
+
+
   const [gameMode, setGameMode] = useState<GameMode>('four');
   const [selectedRuleset, setSelectedRuleset] = useState<Ruleset | null>(null);
+  const [entryMethod, setEntryMethod] = useState<EntryMethod>('rank_plus_points');
   const [rank, setRank] = useState<string>('');
   const [finalPoints, setFinalPoints] = useState<string>('');
+  const [rawScore, setRawScore] = useState<string>('');
   const [chipCount, setChipCount] = useState<string>('');
   const [memo, setMemo] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [calculatedPoints, setCalculatedPoints] = useState<number | null>(null);
+  const [calculationDetails, setCalculationDetails] = useState<any>(null);
+  const [showCalculation, setShowCalculation] = useState(false);
+  const [isCalculating, setIsCalculating] = useState(false);
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState('');
+  const [notificationType, setNotificationType] = useState<'success' | 'error'>('success');
+  const [rawScoreError, setRawScoreError] = useState<string | null>(null);
+  const [rankError, setRankError] = useState<string | null>(null);
+  const [finalPointsError, setFinalPointsError] = useState<string | null>(null);
+
 
   const maxRank = gameMode === 'four' ? 4 : 3;
 
@@ -31,37 +48,292 @@ const MatchRegistrationScreen: React.FC = () => {
     setGameMode(newGameMode);
     // ゲームモード変更時は選択されたルールセットをクリア
     setSelectedRuleset(null);
+    // 計算結果もクリア
+    setCalculatedPoints(null);
+    setCalculationDetails(null);
+    setShowCalculation(false);
+  };
+
+  const handleEntryMethodChange = (newEntryMethod: EntryMethod) => {
+    setEntryMethod(newEntryMethod);
+    // 入力方式変更時は入力値と計算結果をクリア
+    setFinalPoints('');
+    setRawScore('');
+    setCalculatedPoints(null);
+    setCalculationDetails(null);
+    setShowCalculation(false);
+    setRawScoreError(null);
+    setRankError(null);
+    setFinalPointsError(null);
+  };
+
+  const handleRankChange = (value: string) => {
+    setRank(value);
+
+    // 順位のバリデーション
+    if (value) {
+      const validation = validateRank(value);
+      setRankError(validation.isValid ? null : validation.message || null);
+    } else {
+      setRankError(null);
+    }
+  };
+
+  const handleFinalPointsChange = (value: string) => {
+    setFinalPoints(value);
+
+    // 最終ポイントのバリデーション
+    if (value) {
+      const validation = validateFinalPoints(value);
+      setFinalPointsError(validation.isValid ? null : validation.message || null);
+    } else {
+      setFinalPointsError(null);
+    }
   };
 
   const handleRulesetSelect = (ruleset: Ruleset) => {
     setSelectedRuleset(ruleset);
+    // ルール変更時は計算結果をクリア
+    setCalculatedPoints(null);
+    setCalculationDetails(null);
+    setShowCalculation(false);
+    setRawScoreError(null);
+    setRankError(null);
+  };
+
+  // 素点のバリデーション関数
+  const validateRawScore = (score: string): { isValid: boolean; message?: string } => {
+    console.log('validateRawScore called with:', score);
+
+    if (!score) {
+      console.log('score is empty');
+      return { isValid: false };
+    }
+
+    const num = parseInt(score);
+    console.log('parsed score:', num);
+
+    if (isNaN(num)) {
+      console.log('score is NaN');
+      return { isValid: false, message: '数値を入力してください' };
+    }
+
+    // -999900〜999900の範囲チェック
+    if (num < -999900 || num > 999900) {
+      console.log('score out of range:', num);
+      return { isValid: false, message: '6桁までの数値を入力してください（下2桁は00）' };
+    }
+
+    // 下2桁が00でない場合はエラー
+    if (Math.abs(num) % 100 !== 0) {
+      console.log('score not divisible by 100:', num, 'remainder:', Math.abs(num) % 100);
+      return { isValid: false, message: '6桁までの数値を入力してください（下2桁は00）' };
+    }
+
+    console.log('score validation passed');
+    return { isValid: true };
+  };
+
+  // 順位のバリデーション関数
+  const validateRank = (rankValue: string): { isValid: boolean; message?: string } => {
+    if (!rankValue) {
+      return { isValid: false };
+    }
+
+    const num = parseInt(rankValue);
+
+    if (isNaN(num)) {
+      return { isValid: false, message: '数値を入力してください' };
+    }
+
+    if (num < 1 || num > maxRank) {
+      return { isValid: false, message: `1〜${maxRank}位で入力してください` };
+    }
+
+    console.log('rank validation passed');
+    return { isValid: true };
+  };
+
+  // 最終ポイントのバリデーション関数
+  const validateFinalPoints = (points: string): { isValid: boolean; message?: string } => {
+    if (!points) return { isValid: false };
+
+    const num = parseFloat(points);
+    if (isNaN(num)) return { isValid: false, message: '数値を入力してください' };
+
+    // -999.9〜999.9の範囲チェック
+    if (num < -999.9 || num > 999.9) {
+      return { isValid: false, message: '3桁までの数値を入力してください' };
+    }
+
+    // 小数点第1位までかチェック
+    const decimalPlaces = (points.split('.')[1] || '').length;
+    if (decimalPlaces > 1) {
+      return { isValid: false, message: '3桁までの数値を入力してください' };
+    }
+
+    return { isValid: true };
+  };
+
+  const calculatePointsAutomatically = async (
+    ruleset: Ruleset,
+    rankValue: string,
+    rawScoreValue: string
+  ) => {
+    const rankNum = parseInt(rankValue);
+
+    // 基本バリデーション
+    if (
+      !ruleset ||
+      !rankValue ||
+      !rawScoreValue ||
+      rankNum < 1 ||
+      rankNum > maxRank
+    ) {
+      setCalculatedPoints(null);
+      setCalculationDetails(null);
+      setShowCalculation(false);
+      return;
+    }
+
+    // 素点のバリデーション
+    const scoreValidation = validateRawScore(rawScoreValue);
+    if (!scoreValidation.isValid) {
+      setCalculatedPoints(null);
+      setCalculationDetails(null);
+      setShowCalculation(false);
+      setRawScoreError(scoreValidation.message || null);
+      return;
+    }
+
+    // バリデーション成功時はエラーをクリア
+    setRawScoreError(null);
+
+    const rawScoreNum = parseInt(rawScoreValue);
+
+    setIsCalculating(true);
+    try {
+      const request: PointCalculationRequest = {
+        rulesetId: ruleset.rulesetId,
+        rank: rankNum,
+        rawScore: rawScoreNum,
+      };
+
+      const response = await rulesetService.calculatePoints(request);
+      setCalculatedPoints(response.finalPoints);
+      setCalculationDetails(response.calculation);
+      setShowCalculation(true);
+    } catch (error) {
+      console.error('ポイント計算エラー:', error);
+      setCalculatedPoints(null);
+      setCalculationDetails(null);
+      setShowCalculation(false);
+    } finally {
+      setIsCalculating(false);
+    }
+  };
+
+  // 自動計算のためのuseEffect
+  useEffect(() => {
+    if (entryMethod === 'rank_plus_raw' && selectedRuleset) {
+      const timeoutId = setTimeout(() => {
+        calculatePointsAutomatically(selectedRuleset, rank, rawScore);
+      }, 500); // 500ms のデバウンス
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [selectedRuleset, rank, rawScore, entryMethod, maxRank]);
+
+  const showNotificationMessage = (message: string, type: 'success' | 'error' = 'success') => {
+    setNotificationMessage(message);
+    setNotificationType(type);
+    setShowNotification(true);
+    setTimeout(() => {
+      setShowNotification(false);
+    }, 3000); // 3秒後に自動で消える
+  };
+
+  const scrollToErrorField = (sectionType: 'rank' | 'finalPoints' | 'rawScore') => {
+    console.log('scrollToErrorField called for:', sectionType);
+
+    if (!scrollViewRef.current) {
+      console.log('ScrollView ref not available');
+      return;
+    }
+
+    // 各セクションの推定位置（固定値）
+    const positions = {
+      rank: 350,        // ゲームモード + ルール選択 + 入力方式選択 + 順位
+      finalPoints: 450, // 上記 + 順位セクション
+      rawScore: 450,    // 上記 + 順位セクション（素点は最終スコアと同じ位置）
+    };
+
+    const targetY = positions[sectionType];
+    console.log('Scrolling to position:', targetY);
+
+    scrollViewRef.current.scrollTo({
+      y: targetY,
+      animated: true,
+    });
   };
 
   const handleSubmit = async () => {
     // バリデーション
     if (!selectedRuleset) {
-      Alert.alert('エラー', 'ルールを選択してください');
+      showNotificationMessage('ルールを選択してください', 'error');
+      // ルール選択は画面上部なので、トップにスクロール
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
       return;
     }
 
-    if (!rank || parseInt(rank) < 1 || parseInt(rank) > maxRank) {
-      Alert.alert('エラー', `順位は1〜${maxRank}位で入力してください`);
+    // 順位のバリデーション
+    const rankValidation = validateRank(rank);
+    if (!rankValidation.isValid) {
+      showNotificationMessage('入力エラーがあります', 'error');
+      scrollToErrorField('rank');
       return;
     }
 
-    if (!finalPoints || isNaN(parseFloat(finalPoints))) {
-      Alert.alert('エラー', '最終スコアを正しく入力してください');
-      return;
+    // 入力方式に応じたバリデーション
+    let finalPointsValue: number | undefined;
+    let rawScoreValue: number | undefined;
+
+    if (entryMethod === 'rank_plus_points') {
+      const finalPointsValidation = validateFinalPoints(finalPoints);
+      if (!finalPointsValidation.isValid) {
+        showNotificationMessage('入力エラーがあります', 'error');
+        scrollToErrorField('finalPoints');
+        return;
+      }
+      finalPointsValue = parseFloat(finalPoints);
+    } else if (entryMethod === 'rank_plus_raw') {
+      const scoreValidation = validateRawScore(rawScore);
+      if (!scoreValidation.isValid) {
+        showNotificationMessage('入力エラーがあります', 'error');
+        scrollToErrorField('rawScore');
+        return;
+      }
+      if (calculatedPoints === null) {
+        showNotificationMessage('入力エラーがあります', 'error');
+        scrollToErrorField('rawScore');
+        return;
+      }
+      rawScoreValue = parseInt(rawScore);
+      finalPointsValue = calculatedPoints;
+    } else if (entryMethod === 'provisional_rank_only') {
+      // 仮スコア方式は順位のみでOK
+      finalPointsValue = undefined; // バックエンドで計算される
     }
 
     setLoading(true);
     try {
       const matchData: MatchInput = {
         gameMode,
-        entryMethod: 'rank_plus_points',
+        entryMethod,
         rulesetId: selectedRuleset.rulesetId,
         rank: parseInt(rank),
-        finalPoints: parseFloat(finalPoints),
+        finalPoints: finalPointsValue,
+        rawScore: rawScoreValue,
         chipCount: chipCount ? parseInt(chipCount) : undefined,
         memo: memo || undefined,
       };
@@ -73,19 +345,19 @@ const MatchRegistrationScreen: React.FC = () => {
       const result = await MatchService.createMatch(matchData);
 
       if (result.success) {
-        Alert.alert('成功', '対局を登録しました', [
-          {
-            text: 'OK',
-            onPress: () => {
-              // フォームをリセット
-              setRank('');
-              setFinalPoints('');
-              setChipCount('');
-              setMemo('');
-              // ルールセットはリセットしない（同じルールで連続登録することが多いため）
-            },
-          },
-        ]);
+        // フォームをリセット
+        setRank('');
+        setFinalPoints('');
+        setRawScore('');
+        setChipCount('');
+        setMemo('');
+        setCalculatedPoints(null);
+        setCalculationDetails(null);
+        setShowCalculation(false);
+        // ルールセットはリセットしない（同じルールで連続登録することが多いため）
+
+        // 成功通知を表示
+        showNotificationMessage('対局を登録しました');
       } else {
         Alert.alert('エラー', result.message || '対局の登録に失敗しました');
       }
@@ -102,7 +374,19 @@ const MatchRegistrationScreen: React.FC = () => {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <ScrollView style={styles.scrollView}>
+      {/* 通知ポップアップ */}
+      {showNotification && (
+        <View style={styles.notificationContainer}>
+          <View style={[
+            styles.notification,
+            notificationType === 'error' && styles.notificationError
+          ]}>
+            <Text style={styles.notificationText}>{notificationMessage}</Text>
+          </View>
+        </View>
+      )}
+
+      <ScrollView ref={scrollViewRef} style={styles.scrollView}>
         {/* ゲームモード選択 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>ゲームモード</Text>
@@ -135,30 +419,168 @@ const MatchRegistrationScreen: React.FC = () => {
           />
         </View>
 
+        {/* 入力方式選択 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>入力方式</Text>
+          <View style={styles.entryMethodContainer}>
+            <TouchableOpacity
+              style={[
+                styles.entryMethodButton,
+                entryMethod === 'rank_plus_points' && styles.activeEntryMethod,
+              ]}
+              onPress={() => handleEntryMethodChange('rank_plus_points')}
+            >
+              <Text
+                style={[
+                  styles.entryMethodText,
+                  entryMethod === 'rank_plus_points' && styles.activeEntryMethodText,
+                ]}
+              >
+                順位+最終スコア
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.entryMethodButton,
+                entryMethod === 'rank_plus_raw' && styles.activeEntryMethod,
+              ]}
+              onPress={() => handleEntryMethodChange('rank_plus_raw')}
+            >
+              <Text
+                style={[
+                  styles.entryMethodText,
+                  entryMethod === 'rank_plus_raw' && styles.activeEntryMethodText,
+                ]}
+              >
+                順位+素点
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.entryMethodButton,
+                entryMethod === 'provisional_rank_only' && styles.activeEntryMethod,
+              ]}
+              onPress={() => handleEntryMethodChange('provisional_rank_only')}
+            >
+              <Text
+                style={[
+                  styles.entryMethodText,
+                  entryMethod === 'provisional_rank_only' && styles.activeEntryMethodText,
+                ]}
+              >
+                仮スコア
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* 順位入力 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>順位</Text>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              rankError && styles.inputError
+            ]}
             value={rank}
-            onChangeText={setRank}
+            onChangeText={handleRankChange}
             placeholder={`1〜${maxRank}位`}
+            placeholderTextColor="#999"
             keyboardType="numeric"
             maxLength={1}
           />
+          {rankError && (
+            <Text style={styles.errorText}>{rankError}</Text>
+          )}
         </View>
 
-        {/* 最終スコア入力 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>最終スコア</Text>
-          <TextInput
-            style={styles.input}
-            value={finalPoints}
-            onChangeText={setFinalPoints}
-            placeholder="例: 25000, -15000"
-            keyboardType="numeric"
-          />
-        </View>
+        {/* 入力方式に応じた入力欄 */}
+        {entryMethod === 'rank_plus_points' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>最終スコア</Text>
+            <TextInput
+              style={[
+                styles.input,
+                finalPointsError && styles.inputError
+              ]}
+              value={finalPoints}
+              onChangeText={handleFinalPointsChange}
+              placeholder="例: +25.0, 0, -15.0"
+              placeholderTextColor="#999"
+              keyboardType="numeric"
+            />
+            {finalPointsError && (
+              <Text style={styles.errorText}>{finalPointsError}</Text>
+            )}
+          </View>
+        )}
+
+        {entryMethod === 'rank_plus_raw' && (
+          <>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>素点</Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  rawScoreError && styles.inputError
+                ]}
+                value={rawScore}
+                onChangeText={setRawScore}
+                placeholder="例: 45000, 0, -18100（100点単位）"
+                placeholderTextColor="#999"
+                keyboardType="numeric"
+              />
+              {rawScoreError && (
+                <Text style={styles.errorText}>{rawScoreError}</Text>
+              )}
+              {isCalculating && (
+                <Text style={styles.calculatingText}>計算中...</Text>
+              )}
+            </View>
+
+            {/* 計算結果表示 */}
+            {showCalculation && calculationDetails && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>計算結果</Text>
+                <View style={styles.calculationResult}>
+                  <Text style={styles.calculationTitle}>
+                    最終ポイント: {calculatedPoints}pt
+                  </Text>
+                  <Text style={styles.calculationFormula}>
+                    {calculationDetails.formula}
+                  </Text>
+                  <View style={styles.calculationDetails}>
+                    <Text style={styles.calculationDetailText}>
+                      素点: {calculationDetails.rawScore}点
+                    </Text>
+                    <Text style={styles.calculationDetailText}>
+                      基準点: {calculationDetails.basePoints}点
+                    </Text>
+                    <Text style={styles.calculationDetailText}>
+                      基本計算: {calculationDetails.baseCalculation}pt
+                    </Text>
+                    <Text style={styles.calculationDetailText}>
+                      ウマ: {calculationDetails.umaPoints}pt
+                    </Text>
+                    <Text style={styles.calculationDetailText}>
+                      オカ: {calculationDetails.okaPoints}pt
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            )}
+          </>
+        )}
+
+        {entryMethod === 'provisional_rank_only' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>仮スコア方式</Text>
+            <Text style={styles.provisionalNote}>
+              順位のみで仮のスコアを計算します。{'\n'}
+              選択されたルールに基づいて自動計算されます。
+            </Text>
+          </View>
+        )}
 
         {/* チップ数入力 */}
         <View style={styles.section}>
@@ -168,6 +590,7 @@ const MatchRegistrationScreen: React.FC = () => {
             value={chipCount}
             onChangeText={setChipCount}
             placeholder="例: 5"
+            placeholderTextColor="#999"
             keyboardType="numeric"
           />
         </View>
@@ -180,6 +603,7 @@ const MatchRegistrationScreen: React.FC = () => {
             value={memo}
             onChangeText={setMemo}
             placeholder="対局の詳細やメモ"
+            placeholderTextColor="#999"
             multiline
             numberOfLines={3}
           />
@@ -268,6 +692,114 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  entryMethodContainer: {
+    flexDirection: 'column',
+    gap: 8,
+  },
+  entryMethodButton: {
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  activeEntryMethod: {
+    backgroundColor: '#2196F3',
+    borderColor: '#2196F3',
+  },
+  entryMethodText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#666',
+  },
+  activeEntryMethodText: {
+    color: '#fff',
+  },
+  calculatingText: {
+    fontSize: 12,
+    color: '#666',
+    fontStyle: 'italic',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  calculationResult: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  calculationTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#2196F3',
+    marginBottom: 8,
+  },
+  calculationFormula: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 12,
+    fontFamily: 'monospace',
+  },
+  calculationDetails: {
+    gap: 4,
+  },
+  calculationDetailText: {
+    fontSize: 12,
+    color: '#666',
+  },
+  provisionalNote: {
+    fontSize: 14,
+    color: '#666',
+    backgroundColor: '#f8f9fa',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  notificationContainer: {
+    position: 'absolute',
+    top: 50,
+    right: 16,
+    left: 16,
+    zIndex: 1000,
+    alignItems: 'flex-end',
+  },
+  notification: {
+    backgroundColor: '#4CAF50',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    maxWidth: '80%',
+  },
+  notificationError: {
+    backgroundColor: '#FF9800',
+  },
+  notificationText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  inputError: {
+    borderColor: '#f44336',
+    borderWidth: 2,
+  },
+  errorText: {
+    color: '#f44336',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
   },
 });
 

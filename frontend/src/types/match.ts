@@ -1,5 +1,7 @@
 import { GameMode, EntryMethod } from './common';
 
+export { EntryMethod };
+
 export interface Match {
   matchId: string;
   date: string;
