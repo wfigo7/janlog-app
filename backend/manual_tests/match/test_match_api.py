@@ -21,6 +21,7 @@ def test_match_api():
         "date": datetime.now().isoformat(),
         "gameMode": "four",
         "entryMethod": "rank_plus_points",
+        "rulesetId": "mleague-rule",  # テスト用のルールセットID
         "rank": 2,
         "finalPoints": 250.0,
         "chipCount": 5,
@@ -37,8 +38,9 @@ def test_match_api():
             timeout=10,
         )
         print(f"   ステータス: {response.status_code}")
-        if response.status_code == 200:
-            match_data = response.json()
+        if response.status_code == 201:
+            response_data = response.json()
+            match_data = response_data.get("data")
             match_id = match_data.get("matchId")
             print(f"   対局ID: {match_id}")
             print(f"   ゲームモード: {match_data.get('gameMode')}")

@@ -90,6 +90,52 @@ class DynamoDBClient:
         except ClientError as e:
             logger.error(f"DynamoDB query error: {e}")
             return []
+
+    async def query_items_with_pagination(
+        self, 
+        table_name: str,
+        key_condition_expression: str,
+        expression_attribute_values: Dict[str, Any],
+        filter_expression: Optional[str] = None,
+        expression_attribute_names: Optional[Dict[str, str]] = None,
+        limit: Optional[int] = None,
+        exclusive_start_key: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """ページネーション対応のアイテムクエリ"""
+        try:
+            query_params = {
+                'KeyConditionExpression': key_condition_expression,
+                'ExpressionAttributeValues': expression_attribute_values
+            }
+            
+            if filter_expression:
+                query_params['FilterExpression'] = filter_expression
+            
+            if expression_attribute_names:
+                query_params['ExpressionAttributeNames'] = expression_attribute_names
+            
+            if limit:
+                query_params['Limit'] = limit
+            
+            if exclusive_start_key:
+                query_params['ExclusiveStartKey'] = exclusive_start_key
+            
+            response = self.table.query(**query_params)
+            
+            return {
+                'items': response.get('Items', []),
+                'last_evaluated_key': response.get('LastEvaluatedKey'),
+                'count': response.get('Count', 0),
+                'scanned_count': response.get('ScannedCount', 0)
+            }
+        except ClientError as e:
+            logger.error(f"DynamoDB query with pagination error: {e}")
+            return {
+                'items': [],
+                'last_evaluated_key': None,
+                'count': 0,
+                'scanned_count': 0
+            }
     
     async def update_item(
         self, 

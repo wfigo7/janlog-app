@@ -9,32 +9,46 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Match } from '../../types/match';
 import { GameMode } from '../../types/common';
 import { GameModeTab } from '../common/GameModeTab';
-import { MatchService } from '../../services/matchService';
+import { MatchService, PaginationInfo } from '../../services/matchService';
+
+type SortOrder = 'newest' | 'oldest';
 
 const HistoryScreen: React.FC = () => {
+  const router = useRouter();
   const [selectedMode, setSelectedMode] = useState<GameMode>('four');
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
+  const [pagination, setPagination] = useState<PaginationInfo | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   // 対局履歴を取得する関数
-  const fetchMatches = async (showRefresh = false) => {
+  const fetchMatches = async (showRefresh = false, loadMore = false) => {
     try {
       if (showRefresh) {
         setRefreshing(true);
+      } else if (loadMore) {
+        setLoadingMore(true);
       } else {
         setLoading(true);
       }
 
       const response = await MatchService.getMatches({
         mode: selectedMode,
+        limit: 20,
+        nextKey: loadMore ? pagination?.nextKey : undefined,
       });
 
       if (response.success && response.data) {
-        setMatches(response.data);
+        const newMatches = loadMore ? [...matches, ...response.data] : response.data;
+        const sortedMatches = sortMatches(newMatches, sortOrder);
+        setMatches(sortedMatches);
+        setPagination(response.pagination || null);
       } else {
         throw new Error(response.message || '履歴データの取得に失敗しました');
       }
@@ -44,6 +58,7 @@ const HistoryScreen: React.FC = () => {
     } finally {
       setLoading(false);
       setRefreshing(false);
+      setLoadingMore(false);
     }
   };
 
@@ -51,12 +66,39 @@ const HistoryScreen: React.FC = () => {
     fetchMatches();
   }, [selectedMode]);
 
+  useEffect(() => {
+    if (matches.length > 0) {
+      const sortedMatches = sortMatches([...matches], sortOrder);
+      setMatches(sortedMatches);
+    }
+  }, [sortOrder]);
+
+  const sortMatches = (matchList: Match[], order: SortOrder): Match[] => {
+    return matchList.sort((a, b) => {
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      return order === 'newest' ? dateB - dateA : dateA - dateB;
+    });
+  };
+
   const onRefresh = () => {
+    setPagination(null);
     fetchMatches(true);
+  };
+
+  const loadMoreMatches = () => {
+    if (pagination?.hasMore && !loadingMore) {
+      fetchMatches(false, true);
+    }
   };
 
   const onModeChange = (mode: GameMode) => {
     setSelectedMode(mode);
+    setPagination(null); // ページネーション情報をリセット
+  };
+
+  const toggleSortOrder = () => {
+    setSortOrder(prev => prev === 'newest' ? 'oldest' : 'newest');
   };
 
   const formatDate = (dateString: string) => {
@@ -76,7 +118,7 @@ const HistoryScreen: React.FC = () => {
 
   const getRankColor = (rank: number, gameMode: GameMode) => {
     if (rank === 1) return '#4CAF50'; // 1位は緑
-    
+
     if (gameMode === 'three') {
       return rank === 3 ? '#F44336' : '#666666'; // 3人麻雀では3位がラス
     } else {
@@ -84,8 +126,15 @@ const HistoryScreen: React.FC = () => {
     }
   };
 
+  const handleMatchPress = (matchId: string) => {
+    router.push(`/match/${matchId}`);
+  };
+
   const renderMatchItem = ({ item }: { item: Match }) => (
-    <TouchableOpacity style={styles.matchItem}>
+    <TouchableOpacity
+      style={styles.matchItem}
+      onPress={() => handleMatchPress(item.matchId)}
+    >
       <View style={styles.matchHeader}>
         <Text style={styles.matchDate}>{formatDate(item.date)}</Text>
         <View style={styles.matchRankContainer}>
@@ -124,10 +173,18 @@ const HistoryScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      {/* ヘッダー */}
-      <View style={styles.header}>
-        <Text style={styles.title}>対局履歴</Text>
+      {/* コントロール部分 */}
+      <View style={styles.controlsContainer}>
         <GameModeTab selectedMode={selectedMode} onModeChange={onModeChange} />
+
+        {/* ソート機能 */}
+        <View style={styles.sortContainer}>
+          <TouchableOpacity style={styles.sortButton} onPress={toggleSortOrder}>
+            <Text style={styles.sortButtonText}>
+              {sortOrder === 'newest' ? '新しい順 ↓' : '古い順 ↑'}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* 対局履歴リスト */}
@@ -139,6 +196,24 @@ const HistoryScreen: React.FC = () => {
         contentContainerStyle={matches.length === 0 ? styles.emptyContainer : undefined}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        onEndReached={loadMoreMatches}
+        onEndReachedThreshold={0.1}
+        ListFooterComponent={
+          loadingMore ? (
+            <View style={styles.loadMoreContainer}>
+              <ActivityIndicator size="small" color="#007AFF" />
+              <Text style={styles.loadMoreText}>読み込み中...</Text>
+            </View>
+          ) : pagination?.hasMore ? (
+            <TouchableOpacity style={styles.loadMoreButton} onPress={loadMoreMatches}>
+              <Text style={styles.loadMoreButtonText}>さらに読み込む</Text>
+            </TouchableOpacity>
+          ) : matches.length > 0 ? (
+            <View style={styles.endContainer}>
+              <Text style={styles.endText}>すべての履歴を表示しました</Text>
+            </View>
+          ) : null
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
@@ -167,19 +242,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666666',
   },
-  header: {
+
+  controlsContainer: {
     backgroundColor: '#FFFFFF',
-    paddingTop: 60,
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5E5',
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: 20,
+  sortContainer: {
+    alignItems: 'flex-end',
+    marginTop: 12,
   },
   matchList: {
     flex: 1,
@@ -260,6 +333,49 @@ const styles = StyleSheet.create({
   emptySubtext: {
     fontSize: 14,
     color: '#666666',
+  },
+  sortButton: {
+    backgroundColor: '#F0F0F0',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  sortButtonText: {
+    fontSize: 12,
+    color: '#666666',
+    fontWeight: '500',
+  },
+  loadMoreContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadMoreText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#666666',
+  },
+  loadMoreButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    margin: 20,
+    alignItems: 'center',
+  },
+  loadMoreButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  endContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  endText: {
+    fontSize: 12,
+    color: '#999999',
   },
 });
 
