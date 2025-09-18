@@ -63,8 +63,10 @@ class MatchService:
         user_id: str,
         from_date: Optional[str] = None,
         to_date: Optional[str] = None,
-        mode: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        game_mode: Optional[str] = None,
+        limit: Optional[int] = 100,
+        last_evaluated_key: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         """対局一覧を取得"""
         try:
             # パーティションキーでクエリ
@@ -88,9 +90,9 @@ class MatchService:
                 filter_expressions.append("#date <= :to_date")
                 expression_attribute_values[":to_date"] = to_date
             
-            if mode and mode != "all":
+            if game_mode and game_mode != "all":
                 filter_expressions.append("gameMode = :mode")
-                expression_attribute_values[":mode"] = mode
+                expression_attribute_values[":mode"] = game_mode
             
             # フィルター式を結合
             filter_expression = " AND ".join(filter_expressions) if filter_expressions else None
@@ -98,14 +100,26 @@ class MatchService:
             # 属性名のマッピング（予約語対策）
             expression_attribute_names = {"#date": "date"} if from_date or to_date else None
             
-            # DynamoDBからデータを取得
-            items = await self.dynamodb_client.query_items(
-                table_name=self.table_name,
-                key_condition_expression=key_condition_expression,
-                expression_attribute_values=expression_attribute_values,
-                filter_expression=filter_expression,
-                expression_attribute_names=expression_attribute_names,
-            )
+            # DynamoDBからデータを取得（ページネーション対応）
+            query_params = {
+                "table_name": self.table_name,
+                "key_condition_expression": key_condition_expression,
+                "expression_attribute_values": expression_attribute_values,
+                "limit": limit,
+            }
+            
+            if filter_expression:
+                query_params["filter_expression"] = filter_expression
+            
+            if expression_attribute_names:
+                query_params["expression_attribute_names"] = expression_attribute_names
+            
+            if last_evaluated_key:
+                query_params["exclusive_start_key"] = last_evaluated_key
+            
+            result = await self.dynamodb_client.query_items_with_pagination(**query_params)
+            items = result.get("items", [])
+            next_key = result.get("last_evaluated_key")
             
             # Matchオブジェクトに変換してAPIレスポンス形式に変換
             matches = []
@@ -121,7 +135,12 @@ class MatchService:
             # 日付順でソート（新しい順）
             matches.sort(key=lambda x: x["date"], reverse=True)
             
-            return matches
+            return {
+                "matches": matches,
+                "total": len(matches),
+                "hasMore": next_key is not None,
+                "nextKey": next_key,
+            }
             
         except Exception as e:
             raise Exception(f"対局一覧の取得に失敗しました: {str(e)}")

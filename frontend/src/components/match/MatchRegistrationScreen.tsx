@@ -15,6 +15,7 @@ import { GameMode } from '../../types/common';
 import { Ruleset, PointCalculationRequest } from '../../types/ruleset';
 import { MatchService } from '../../services/matchService';
 import { rulesetService } from '../../services/rulesetService';
+import { GameModeTab } from '../common/GameModeTab';
 import RuleSelector from './RuleSelector';
 import EntryMethodSelector from './EntryMethodSelector';
 
@@ -622,24 +623,7 @@ const MatchRegistrationScreen: React.FC = () => {
         {/* ゲームモード選択 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>ゲームモード</Text>
-          <View style={styles.tabContainer}>
-            <TouchableOpacity
-              style={[styles.tab, gameMode === 'four' && styles.activeTab]}
-              onPress={() => handleGameModeChange('four')}
-            >
-              <Text style={[styles.tabText, gameMode === 'four' && styles.activeTabText]}>
-                4人麻雀
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.tab, gameMode === 'three' && styles.activeTab]}
-              onPress={() => handleGameModeChange('three')}
-            >
-              <Text style={[styles.tabText, gameMode === 'three' && styles.activeTabText]}>
-                3人麻雀
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <GameModeTab selectedMode={gameMode} onModeChange={handleGameModeChange} />
         </View>
 
         {/* ルール選択 */}
@@ -741,29 +725,7 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 8,
   },
-  tabContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-  },
-  activeTab: {
-    backgroundColor: '#2196F3',
-  },
-  tabText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#666',
-  },
-  activeTabText: {
-    color: '#fff',
-  },
+
   input: {
     backgroundColor: '#fff',
     borderRadius: 8,

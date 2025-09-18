@@ -2,14 +2,14 @@
  * 統計画面（トップ画面）
  */
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  RefreshControl, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  RefreshControl,
   Alert,
-  ActivityIndicator 
+  ActivityIndicator
 } from 'react-native';
 import { StatsCard } from './StatsCard';
 import { GameModeTab } from '../common/GameModeTab';
@@ -81,123 +81,125 @@ export default function StatsScreen() {
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
-      <View style={styles.header}>
-        <Text style={styles.title}>成績統計</Text>
+    <View style={styles.container}>
+      {/* コントロール部分 */}
+      <View style={styles.controlsContainer}>
         <GameModeTab selectedMode={selectedMode} onModeChange={onModeChange} />
       </View>
 
-      <View style={styles.content}>
-        {/* 基本統計 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>基本統計</Text>
-          <View style={styles.statsGrid}>
-            <View style={styles.statsRow}>
-              <StatsCard
-                title="対局数"
-                value={stats.count}
-                subtitle="半荘"
-              />
-              <StatsCard
-                title="平均順位"
-                value={stats.avgRank.toFixed(2)}
-                color="#FF6B6B"
-              />
-            </View>
-            <View style={styles.statsRow}>
-              <StatsCard
-                title="累積ポイント"
-                value={stats.totalPoints > 0 ? `+${stats.totalPoints.toFixed(1)}` : stats.totalPoints.toFixed(1)}
-                color={stats.totalPoints >= 0 ? "#4ECDC4" : "#FF6B6B"}
-              />
-              <StatsCard
-                title="平均スコア"
-                value={stats.avgScore > 0 ? `+${stats.avgScore.toFixed(1)}` : stats.avgScore.toFixed(1)}
-                color={stats.avgScore >= 0 ? "#4ECDC4" : "#FF6B6B"}
-              />
-            </View>
-          </View>
-        </View>
-
-        {/* 順位分布 */}
-        <View style={styles.section}>
-          <RankDistributionCard
-            distribution={stats.rankDistribution}
-            totalCount={stats.count}
-            gameMode={selectedMode}
-          />
-        </View>
-
-        {/* 率統計 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>率統計</Text>
-          <View style={styles.statsGrid}>
-            <View style={styles.statsRow}>
-              <StatsCard
-                title="トップ率"
-                value={`${stats.topRate.toFixed(1)}%`}
-                color="#FFD700"
-              />
-              <StatsCard
-                title="ラス率"
-                value={`${stats.lastRate.toFixed(1)}%`}
-                color="#FF6B6B"
-              />
-            </View>
-          </View>
-        </View>
-
-        {/* 記録 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>記録</Text>
-          <View style={styles.statsGrid}>
-            <View style={styles.statsRow}>
-              <StatsCard
-                title="連続トップ"
-                value={`${stats.maxConsecutiveFirst}回`}
-                color="#FFD700"
-              />
-              <StatsCard
-                title="連続ラス"
-                value={`${stats.maxConsecutiveLast}回`}
-                color="#FF6B6B"
-              />
-            </View>
-            <View style={styles.statsRow}>
-              <StatsCard
-                title="最高得点"
-                value={stats.maxScore > -Infinity ? `+${stats.maxScore.toFixed(1)}` : '---'}
-                color="#4ECDC4"
-              />
-              <StatsCard
-                title="最低得点"
-                value={stats.minScore < Infinity ? stats.minScore.toFixed(1) : '---'}
-                color="#FF6B6B"
-              />
-            </View>
-          </View>
-        </View>
-
-        {/* その他 */}
-        {stats.chipTotal > 0 && (
+      <ScrollView
+        style={styles.scrollContainer}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        <View style={styles.content}>
+          {/* 基本統計 */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>その他</Text>
+            <Text style={styles.sectionTitle}>基本統計</Text>
             <View style={styles.statsGrid}>
-              <StatsCard
-                title="チップ合計"
-                value={stats.chipTotal}
-                color="#9B59B6"
-              />
+              <View style={styles.statsRow}>
+                <StatsCard
+                  title="対局数"
+                  value={stats.count}
+                  subtitle="半荘"
+                />
+                <StatsCard
+                  title="平均順位"
+                  value={stats.avgRank.toFixed(2)}
+                  color="#FF6B6B"
+                />
+              </View>
+              <View style={styles.statsRow}>
+                <StatsCard
+                  title="累積ポイント"
+                  value={stats.totalPoints > 0 ? `+${stats.totalPoints.toFixed(1)}` : stats.totalPoints.toFixed(1)}
+                  color={stats.totalPoints >= 0 ? "#4ECDC4" : "#FF6B6B"}
+                />
+                <StatsCard
+                  title="平均スコア"
+                  value={stats.avgScore > 0 ? `+${stats.avgScore.toFixed(1)}` : stats.avgScore.toFixed(1)}
+                  color={stats.avgScore >= 0 ? "#4ECDC4" : "#FF6B6B"}
+                />
+              </View>
             </View>
           </View>
-        )}
-      </View>
-    </ScrollView>
+
+          {/* 順位分布 */}
+          <View style={styles.section}>
+            <RankDistributionCard
+              distribution={stats.rankDistribution}
+              totalCount={stats.count}
+              gameMode={selectedMode}
+            />
+          </View>
+
+          {/* 率統計 */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>率統計</Text>
+            <View style={styles.statsGrid}>
+              <View style={styles.statsRow}>
+                <StatsCard
+                  title="トップ率"
+                  value={`${stats.topRate.toFixed(1)}%`}
+                  color="#FFD700"
+                />
+                <StatsCard
+                  title="ラス率"
+                  value={`${stats.lastRate.toFixed(1)}%`}
+                  color="#FF6B6B"
+                />
+              </View>
+            </View>
+          </View>
+
+          {/* 記録 */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>記録</Text>
+            <View style={styles.statsGrid}>
+              <View style={styles.statsRow}>
+                <StatsCard
+                  title="連続トップ"
+                  value={`${stats.maxConsecutiveFirst}回`}
+                  color="#FFD700"
+                />
+                <StatsCard
+                  title="連続ラス"
+                  value={`${stats.maxConsecutiveLast}回`}
+                  color="#FF6B6B"
+                />
+              </View>
+              <View style={styles.statsRow}>
+                <StatsCard
+                  title="最高得点"
+                  value={stats.maxScore > -Infinity ? `+${stats.maxScore.toFixed(1)}` : '---'}
+                  color="#4ECDC4"
+                />
+                <StatsCard
+                  title="最低得点"
+                  value={stats.minScore < Infinity ? stats.minScore.toFixed(1) : '---'}
+                  color="#FF6B6B"
+                />
+              </View>
+            </View>
+          </View>
+
+          {/* その他 */}
+          {stats.chipTotal > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>その他</Text>
+              <View style={styles.statsGrid}>
+                <StatsCard
+                  title="チップ合計"
+                  value={stats.chipTotal}
+                  color="#9B59B6"
+                />
+              </View>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -205,6 +207,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8F9FA',
+  },
+  controlsContainer: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5E5',
+  },
+  scrollContainer: {
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,
@@ -234,20 +246,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666666',
   },
-  header: {
-    backgroundColor: '#FFFFFF',
-    paddingTop: 60,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E5',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: 20,
-  },
+
   content: {
     padding: 20,
   },

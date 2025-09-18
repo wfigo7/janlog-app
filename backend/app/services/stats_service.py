@@ -25,12 +25,16 @@ class StatsService:
         """成績サマリを計算"""
         try:
             # 対局データを取得
-            matches = await self.match_service.get_matches(
+            result = await self.match_service.get_matches(
                 user_id=user_id,
                 from_date=from_date,
                 to_date=to_date,
-                mode=game_mode,
+                game_mode=game_mode,
+                limit=1000,  # 統計計算用に大きな値を設定
             )
+
+            # 新しい戻り値形式に対応
+            matches = result.get("matches", []) if isinstance(result, dict) else result
 
             if not matches:
                 return StatsSummary.empty()
@@ -39,6 +43,10 @@ class StatsService:
             return self._calculate_stats_from_matches(matches, game_mode)
 
         except Exception as e:
+            print(f"統計計算エラー: {e}")
+            import traceback
+
+            traceback.print_exc()
             raise Exception(f"統計計算に失敗しました: {str(e)}")
 
     def _calculate_stats_from_matches(
