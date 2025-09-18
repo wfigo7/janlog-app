@@ -87,7 +87,7 @@ describe('MatchRegistrationScreen', () => {
     expect(getByPlaceholderText('1〜4位')).toBeTruthy();
     
     // 順位+最終スコアがデフォルト選択
-    expect(getByText('最終スコア')).toBeTruthy();
+    expect(getByText('最終スコア入力')).toBeTruthy();
   });
 
   it('順位のみ入力方式を選択できる', () => {
@@ -99,7 +99,7 @@ describe('MatchRegistrationScreen', () => {
     
     // 順位のみ入力の説明が表示される
     expect(getByText('順位のみ入力')).toBeTruthy();
-    expect(getByText(/順位のみで仮のスコアを計算します/)).toBeTruthy();
+    expect(getByText('順位のみで仮のスコアを計算します。素点を忘れた場合や大まかな記録に便利です。')).toBeTruthy();
     expect(getByText(/4人麻雀: 1位\(\+15000\), 2位\(\+5000\), 3位\(-5000\), 4位\(-15000\)/)).toBeTruthy();
   });
 
@@ -121,7 +121,7 @@ describe('MatchRegistrationScreen', () => {
     
     // 計算結果が表示されるまで待機
     await waitFor(() => {
-      expect(getByText('計算結果（順位のみ）')).toBeTruthy();
+      expect(getByText('仮計算結果')).toBeTruthy();
       expect(getByText('仮ポイント: 60pt')).toBeTruthy();
       expect(getByText('仮素点: 40000点')).toBeTruthy();
       expect(getByText('※ これは仮の計算結果です。実際の素点とは異なる場合があります。')).toBeTruthy();
@@ -271,13 +271,13 @@ describe('MatchRegistrationScreen', () => {
     fireEvent.changeText(getByPlaceholderText('1〜4位'), '1');
     
     await waitFor(() => {
-      expect(getByText('計算結果（順位のみ）')).toBeTruthy();
+      expect(getByText('仮計算結果')).toBeTruthy();
     });
     
     // 別の入力方式に変更
     fireEvent.press(getByText('順位+最終スコア'));
     
     // 計算結果がクリアされる
-    expect(queryByText('計算結果（順位のみ）')).toBeNull();
+    expect(queryByText('仮計算結果')).toBeNull();
   });
 });

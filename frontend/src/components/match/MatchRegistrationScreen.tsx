@@ -16,6 +16,7 @@ import { Ruleset, PointCalculationRequest } from '../../types/ruleset';
 import { MatchService } from '../../services/matchService';
 import { rulesetService } from '../../services/rulesetService';
 import RuleSelector from './RuleSelector';
+import EntryMethodSelector from './EntryMethodSelector';
 
 const MatchRegistrationScreen: React.FC = () => {
   const scrollViewRef = useRef<ScrollView>(null);
@@ -329,6 +330,165 @@ const MatchRegistrationScreen: React.FC = () => {
     }, 3000); // 3秒後に自動で消える
   };
 
+  // 動的フォーム表示のレンダリング関数
+  const renderDynamicForm = () => {
+    switch (entryMethod) {
+      case 'rank_plus_points':
+        return renderFinalPointsForm();
+      case 'rank_plus_raw':
+        return renderRawScoreForm();
+      case 'provisional_rank_only':
+        return renderProvisionalForm();
+      default:
+        return null;
+    }
+  };
+
+  // 最終スコア入力フォーム
+  const renderFinalPointsForm = () => (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>最終スコア入力</Text>
+      <Text style={styles.sectionDescription}>
+        計算済みの最終ポイントを直接入力してください
+      </Text>
+      <TextInput
+        style={[
+          styles.input,
+          finalPointsError && styles.inputError
+        ]}
+        value={finalPoints}
+        onChangeText={handleFinalPointsChange}
+        placeholder="例: +25.0, 0, -15.0"
+        placeholderTextColor="#999"
+        keyboardType="numeric"
+      />
+      {finalPointsError && (
+        <Text style={styles.errorText}>{finalPointsError}</Text>
+      )}
+    </View>
+  );
+
+  // 素点入力フォーム
+  const renderRawScoreForm = () => (
+    <>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>素点入力</Text>
+        <Text style={styles.sectionDescription}>
+          素点を入力すると、選択されたルールに基づいて自動でポイント計算を行います
+        </Text>
+        <TextInput
+          style={[
+            styles.input,
+            rawScoreError && styles.inputError
+          ]}
+          value={rawScore}
+          onChangeText={setRawScore}
+          placeholder="例: 45000, 0, -18100（100点単位）"
+          placeholderTextColor="#999"
+          keyboardType="numeric"
+        />
+        {rawScoreError && (
+          <Text style={styles.errorText}>{rawScoreError}</Text>
+        )}
+        {isCalculating && (
+          <Text style={styles.calculatingText}>計算中...</Text>
+        )}
+      </View>
+
+      {/* 計算結果表示 */}
+      {showCalculation && calculationDetails && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>自動計算結果</Text>
+          <View style={styles.calculationResult}>
+            <Text style={styles.calculationTitle}>
+              最終ポイント: {calculatedPoints}pt
+            </Text>
+            <Text style={styles.calculationFormula}>
+              {calculationDetails.formula}
+            </Text>
+            <View style={styles.calculationDetails}>
+              <Text style={styles.calculationDetailText}>
+                素点: {calculationDetails.rawScore}点
+              </Text>
+              <Text style={styles.calculationDetailText}>
+                基準点: {calculationDetails.basePoints}点
+              </Text>
+              <Text style={styles.calculationDetailText}>
+                基本計算: {calculationDetails.baseCalculation}pt
+              </Text>
+              <Text style={styles.calculationDetailText}>
+                ウマ: {calculationDetails.umaPoints}pt
+              </Text>
+              <Text style={styles.calculationDetailText}>
+                オカ: {calculationDetails.okaPoints}pt
+              </Text>
+            </View>
+          </View>
+        </View>
+      )}
+    </>
+  );
+
+  // 仮スコア入力フォーム
+  const renderProvisionalForm = () => (
+    <>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>順位のみ入力</Text>
+        <Text style={styles.sectionDescription}>
+          順位のみで仮のスコアを計算します。素点を忘れた場合や大まかな記録に便利です。
+        </Text>
+        <View style={styles.provisionalInfoContainer}>
+          <Text style={styles.provisionalInfoTitle}>仮素点の計算方式</Text>
+          <Text style={styles.provisionalNote}>
+            {gameMode === 'three'
+              ? '3人麻雀: 1位(+15000), 2位(±0), 3位(-15000)'
+              : '4人麻雀: 1位(+15000), 2位(+5000), 3位(-5000), 4位(-15000)'
+            }{'\n'}
+            開始点からの増減で仮素点を設定し、選択されたルールでポイント計算します。
+          </Text>
+        </View>
+        {isCalculating && (
+          <Text style={styles.calculatingText}>計算中...</Text>
+        )}
+      </View>
+
+      {/* 仮スコア計算結果表示 */}
+      {showProvisionalCalculation && provisionalDetails && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>仮計算結果</Text>
+          <View style={styles.calculationResult}>
+            <Text style={styles.calculationTitle}>
+              仮ポイント: {provisionalPoints}pt
+            </Text>
+            <Text style={styles.calculationFormula}>
+              {provisionalDetails.formula}
+            </Text>
+            <View style={styles.calculationDetails}>
+              <Text style={styles.calculationDetailText}>
+                仮素点: {provisionalDetails.provisionalRawScore}点
+              </Text>
+              <Text style={styles.calculationDetailText}>
+                基準点: {provisionalDetails.basePoints}点
+              </Text>
+              <Text style={styles.calculationDetailText}>
+                基本計算: {provisionalDetails.baseCalculation}pt
+              </Text>
+              <Text style={styles.calculationDetailText}>
+                ウマ: {provisionalDetails.umaPoints}pt
+              </Text>
+              <Text style={styles.calculationDetailText}>
+                オカ: {provisionalDetails.okaPoints}pt
+              </Text>
+            </View>
+            <Text style={styles.provisionalWarning}>
+              ※ これは仮の計算結果です。実際の素点とは異なる場合があります。
+            </Text>
+          </View>
+        </View>
+      )}
+    </>
+  );
+
   const scrollToErrorField = (sectionType: 'rank' | 'finalPoints' | 'rawScore') => {
     if (!scrollViewRef.current) {
       return;
@@ -492,59 +652,11 @@ const MatchRegistrationScreen: React.FC = () => {
         </View>
 
         {/* 入力方式選択 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>入力方式</Text>
-          <View style={styles.entryMethodContainer}>
-            <TouchableOpacity
-              style={[
-                styles.entryMethodButton,
-                entryMethod === 'rank_plus_points' && styles.activeEntryMethod,
-              ]}
-              onPress={() => handleEntryMethodChange('rank_plus_points')}
-            >
-              <Text
-                style={[
-                  styles.entryMethodText,
-                  entryMethod === 'rank_plus_points' && styles.activeEntryMethodText,
-                ]}
-              >
-                順位+最終スコア
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.entryMethodButton,
-                entryMethod === 'rank_plus_raw' && styles.activeEntryMethod,
-              ]}
-              onPress={() => handleEntryMethodChange('rank_plus_raw')}
-            >
-              <Text
-                style={[
-                  styles.entryMethodText,
-                  entryMethod === 'rank_plus_raw' && styles.activeEntryMethodText,
-                ]}
-              >
-                順位+素点
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.entryMethodButton,
-                entryMethod === 'provisional_rank_only' && styles.activeEntryMethod,
-              ]}
-              onPress={() => handleEntryMethodChange('provisional_rank_only')}
-            >
-              <Text
-                style={[
-                  styles.entryMethodText,
-                  entryMethod === 'provisional_rank_only' && styles.activeEntryMethodText,
-                ]}
-              >
-                順位のみ
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        <EntryMethodSelector
+          selectedMethod={entryMethod}
+          gameMode={gameMode}
+          onMethodChange={handleEntryMethodChange}
+        />
 
         {/* 順位入力 */}
         <View style={styles.section}>
@@ -566,137 +678,8 @@ const MatchRegistrationScreen: React.FC = () => {
           )}
         </View>
 
-        {/* 入力方式に応じた入力欄 */}
-        {entryMethod === 'rank_plus_points' && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>最終スコア</Text>
-            <TextInput
-              style={[
-                styles.input,
-                finalPointsError && styles.inputError
-              ]}
-              value={finalPoints}
-              onChangeText={handleFinalPointsChange}
-              placeholder="例: +25.0, 0, -15.0"
-              placeholderTextColor="#999"
-              keyboardType="numeric"
-            />
-            {finalPointsError && (
-              <Text style={styles.errorText}>{finalPointsError}</Text>
-            )}
-          </View>
-        )}
-
-        {entryMethod === 'rank_plus_raw' && (
-          <>
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>素点</Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  rawScoreError && styles.inputError
-                ]}
-                value={rawScore}
-                onChangeText={setRawScore}
-                placeholder="例: 45000, 0, -18100（100点単位）"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-              />
-              {rawScoreError && (
-                <Text style={styles.errorText}>{rawScoreError}</Text>
-              )}
-              {isCalculating && (
-                <Text style={styles.calculatingText}>計算中...</Text>
-              )}
-            </View>
-
-            {/* 計算結果表示 */}
-            {showCalculation && calculationDetails && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>計算結果</Text>
-                <View style={styles.calculationResult}>
-                  <Text style={styles.calculationTitle}>
-                    最終ポイント: {calculatedPoints}pt
-                  </Text>
-                  <Text style={styles.calculationFormula}>
-                    {calculationDetails.formula}
-                  </Text>
-                  <View style={styles.calculationDetails}>
-                    <Text style={styles.calculationDetailText}>
-                      素点: {calculationDetails.rawScore}点
-                    </Text>
-                    <Text style={styles.calculationDetailText}>
-                      基準点: {calculationDetails.basePoints}点
-                    </Text>
-                    <Text style={styles.calculationDetailText}>
-                      基本計算: {calculationDetails.baseCalculation}pt
-                    </Text>
-                    <Text style={styles.calculationDetailText}>
-                      ウマ: {calculationDetails.umaPoints}pt
-                    </Text>
-                    <Text style={styles.calculationDetailText}>
-                      オカ: {calculationDetails.okaPoints}pt
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            )}
-          </>
-        )}
-
-        {entryMethod === 'provisional_rank_only' && (
-          <>
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>順位のみ入力</Text>
-              <Text style={styles.provisionalNote}>
-                順位のみで仮のスコアを計算します。{'\n'}
-                {gameMode === 'three'
-                  ? '3人麻雀: 1位(+15000), 2位(±0), 3位(-15000)'
-                  : '4人麻雀: 1位(+15000), 2位(+5000), 3位(-5000), 4位(-15000)'
-                }{'\n'}
-                開始点からの増減で仮素点を設定し、選択されたルールでポイント計算します。
-              </Text>
-              {isCalculating && (
-                <Text style={styles.calculatingText}>計算中...</Text>
-              )}
-            </View>
-
-            {/* 仮スコア計算結果表示 */}
-            {showProvisionalCalculation && provisionalDetails && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>計算結果（順位のみ）</Text>
-                <View style={styles.calculationResult}>
-                  <Text style={styles.calculationTitle}>
-                    仮ポイント: {provisionalPoints}pt
-                  </Text>
-                  <Text style={styles.calculationFormula}>
-                    {provisionalDetails.formula}
-                  </Text>
-                  <View style={styles.calculationDetails}>
-                    <Text style={styles.calculationDetailText}>
-                      仮素点: {provisionalDetails.provisionalRawScore}点
-                    </Text>
-                    <Text style={styles.calculationDetailText}>
-                      基準点: {provisionalDetails.basePoints}点
-                    </Text>
-                    <Text style={styles.calculationDetailText}>
-                      基本計算: {provisionalDetails.baseCalculation}pt
-                    </Text>
-                    <Text style={styles.calculationDetailText}>
-                      ウマ: {provisionalDetails.umaPoints}pt
-                    </Text>
-                    <Text style={styles.calculationDetailText}>
-                      オカ: {provisionalDetails.okaPoints}pt
-                    </Text>
-                  </View>
-                  <Text style={styles.provisionalWarning}>
-                    ※ これは仮の計算結果です。実際の素点とは異なる場合があります。
-                  </Text>
-                </View>
-              </View>
-            )}
-          </>
-        )}
+        {/* 動的フォーム表示 */}
+        {renderDynamicForm()}
 
         {/* チップ数入力 */}
         <View style={styles.section}>
@@ -809,29 +792,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  entryMethodContainer: {
-    flexDirection: 'column',
-    gap: 8,
+  sectionDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 12,
   },
-  entryMethodButton: {
-    backgroundColor: '#f0f0f0',
+  provisionalInfoContainer: {
+    backgroundColor: '#f8f9fa',
     borderRadius: 8,
     padding: 12,
-    alignItems: 'center',
+    marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#e9ecef',
   },
-  activeEntryMethod: {
-    backgroundColor: '#2196F3',
-    borderColor: '#2196F3',
-  },
-  entryMethodText: {
+  provisionalInfoTitle: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#666',
-  },
-  activeEntryMethodText: {
-    color: '#fff',
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 6,
   },
   calculatingText: {
     fontSize: 12,
