@@ -9,22 +9,32 @@ import {
   ScrollView,
   RefreshControl,
   Alert,
-  ActivityIndicator
+  ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { StatsCard } from './StatsCard';
 import { GameModeTab } from '../common/GameModeTab';
 import { RankDistributionCard } from './RankDistributionCard';
+import { DateRangePicker, DateRange } from '../common/DateRangePicker';
+import { StatsChart } from './StatsChart';
+import { DetailedStatsCard } from './DetailedStatsCard';
 import { StatsService } from '../../services/statsService';
-import { StatsSummary } from '../../types/stats';
+import { StatsSummary, ChartDataResponse } from '../../types/stats';
 import { GameMode } from '../../types/common';
+import { Match } from '../../types/match';
 
 export default function StatsScreen() {
   const [stats, setStats] = useState<StatsSummary | null>(null);
+  const [chartData, setChartData] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode>('four');
+  const [dateRange, setDateRange] = useState<DateRange>({});
+  const [showCharts, setShowCharts] = useState(false);
+  const [showDetailedStats, setShowDetailedStats] = useState(false);
 
-  const loadStats = async (showRefresh = false) => {
+  const loadData = async (showRefresh = false) => {
     try {
       if (showRefresh) {
         setRefreshing(true);
@@ -32,18 +42,30 @@ export default function StatsScreen() {
         setLoading(true);
       }
 
-      const response = await StatsService.getStatsSummary({
+      const filters = {
         mode: selectedMode,
-      });
+        from: dateRange.from,
+        to: dateRange.to,
+      };
 
-      if (response.success) {
-        setStats(response.data);
+      // 統計データとチャートデータを並行取得
+      const [statsResponse, chartResponse] = await Promise.all([
+        StatsService.getStatsSummary(filters),
+        StatsService.getChartData(filters),
+      ]);
+
+      if (statsResponse.success) {
+        setStats(statsResponse.data);
       } else {
         throw new Error('統計データの取得に失敗しました');
       }
+
+      if (chartResponse.success) {
+        setChartData(chartResponse.data.matches || []);
+      }
     } catch (error) {
-      console.error('統計データ取得エラー:', error);
-      Alert.alert('エラー', '統計データの取得に失敗しました');
+      console.error('データ取得エラー:', error);
+      Alert.alert('エラー', 'データの取得に失敗しました');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -51,15 +73,27 @@ export default function StatsScreen() {
   };
 
   useEffect(() => {
-    loadStats();
-  }, [selectedMode]);
+    loadData();
+  }, [selectedMode, dateRange]);
 
   const onRefresh = () => {
-    loadStats(true);
+    loadData(true);
   };
 
   const onModeChange = (mode: GameMode) => {
     setSelectedMode(mode);
+  };
+
+  const onDateRangeChange = (range: DateRange) => {
+    setDateRange(range);
+  };
+
+  const toggleCharts = () => {
+    setShowCharts(!showCharts);
+  };
+
+  const toggleDetailedStats = () => {
+    setShowDetailedStats(!showDetailedStats);
   };
 
   if (loading) {
@@ -85,6 +119,53 @@ export default function StatsScreen() {
       {/* コントロール部分 */}
       <View style={styles.controlsContainer}>
         <GameModeTab selectedMode={selectedMode} onModeChange={onModeChange} />
+
+        {/* 期間フィルター */}
+        <View style={styles.filterContainer}>
+          <Text style={styles.filterLabel}>期間フィルター</Text>
+          <DateRangePicker
+            value={dateRange}
+            onChange={onDateRangeChange}
+            placeholder="全期間"
+          />
+        </View>
+
+        {/* 表示オプション */}
+        <View style={styles.optionsContainer}>
+          <TouchableOpacity
+            style={[styles.optionButton, showCharts && styles.optionButtonActive]}
+            onPress={toggleCharts}
+          >
+            <Ionicons
+              name="bar-chart-outline"
+              size={16}
+              color={showCharts ? "#FFFFFF" : "#666666"}
+            />
+            <Text style={[
+              styles.optionButtonText,
+              showCharts && styles.optionButtonTextActive
+            ]}>
+              グラフ表示
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.optionButton, showDetailedStats && styles.optionButtonActive]}
+            onPress={toggleDetailedStats}
+          >
+            <Ionicons
+              name="analytics-outline"
+              size={16}
+              color={showDetailedStats ? "#FFFFFF" : "#666666"}
+            />
+            <Text style={[
+              styles.optionButtonText,
+              showDetailedStats && styles.optionButtonTextActive
+            ]}>
+              詳細分析
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -134,6 +215,54 @@ export default function StatsScreen() {
             />
           </View>
 
+          {/* チャート表示 */}
+          {showCharts && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>グラフ分析</Text>
+
+              {/* 順位分布チャート */}
+              <View style={styles.chartContainer}>
+                <Text style={styles.chartTitle}>順位分布</Text>
+                <StatsChart
+                  type="rank-distribution"
+                  data={stats.rankDistribution}
+                  gameMode={selectedMode}
+                />
+              </View>
+
+              {/* 順位推移チャート */}
+              {chartData.length > 0 && (
+                <View style={styles.chartContainer}>
+                  <Text style={styles.chartTitle}>最近の順位推移</Text>
+                  <StatsChart
+                    type="trend"
+                    data={chartData}
+                    gameMode={selectedMode}
+                  />
+                </View>
+              )}
+
+              {/* ポイント推移チャート */}
+              {chartData.length > 0 && (
+                <View style={styles.chartContainer}>
+                  <Text style={styles.chartTitle}>最近のポイント推移</Text>
+                  <StatsChart
+                    type="performance"
+                    data={chartData}
+                    gameMode={selectedMode}
+                  />
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* 詳細統計 */}
+          {showDetailedStats && (
+            <View style={styles.section}>
+              <DetailedStatsCard stats={stats} gameMode={selectedMode} />
+            </View>
+          )}
+
           {/* 率統計 */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>率統計</Text>
@@ -148,6 +277,18 @@ export default function StatsScreen() {
                   title="ラス率"
                   value={`${stats.lastRate.toFixed(1)}%`}
                   color="#FF6B6B"
+                />
+              </View>
+              <View style={styles.statsRow}>
+                <StatsCard
+                  title="2位率"
+                  value={`${stats.secondRate.toFixed(1)}%`}
+                  color="#C0C0C0"
+                />
+                <StatsCard
+                  title="3位率"
+                  value={`${stats.thirdRate.toFixed(1)}%`}
+                  color="#CD7F32"
                 />
               </View>
             </View>
@@ -215,6 +356,43 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5E5',
   },
+  filterContainer: {
+    marginTop: 16,
+  },
+  filterLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333333',
+    marginBottom: 8,
+  },
+  optionsContainer: {
+    flexDirection: 'row',
+    marginTop: 16,
+    gap: 12,
+  },
+  optionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    backgroundColor: '#F5F5F5',
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+  },
+  optionButtonActive: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  optionButtonText: {
+    fontSize: 12,
+    color: '#666666',
+    marginLeft: 4,
+    fontWeight: '500',
+  },
+  optionButtonTextActive: {
+    color: '#FFFFFF',
+  },
   scrollContainer: {
     flex: 1,
   },
@@ -246,7 +424,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666666',
   },
-
   content: {
     padding: 20,
   },
@@ -265,5 +442,26 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     gap: 12,
+  },
+  chartContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  chartTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginBottom: 12,
+    textAlign: 'center',
   },
 });

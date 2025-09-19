@@ -13,3 +13,11 @@ global.console = {
 global.Alert = {
   alert: jest.fn(),
 };
+
+// Expo vector-icons のモック
+jest.mock('@expo/vector-icons', () => ({
+  Ionicons: 'Ionicons',
+  MaterialIcons: 'MaterialIcons',
+  FontAwesome: 'FontAwesome',
+  AntDesign: 'AntDesign',
+}));

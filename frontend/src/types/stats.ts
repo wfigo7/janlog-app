@@ -39,9 +39,17 @@ export interface StatsResponse {
 }
 
 import { GameMode } from './common';
+import { Match } from './match';
 
 export interface StatsFilters {
   from?: string;    // 開始日（YYYY-MM-DD）
   to?: string;      // 終了日（YYYY-MM-DD）
   mode: GameMode;   // ゲームモード
+}
+
+export interface ChartDataResponse {
+  success: boolean;
+  data: {
+    matches: Match[];
+  };
 }
