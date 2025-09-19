@@ -25,7 +25,7 @@ export class ApiClient {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
-    
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
@@ -34,7 +34,7 @@ export class ApiClient {
       const accessToken = await authService.getAccessToken();
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        ...options.headers,
+        ...(options.headers as Record<string, string> || {}),
       };
 
       if (accessToken) {
@@ -62,14 +62,14 @@ export class ApiClient {
       return await response.json();
     } catch (error) {
       clearTimeout(timeoutId);
-      
+
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
           throw new Error('リクエストがタイムアウトしました');
         }
         throw error;
       }
-      
+
       throw new Error('不明なエラーが発生しました');
     }
   }
@@ -78,10 +78,10 @@ export class ApiClient {
    * GETリクエスト
    */
   async get<T>(endpoint: string, params?: Record<string, string>): Promise<T> {
-    const url = params 
+    const url = params
       ? `${endpoint}?${new URLSearchParams(params).toString()}`
       : endpoint;
-    
+
     return this.request<T>(url, { method: 'GET' });
   }
 
