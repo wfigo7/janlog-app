@@ -665,18 +665,20 @@ const MatchRegistrationScreen: React.FC = () => {
         {/* 動的フォーム表示 */}
         {renderDynamicForm()}
 
-        {/* チップ数入力 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>チップ数（任意）</Text>
-          <TextInput
-            style={styles.input}
-            value={chipCount}
-            onChangeText={setChipCount}
-            placeholder="例: 5"
-            placeholderTextColor="#999"
-            keyboardType="numeric"
-          />
-        </View>
+        {/* チップ数入力（チップありルールの場合のみ表示） */}
+        {selectedRuleset?.useChips && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>チップ数（任意）</Text>
+            <TextInput
+              style={styles.input}
+              value={chipCount}
+              onChangeText={setChipCount}
+              placeholder="例: 5"
+              placeholderTextColor="#999"
+              keyboardType="numeric"
+            />
+          </View>
+        )}
 
         {/* メモ入力 */}
         <View style={styles.section}>

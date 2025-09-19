@@ -6,6 +6,7 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 from app.models.stats import StatsSummary, RankDistribution
 from app.services.match_service import get_match_service
+from app.services.ruleset_service import get_ruleset_service
 from app.config.settings import settings
 
 
@@ -14,6 +15,7 @@ class StatsService:
 
     def __init__(self):
         self.match_service = get_match_service()
+        self.ruleset_service = get_ruleset_service()
 
     async def calculate_stats_summary(
         self,
@@ -40,7 +42,7 @@ class StatsService:
                 return StatsSummary.empty()
 
             # 統計計算
-            return self._calculate_stats_from_matches(matches, game_mode)
+            return await self._calculate_stats_from_matches(matches, game_mode, user_id)
 
         except Exception as e:
             print(f"統計計算エラー: {e}")
@@ -49,8 +51,8 @@ class StatsService:
             traceback.print_exc()
             raise Exception(f"統計計算に失敗しました: {str(e)}")
 
-    def _calculate_stats_from_matches(
-        self, matches: List[Dict[str, Any]], game_mode: Optional[str]
+    async def _calculate_stats_from_matches(
+        self, matches: List[Dict[str, Any]], game_mode: Optional[str], user_id: str
     ) -> StatsSummary:
         """対局データから統計を計算"""
         if not matches:
@@ -69,16 +71,23 @@ class StatsService:
         scores = []
         ranks_sequence = []  # 連続記録計算用
 
+        # チップありルールの対局があるかどうかを判定（chipCountがnullでない対局が存在するか）
+        has_chip_matches = False
+        
         # 各対局のデータを集計
         for match in matches:
             rank = match.get("rank", 0)
             final_points = match.get("finalPoints", 0.0) or 0.0
-            chip_count = match.get("chipCount", 0) or 0
+            chip_count = match.get("chipCount")
 
             # 基本統計
             total_rank += rank
             total_points += final_points
-            total_chips += chip_count
+            
+            # チップカウントがnullでない場合のみ加算し、チップありフラグを立てる
+            if chip_count is not None:
+                total_chips += chip_count
+                has_chip_matches = True
 
             # 順位分布
             if rank in rank_counts:
@@ -126,7 +135,7 @@ class StatsService:
             avgRank=avg_rank,
             avgScore=avg_score,
             totalPoints=total_points,
-            chipTotal=total_chips,
+            chipTotal=total_chips if has_chip_matches else None,
             rankDistribution=rank_distribution,
             topRate=top_rate,
             secondRate=second_rate,

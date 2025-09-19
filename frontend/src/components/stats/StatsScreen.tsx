@@ -331,7 +331,7 @@ export default function StatsScreen() {
           </View>
 
           {/* その他 */}
-          {stats.chipTotal > 0 && (
+          {stats.chipTotal !== undefined && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>その他</Text>
               <View style={styles.statsGrid}>

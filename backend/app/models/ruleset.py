@@ -36,6 +36,7 @@ class RulesetRequest(BaseModel):
     uma: List[int] = Field(..., description="ウマ配列")
     umaMatrix: Optional[Dict[str, List[int]]] = Field(None, description="浮き人数別ウマ表")
     oka: int = Field(..., description="オカポイント")
+    useChips: bool = Field(False, description="チップを使用するかどうか")
     memo: Optional[str] = Field(None, description="メモ")
     basicRules: Optional[Dict[str, Any]] = Field(None, description="基本ルール")
     gameplayRules: Optional[Dict[str, Any]] = Field(None, description="進行ルール")
@@ -86,6 +87,7 @@ class Ruleset(BaseEntity):
     uma: List[int] = Field(..., description="ウマ配列")
     umaMatrix: Optional[Dict[str, List[int]]] = Field(None, description="浮き人数別ウマ表")
     oka: int = Field(..., description="オカポイント")
+    useChips: bool = Field(False, description="チップを使用するかどうか")
     
     # 階層化されたルール（将来拡張用）
     basicRules: Optional[Dict[str, Any]] = Field(None, description="基本ルール")
@@ -135,6 +137,7 @@ class Ruleset(BaseEntity):
             uma=request.uma,
             umaMatrix=request.umaMatrix,
             oka=request.oka,
+            useChips=request.useChips,
             memo=request.memo,
             basicRules=request.basicRules,
             gameplayRules=request.gameplayRules,
@@ -155,6 +158,7 @@ class Ruleset(BaseEntity):
             "uma": self.uma,
             "umaMatrix": self.umaMatrix,
             "oka": self.oka,
+            "useChips": self.useChips,
             "memo": self.memo,
             "basicRules": self.basicRules,
             "gameplayRules": self.gameplayRules,

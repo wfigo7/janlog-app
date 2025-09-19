@@ -1,7 +1,7 @@
 """
 統計データモデル
 """
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from pydantic import BaseModel
 
 
@@ -20,7 +20,7 @@ class StatsSummary(BaseModel):
     avgRank: float  # 平均順位（平均着順）
     avgScore: float  # 平均スコア（1対局あたりの平均ポイント）
     totalPoints: float  # 累積ポイント（スコア）
-    chipTotal: int  # チップ合計
+    chipTotal: Optional[int] = None  # チップ合計（チップありルールでの対局がある場合のみ）
     
     # 順位分布
     rankDistribution: RankDistribution  # 各順位の回数と割合
@@ -39,13 +39,12 @@ class StatsSummary(BaseModel):
 
     def to_api_response(self) -> Dict[str, Any]:
         """API レスポンス形式に変換"""
-        return {
+        response = {
             # 基本統計
             "count": self.count,
             "avgRank": round(self.avgRank, 2),
             "avgScore": round(self.avgScore, 1),
             "totalPoints": round(self.totalPoints, 1),
-            "chipTotal": self.chipTotal,
             
             # 順位分布
             "rankDistribution": {
@@ -67,6 +66,12 @@ class StatsSummary(BaseModel):
             "maxScore": round(self.maxScore, 1) if self.maxScore != float('-inf') else 0.0,
             "minScore": round(self.minScore, 1) if self.minScore != float('inf') else 0.0,
         }
+        
+        # チップ合計は値がある場合のみ追加
+        if self.chipTotal is not None:
+            response["chipTotal"] = self.chipTotal
+            
+        return response
 
     @classmethod
     def empty(cls) -> "StatsSummary":
@@ -76,7 +81,7 @@ class StatsSummary(BaseModel):
             avgRank=0.0,
             avgScore=0.0,
             totalPoints=0.0,
-            chipTotal=0,
+            chipTotal=None,
             rankDistribution=RankDistribution(),
             topRate=0.0,
             secondRate=0.0,

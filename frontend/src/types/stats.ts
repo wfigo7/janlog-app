@@ -15,7 +15,7 @@ export interface StatsSummary {
   avgRank: number;        // 平均順位（平均着順）
   avgScore: number;       // 平均スコア（1対局あたりの平均ポイント）
   totalPoints: number;    // 累積ポイント（スコア）
-  chipTotal: number;      // チップ合計
+  chipTotal?: number;     // チップ合計（チップありルールでの対局がある場合のみ）
   
   // 順位分布
   rankDistribution: RankDistribution;  // 各順位の回数

@@ -191,6 +191,7 @@ class PointCalculator:
                 "basePoints": 30000,
                 "uma": [30, 10, -10, -30],
                 "oka": 20,
+                "useChips": False,
                 "description": "プロリーグで使用される標準ルール"
             },
             {
@@ -200,6 +201,7 @@ class PointCalculator:
                 "basePoints": 30000,
                 "uma": [20, 10, -10, -20],
                 "oka": 20,
+                "useChips": True,
                 "description": "一般的なフリー雀荘ルール"
             },
             {
@@ -209,6 +211,7 @@ class PointCalculator:
                 "basePoints": 30000,
                 "uma": [15, 5, -5, -15],
                 "oka": 20,
+                "useChips": False,
                 "description": "競技麻雀でよく使われるルール"
             },
             {
@@ -218,16 +221,18 @@ class PointCalculator:
                 "basePoints": 40000,
                 "uma": [20, 0, -20],
                 "oka": 15,
+                "useChips": False,
                 "description": "3人麻雀の一般的なルール"
             },
             {
-                "name": "3人麻雀（高レート）",
+                "name": "フリー雀荘標準（3人麻雀）",
                 "gameMode": "three",
                 "startingPoints": 25000,
                 "basePoints": 35000,
                 "uma": [30, 0, -30],
                 "oka": 30,
-                "description": "高レート3人麻雀ルール"
+                "useChips": True,
+                "description": "一般的なフリー雀荘ルール"
             }
         ]
     
