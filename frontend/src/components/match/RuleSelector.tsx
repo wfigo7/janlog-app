@@ -12,6 +12,7 @@ import {
 import { Ruleset } from '../../types/ruleset';
 import { GameMode } from '../../types/common';
 import { rulesetService } from '../../services/rulesetService';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
 
 interface RuleSelectorProps {
   gameMode: GameMode;
@@ -24,6 +25,7 @@ const RuleSelector: React.FC<RuleSelectorProps> = ({
   selectedRulesetId,
   onRulesetSelect,
 }) => {
+  const { showAlert, AlertComponent } = useCustomAlert();
   const [rulesets, setRulesets] = useState<Ruleset[]>([]);
   const [filteredRulesets, setFilteredRulesets] = useState<Ruleset[]>([]);
   const [loading, setLoading] = useState(false);
@@ -37,7 +39,10 @@ const RuleSelector: React.FC<RuleSelectorProps> = ({
       const response = await rulesetService.getRulesets();
       setRulesets(response.rulesets);
     } catch (error) {
-      Alert.alert('エラー', 'ルールセットの取得に失敗しました');
+      showAlert({
+        title: 'エラー',
+        message: 'ルールセットの取得に失敗しました',
+      });
     } finally {
       setLoading(false);
     }
@@ -47,7 +52,7 @@ const RuleSelector: React.FC<RuleSelectorProps> = ({
   useEffect(() => {
     const filtered = rulesetService.filterRulesetsByGameMode(rulesets, gameMode);
     setFilteredRulesets(filtered);
-    
+
     // 選択されているルールセットがフィルタ結果に含まれない場合はクリア
     if (selectedRuleset && selectedRuleset.gameMode !== gameMode) {
       setSelectedRuleset(null);
@@ -91,7 +96,7 @@ const RuleSelector: React.FC<RuleSelectorProps> = ({
           </View>
         )}
       </View>
-      
+
       <View style={styles.rulesetDetails}>
         <Text style={styles.rulesetDetail}>
           {item.startingPoints}点持ち{item.basePoints}点返し
@@ -100,7 +105,7 @@ const RuleSelector: React.FC<RuleSelectorProps> = ({
           ウマ: {item.uma.join('/')} | オカ: {item.oka}
         </Text>
       </View>
-      
+
       {item.memo && (
         <Text style={styles.rulesetMemo}>{item.memo}</Text>
       )}
@@ -110,7 +115,7 @@ const RuleSelector: React.FC<RuleSelectorProps> = ({
   return (
     <View style={styles.container}>
       <Text style={styles.label}>ルール</Text>
-      
+
       <TouchableOpacity
         style={styles.selector}
         onPress={() => setModalVisible(true)}
@@ -121,7 +126,7 @@ const RuleSelector: React.FC<RuleSelectorProps> = ({
         ) : (
           <>
             <Text style={[styles.selectorText, !selectedRuleset && styles.placeholderText]}>
-              {selectedRuleset 
+              {selectedRuleset
                 ? rulesetService.formatRulesetForDisplay(selectedRuleset)
                 : 'ルールを選択してください'
               }
@@ -165,6 +170,7 @@ const RuleSelector: React.FC<RuleSelectorProps> = ({
           )}
         </View>
       </Modal>
+      <AlertComponent />
     </View>
   );
 };
