@@ -18,6 +18,7 @@ import { GameModeTab } from '../common/GameModeTab';
 import { RankDistributionCard } from './RankDistributionCard';
 import { DateRangePicker, DateRange } from '../common/DateRangePicker';
 import { StatsChart } from './StatsChart';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
 import { DetailedStatsCard } from './DetailedStatsCard';
 import { StatsService } from '../../services/statsService';
 import { StatsSummary, ChartDataResponse } from '../../types/stats';
@@ -25,6 +26,7 @@ import { GameMode } from '../../types/common';
 import { Match } from '../../types/match';
 
 export default function StatsScreen() {
+  const { showAlert, AlertComponent } = useCustomAlert();
   const [stats, setStats] = useState<StatsSummary | null>(null);
   const [chartData, setChartData] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,7 +67,10 @@ export default function StatsScreen() {
       }
     } catch (error) {
       console.error('データ取得エラー:', error);
-      Alert.alert('エラー', 'データの取得に失敗しました');
+      showAlert({
+        title: 'エラー',
+        message: 'データの取得に失敗しました',
+      });
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -340,6 +345,7 @@ export default function StatsScreen() {
           )}
         </View>
       </ScrollView>
+      <AlertComponent />
     </View>
   );
 }

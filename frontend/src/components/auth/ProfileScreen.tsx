@@ -13,23 +13,44 @@ import {
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { authService } from '../../services/authService';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
 
 export function ProfileScreen() {
     const { user, logout, isLoading, checkAuthState } = useAuth();
+    const { showAlert, AlertComponent } = useCustomAlert();
 
     /**
      * ログアウト確認
      */
-    const handleLogout = async () => {
+    const handleLogout = () => {
         console.log('Logout button pressed');
-        try {
-            console.log('Calling logout directly...');
-            await logout();
-            console.log('Logout completed successfully');
-        } catch (error) {
-            console.error('Logout failed:', error);
-            Alert.alert('エラー', 'ログアウトに失敗しました');
-        }
+        showAlert({
+            title: 'ログアウト',
+            message: 'ログアウトしますか？',
+            buttons: [
+                {
+                    text: 'キャンセル',
+                    style: 'cancel',
+                },
+                {
+                    text: 'ログアウト',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            console.log('Calling logout directly...');
+                            await logout();
+                            console.log('Logout completed successfully');
+                        } catch (error) {
+                            console.error('Logout failed:', error);
+                            showAlert({
+                                title: 'エラー',
+                                message: 'ログアウトに失敗しました',
+                            });
+                        }
+                    },
+                },
+            ],
+        });
     };
 
     /**
@@ -49,7 +70,7 @@ export function ProfileScreen() {
                     style: 'destructive',
                     onPress: async () => {
                         try {
-                            await authService.forceLogout();
+                            await authService.logout();
                             // 認証状態を再チェック
                             await checkAuthState();
                         } catch (error) {
@@ -70,76 +91,93 @@ export function ProfileScreen() {
     }
 
     return (
-        <ScrollView style={styles.container}>
-            <View style={styles.content}>
-                {/* ユーザー情報 */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>ユーザー情報</Text>
+        <>
+            <ScrollView style={styles.container}>
+                <View style={styles.content}>
+                    {/* ユーザー情報 */}
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>ユーザー情報</Text>
 
-                    <View style={styles.infoItem}>
-                        <Text style={styles.infoLabel}>表示名</Text>
-                        <Text style={styles.infoValue}>{user.displayName}</Text>
+                        <View style={styles.infoItem}>
+                            <Text style={styles.infoLabel}>表示名</Text>
+                            <Text style={styles.infoValue}>{user.displayName}</Text>
+                        </View>
+
+                        <View style={styles.infoItem}>
+                            <Text style={styles.infoLabel}>メールアドレス</Text>
+                            <Text style={styles.infoValue}>{user.email}</Text>
+                        </View>
+
+                        <View style={styles.infoItem}>
+                            <Text style={styles.infoLabel}>ユーザーID</Text>
+                            <Text style={styles.infoValue}>{user.userId}</Text>
+                        </View>
+
+                        <View style={styles.infoItem}>
+                            <Text style={styles.infoLabel}>権限</Text>
+                            <Text style={styles.infoValue}>
+                                {user.role === 'admin' ? '管理者' : '一般ユーザー'}
+                            </Text>
+                        </View>
                     </View>
 
-                    <View style={styles.infoItem}>
-                        <Text style={styles.infoLabel}>メールアドレス</Text>
-                        <Text style={styles.infoValue}>{user.email}</Text>
+                    {/* アクション */}
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>アカウント</Text>
+
+                        {/* Alert テスト用ボタン */}
+                        <TouchableOpacity
+                            style={[styles.logoutButton, { backgroundColor: '#2196f3', marginBottom: 10 }]}
+                            onPress={() => {
+                                console.log('Custom Alert test button pressed');
+                                showAlert({
+                                    title: 'テスト',
+                                    message: 'カスタムアラートは正常に動作しています！',
+                                });
+                            }}
+                        >
+                            <Text style={styles.logoutButtonText}>カスタムAlert テスト</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.logoutButton}
+                            onPress={handleLogout}
+                            disabled={isLoading}
+                        >
+                            <Text style={styles.logoutButtonText}>
+                                {isLoading ? 'ログアウト中...' : 'ログアウト'}
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.forceLogoutButton}
+                            onPress={handleForceLogout}
+                            disabled={isLoading}
+                        >
+                            <Text style={styles.forceLogoutButtonText}>
+                                強制ログアウト（デバッグ用）
+                            </Text>
+                        </TouchableOpacity>
                     </View>
 
-                    <View style={styles.infoItem}>
-                        <Text style={styles.infoLabel}>ユーザーID</Text>
-                        <Text style={styles.infoValue}>{user.userId}</Text>
-                    </View>
+                    {/* アプリ情報 */}
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>アプリ情報</Text>
 
-                    <View style={styles.infoItem}>
-                        <Text style={styles.infoLabel}>権限</Text>
-                        <Text style={styles.infoValue}>
-                            {user.role === 'admin' ? '管理者' : '一般ユーザー'}
-                        </Text>
+                        <View style={styles.infoItem}>
+                            <Text style={styles.infoLabel}>アプリ名</Text>
+                            <Text style={styles.infoValue}>Janlog</Text>
+                        </View>
+
+                        <View style={styles.infoItem}>
+                            <Text style={styles.infoLabel}>バージョン</Text>
+                            <Text style={styles.infoValue}>1.0.0</Text>
+                        </View>
                     </View>
                 </View>
-
-                {/* アクション */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>アカウント</Text>
-
-                    <TouchableOpacity
-                        style={styles.logoutButton}
-                        onPress={handleLogout}
-                        disabled={isLoading}
-                    >
-                        <Text style={styles.logoutButtonText}>
-                            {isLoading ? 'ログアウト中...' : 'ログアウト'}
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={styles.forceLogoutButton}
-                        onPress={handleForceLogout}
-                        disabled={isLoading}
-                    >
-                        <Text style={styles.forceLogoutButtonText}>
-                            強制ログアウト（デバッグ用）
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-
-                {/* アプリ情報 */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>アプリ情報</Text>
-
-                    <View style={styles.infoItem}>
-                        <Text style={styles.infoLabel}>アプリ名</Text>
-                        <Text style={styles.infoValue}>Janlog</Text>
-                    </View>
-
-                    <View style={styles.infoItem}>
-                        <Text style={styles.infoLabel}>バージョン</Text>
-                        <Text style={styles.infoValue}>1.0.0</Text>
-                    </View>
-                </View>
-            </View>
-        </ScrollView>
+            </ScrollView>
+            <AlertComponent />
+        </>
     );
 }
 

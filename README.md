@@ -39,6 +39,15 @@ Janlogは、フリー雀荘やセット麻雀の成績を個人用に記録・�
 - **[shared/](shared/README.md)** - 共通型定義とユーティリティライブラリ
 - **[spec/](spec/)** - OpenAPI仕様書とアーキテクチャドキュメント
 
+## 開発ガイドライン
+
+### UI/UX規約
+
+このプロジェクトでは、一貫したユーザー体験のため以下の規約を設けています：
+
+- **Alert.alert禁止**: React Native標準の`Alert.alert`は使用せず、カスタムアラートコンポーネントを使用
+- **詳細**: [frontend/docs/UI_GUIDELINES.md](frontend/docs/UI_GUIDELINES.md) を参照
+
 ## 開発環境セットアップ
 
 ### 前提条件

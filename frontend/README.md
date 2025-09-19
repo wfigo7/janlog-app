@@ -110,9 +110,53 @@ npx expo run:ios       # iOS
 
 環境変数は `app.config.js` で管理されています。
 
+## 開発ガイドライン
+
+### UI/UXガイドライン
+
+**重要**: このプロジェクトでは、React Native標準の`Alert.alert`は使用しません。
+
+```typescript
+// ❌ 使用禁止
+import { Alert } from 'react-native';
+Alert.alert('タイトル', 'メッセージ');
+
+// ✅ 推奨
+import { useCustomAlert } from '../hooks/useCustomAlert';
+
+function MyComponent() {
+  const { showAlert, AlertComponent } = useCustomAlert();
+  
+  const handleAction = () => {
+    showAlert({
+      title: 'タイトル',
+      message: 'メッセージ',
+    });
+  };
+
+  return (
+    <View>
+      {/* コンポーネント内容 */}
+      <AlertComponent />
+    </View>
+  );
+}
+```
+
+詳細は [`docs/UI_GUIDELINES.md`](./docs/UI_GUIDELINES.md) を参照してください。
+
+### コーディング規約
+
+- TypeScriptの型定義を必須とする
+- ESLintルールに従う
+- コンポーネントは関数コンポーネントを使用
+- カスタムフックでロジックを分離
+- テストコードを併せて作成
+
 ## 関連ドキュメント
 
+- [UI/UXガイドライン](./docs/UI_GUIDELINES.md)
 - [Expo Documentation](https://docs.expo.dev/)
 - [Expo Router Documentation](https://docs.expo.dev/router/introduction/)
 - [React Native Documentation](https://reactnative.dev/docs/getting-started)
-- [AWS Amplify for React Native](https://docs.amplify.aws/react-native/)
+- [AWS SDK for JavaScript v3](https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/)

@@ -16,9 +16,11 @@ import {
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { LoginCredentials } from '../../types/auth';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
 
 export function LoginScreen() {
   const { login, isLoading, error, clearError } = useAuth();
+  const { showAlert, AlertComponent } = useCustomAlert();
   const [credentials, setCredentials] = useState<LoginCredentials>({
     email: '',
     password: '',
@@ -34,12 +36,18 @@ export function LoginScreen() {
     
     // バリデーション
     if (!credentials.email.trim()) {
-      Alert.alert('エラー', 'メールアドレスを入力してください');
+      showAlert({
+        title: 'エラー',
+        message: 'メールアドレスを入力してください',
+      });
       return;
     }
 
     if (!credentials.password.trim()) {
-      Alert.alert('エラー', 'パスワードを入力してください');
+      showAlert({
+        title: 'エラー',
+        message: 'パスワードを入力してください',
+      });
       return;
     }
 
@@ -161,6 +169,7 @@ export function LoginScreen() {
           </View>
         </View>
       </ScrollView>
+      <AlertComponent />
     </KeyboardAvoidingView>
   );
 }
