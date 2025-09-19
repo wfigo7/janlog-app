@@ -82,6 +82,7 @@ src/
 │   │   ├── MatchRegistrationScreen.tsx
 │   │   ├── EntryMethodSelector.tsx
 │   │   ├── RuleSelector.tsx
+│   │   ├── MatchDatePicker.tsx
 │   │   └── PointCalculationDisplay.tsx
 │   ├── admin/
 │   │   ├── RuleManagementScreen.tsx
@@ -242,7 +243,7 @@ PK: USER#{userId}
 SK: MATCH#{matchId}
 Attributes:
 - entityType: "MATCH"
-- date (ISO datetime)
+- date (ISO datetime) # 実際の対局日（ユーザー選択日付+00:00:00時刻、必須）
 - gameMode (three | four)
 - entryMethod (rank_plus_points | rank_plus_raw | provisional_rank_only)
 - rulesetId (ルールセットID)
@@ -252,11 +253,19 @@ Attributes:
 - chipCount (integer, nullable)
 - venueId (string, nullable)
 - memo (string, nullable)
-- createdAt (ISO datetime)
-- updatedAt (ISO datetime)
+- createdAt (ISO datetime) # データ作成日時（システム自動設定）
+- updatedAt (ISO datetime) # データ更新日時（システム自動設定）
 ```
 
 #### 入力バリデーションルール
+
+**対局日（date）:**
+- 形式: ISO 8601形式（例: 2024-03-15T00:00:00+09:00）
+- 範囲: 過去5年以内〜現在日付まで
+- 必須項目
+- 未来の日付は選択不可
+- 5年以上前の日付は選択不可
+- 時刻は自動で00:00:00に設定
 
 **順位（rank）:**
 - 範囲: 1〜3（3人麻雀）、1〜4（4人麻雀）
@@ -537,6 +546,9 @@ interface StatsSummary {
    - 422 Unprocessable Entity: ビジネスルール違反
 
 **具体的なバリデーションエラー:**
+- 対局日エラー: 「対局日を選択してください」
+- 未来日エラー: 「未来の日付は選択できません」
+- 過去日エラー: 「5年以上前の日付は選択できません」
 - 順位エラー: 「1〜3位で入力してください」（3人麻雀の場合）
 - 素点エラー: 「6桁までの数値を入力してください（下2桁は00）」
 - 最終ポイントエラー: 「3桁までの数値を入力してください」
@@ -603,6 +615,13 @@ interface ErrorResponse {
 ## ユーザーエクスペリエンス（UX）設計
 
 ### 対局登録画面のUX
+
+#### 対局日選択
+- デフォルトで現在日付を設定
+- タップで日付選択ピッカーを表示
+- 日付のみ選択（時刻は自動で00:00:00に設定）
+- 未来日付や5年以上前の日付は選択不可
+- 選択された日付を分かりやすい形式で表示（例：2024年3月15日）
 
 #### 入力方式選択
 - 3つの入力方式を明確に区別
