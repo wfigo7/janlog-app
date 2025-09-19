@@ -3,6 +3,7 @@
  */
 
 import { ApiError, ApiClientConfig } from '../types/api';
+import { authService } from '../services/authService';
 
 /**
  * 共通APIクライアント
@@ -29,18 +30,31 @@ export class ApiClient {
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
     try {
+      // 認証トークンを取得してヘッダーに追加
+      const accessToken = await authService.getAccessToken();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      };
+
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+
       const response = await fetch(url, {
         ...options,
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
+        headers,
         signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
 
       if (!response.ok) {
+        // 401エラーの場合は認証エラーとして処理
+        if (response.status === 401) {
+          throw new Error('認証が必要です。再度ログインしてください。');
+        }
+
         const errorData: ApiError = await response.json().catch(() => ({}));
         throw new Error(errorData.detail || errorData.message || `HTTP error! status: ${response.status}`);
       }
