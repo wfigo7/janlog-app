@@ -5,6 +5,8 @@ module.exports = function (api) {
       'babel-preset-expo',
       '@babel/preset-typescript'
     ],
-    plugins: []
+    plugins: [
+      '@babel/plugin-transform-class-static-block'
+    ]
   };
 };

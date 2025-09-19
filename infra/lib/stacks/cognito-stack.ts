@@ -33,6 +33,14 @@ export class CognitoStack extends cdk.Stack {
       accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
       // メール設定（デフォルトのCognito Emailを使用）
       email: cognito.UserPoolEmail.withCognito(),
+      // カスタム属性
+      customAttributes: {
+        role: new cognito.StringAttribute({
+          minLen: 1,
+          maxLen: 20,
+          mutable: true,
+        }),
+      },
       // 招待メッセージのカスタマイズ
       userInvitation: {
         emailSubject: 'Janlogアプリへの招待',
@@ -51,8 +59,8 @@ Janlogアプリ
         `.trim(),
       },
       // 削除保護（本番環境では保持）
-      removalPolicy: environment === 'production' 
-        ? cdk.RemovalPolicy.RETAIN 
+      removalPolicy: environment === 'production'
+        ? cdk.RemovalPolicy.RETAIN
         : cdk.RemovalPolicy.DESTROY,
     });
 
