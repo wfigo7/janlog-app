@@ -174,6 +174,7 @@ class RulesetService:
             "uma": request.uma,
             "umaMatrix": request.umaMatrix,
             "oka": request.oka,
+            "useChips": request.useChips,
             "memo": request.memo,
             "basicRules": request.basicRules,
             "gameplayRules": request.gameplayRules,
@@ -302,6 +303,7 @@ class RulesetService:
                 useFloatingUma=False,
                 uma=template["uma"],
                 oka=template["oka"],
+                useChips=template.get("useChips", False),
                 memo=template.get("description")
             )
             

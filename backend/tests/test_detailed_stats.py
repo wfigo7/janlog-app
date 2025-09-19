@@ -9,7 +9,8 @@ from app.models.stats import StatsSummary, RankDistribution
 class TestDetailedStats:
     """詳細統計のテスト"""
 
-    def test_calculate_stats_with_various_ranks(self):
+    @pytest.mark.asyncio
+    async def test_calculate_stats_with_various_ranks(self):
         """様々な順位データでの統計計算テスト"""
         stats_service = StatsService()
         
@@ -27,7 +28,7 @@ class TestDetailedStats:
             {"rank": 3, "finalPoints": -25.0, "chipCount": 0},
         ]
         
-        result = stats_service._calculate_stats_from_matches(matches, "four")
+        result = await stats_service._calculate_stats_from_matches(matches, "four", "test-user")
         
         # 基本統計の確認
         assert result.count == 10
@@ -55,7 +56,8 @@ class TestDetailedStats:
         assert abs(result.maxScore - 50.0) < 0.01
         assert abs(result.minScore - (-45.0)) < 0.01
 
-    def test_calculate_stats_three_player(self):
+    @pytest.mark.asyncio
+    async def test_calculate_stats_three_player(self):
         """3人麻雀での統計計算テスト"""
         stats_service = StatsService()
         
@@ -69,7 +71,7 @@ class TestDetailedStats:
             {"rank": 3, "finalPoints": -35.0, "chipCount": 0},
         ]
         
-        result = stats_service._calculate_stats_from_matches(matches, "three")
+        result = await stats_service._calculate_stats_from_matches(matches, "three", "test-user")
         
         # 基本統計の確認
         assert result.count == 6
@@ -85,7 +87,8 @@ class TestDetailedStats:
         assert result.lastRate == result.thirdRate
         assert abs(result.lastRate - 33.33333333333333) < 0.01  # 2/6 * 100 ≈ 33.33%
 
-    def test_consecutive_records(self):
+    @pytest.mark.asyncio
+    async def test_consecutive_records(self):
         """連続記録の計算テスト"""
         stats_service = StatsService()
         
@@ -100,18 +103,19 @@ class TestDetailedStats:
             {"rank": 4, "finalPoints": -40.0, "chipCount": 0},
         ]
         
-        result = stats_service._calculate_stats_from_matches(matches, "four")
+        result = await stats_service._calculate_stats_from_matches(matches, "four", "test-user")
         
         # 連続1位は3回
         assert result.maxConsecutiveFirst == 3
         # 連続ラス（4位）は2回
         assert result.maxConsecutiveLast == 2
 
-    def test_empty_matches(self):
+    @pytest.mark.asyncio
+    async def test_empty_matches(self):
         """空のデータでの統計計算テスト"""
         stats_service = StatsService()
         
-        result = stats_service._calculate_stats_from_matches([], "four")
+        result = await stats_service._calculate_stats_from_matches([], "four", "test-user")
         
         # 空の統計データが返される
         assert result.count == 0

@@ -167,6 +167,36 @@ class DynamoDBClient:
             logger.error(f"DynamoDB delete_item error: {e}")
             return False
     
+    async def scan_items(
+        self,
+        table_name: str,
+        filter_expression: Optional[str] = None,
+        expression_attribute_values: Optional[Dict[str, Any]] = None,
+        expression_attribute_names: Optional[Dict[str, str]] = None,
+        limit: Optional[int] = None
+    ) -> List[Dict[str, Any]]:
+        """テーブル全体をスキャン"""
+        try:
+            scan_params = {}
+            
+            if filter_expression:
+                scan_params['FilterExpression'] = filter_expression
+            
+            if expression_attribute_values:
+                scan_params['ExpressionAttributeValues'] = expression_attribute_values
+            
+            if expression_attribute_names:
+                scan_params['ExpressionAttributeNames'] = expression_attribute_names
+            
+            if limit:
+                scan_params['Limit'] = limit
+            
+            response = self.table.scan(**scan_params)
+            return response.get('Items', [])
+        except ClientError as e:
+            logger.error(f"DynamoDB scan error: {e}")
+            return []
+    
     async def health_check(self) -> bool:
         """DynamoDBの接続確認"""
         try:

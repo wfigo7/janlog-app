@@ -12,6 +12,7 @@ export interface Ruleset {
   uma: number[];
   umaMatrix?: Record<string, number[]>;
   oka: number;
+  useChips: boolean;
   memo?: string;
   basicRules?: Record<string, any>;
   gameplayRules?: Record<string, any>;

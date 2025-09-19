@@ -23,6 +23,9 @@ class MatchService:
         if match_request.entryMethod == "provisional_rank_only":
             match_request = await self._calculate_provisional_score(match_request, user_id)
         
+        # チップなしルールの場合はchipCountをnullに設定
+        match_request = await self._adjust_chip_count_by_ruleset(match_request, user_id)
+        
         # リクエストから対局データを作成
         match = Match.from_request(match_request, user_id)
         
@@ -55,6 +58,25 @@ class MatchService:
         # リクエストを更新
         match_request.finalPoints = result["finalPoints"]
         match_request.rawScore = result["calculation"]["provisionalRawScore"]
+        
+        return match_request
+
+    async def _adjust_chip_count_by_ruleset(self, match_request: MatchRequest, user_id: str) -> MatchRequest:
+        """ルールセットの設定に基づいてchipCountを調整"""
+        if match_request.rulesetId:
+            try:
+                from app.services.ruleset_service import get_ruleset_service
+                
+                ruleset_service = get_ruleset_service()
+                ruleset = await ruleset_service.get_ruleset(match_request.rulesetId, user_id)
+                
+                # チップなしルールの場合はchipCountをnullに設定
+                if ruleset and not getattr(ruleset, 'useChips', False):
+                    match_request.chipCount = None
+                    
+            except Exception:
+                # ルールセット取得に失敗した場合は元のリクエストをそのまま返す
+                pass
         
         return match_request
 
@@ -166,6 +188,9 @@ class MatchService:
             existing_match = await self.get_match_by_id(user_id, match_id)
             if not existing_match:
                 return None
+            
+            # チップなしルールの場合はchipCountをnullに設定
+            match_request = await self._adjust_chip_count_by_ruleset(match_request, user_id)
             
             # 新しいデータで更新
             updated_match = Match.from_request(match_request, user_id)

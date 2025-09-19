@@ -76,7 +76,7 @@ class TestStatsService:
             assert result.avgRank == 2.0  # (1+2+4+1)/4 = 2.0
             assert result.totalPoints == 30.0  # 25.5+10.0-35.5+30.0 = 30.0
             assert result.avgScore == 7.5  # 30.0/4 = 7.5
-            assert result.chipTotal == 3  # 2+0+0+1 = 3
+            assert result.chipTotal == 3  # 2+0+0+1 = 3（chipCountがnullでない対局があるため表示）
             
             # 順位分布
             assert result.rankDistribution.first == 2  # 1位が2回
@@ -97,6 +97,36 @@ class TestStatsService:
             assert result.minScore == -35.5  # 最低得点
 
     @pytest.mark.asyncio
+    async def test_calculate_stats_summary_no_chips(self, stats_service):
+        """チップなしルールの対局のみの場合のテスト"""
+        no_chip_matches = [
+            {
+                "matchId": "match1",
+                "date": "2024-01-01T10:00:00Z",
+                "gameMode": "four",
+                "rank": 1,
+                "finalPoints": 25.5,
+                "chipCount": None,  # チップなしルール
+            },
+            {
+                "matchId": "match2", 
+                "date": "2024-01-02T10:00:00Z",
+                "gameMode": "four",
+                "rank": 2,
+                "finalPoints": 10.0,
+                "chipCount": None,  # チップなしルール
+            },
+        ]
+        
+        with patch.object(stats_service.match_service, 'get_matches', return_value=no_chip_matches):
+            result = await stats_service.calculate_stats_summary("test-user", game_mode="four")
+            
+            # チップなしルールの対局のみの場合、chipTotalはNoneになる
+            assert result.chipTotal is None
+            assert result.count == 2
+            assert result.totalPoints == 35.5
+
+    @pytest.mark.asyncio
     async def test_calculate_stats_three_player(self, stats_service):
         """3人麻雀での統計計算テスト"""
         three_player_matches = [
@@ -106,7 +136,7 @@ class TestStatsService:
                 "gameMode": "three",
                 "rank": 1,
                 "finalPoints": 20.0,
-                "chipCount": 0,
+                "chipCount": None,  # チップなしルール
             },
             {
                 "matchId": "match2",
@@ -114,7 +144,7 @@ class TestStatsService:
                 "gameMode": "three",
                 "rank": 3,
                 "finalPoints": -20.0,
-                "chipCount": 0,
+                "chipCount": None,  # チップなしルール
             },
         ]
         
@@ -124,6 +154,7 @@ class TestStatsService:
             # 3人麻雀では3位がラス
             assert result.lastRate == 50.0  # 1/2 * 100 = 50%
             assert result.rankDistribution.fourth == 0  # 4位は存在しない
+            assert result.chipTotal is None  # チップなしルールのみなのでNone
 
     def test_calculate_max_consecutive(self, stats_service):
         """連続記録計算のテスト"""

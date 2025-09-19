@@ -20,6 +20,7 @@ class TestRulesetModel:
             useFloatingUma=False,
             uma=[30, 10, -10, -30],
             oka=20,
+            useChips=False,
             memo="テスト用ルール"
         )
         
@@ -31,8 +32,28 @@ class TestRulesetModel:
         assert ruleset.basePoints == 30000
         assert ruleset.uma == [30, 10, -10, -30]
         assert ruleset.oka == 20
+        assert ruleset.useChips == False
         assert ruleset.isGlobal == False
         assert ruleset.createdBy == "test-user"
+    
+    def test_create_ruleset_with_chips(self):
+        """チップありルールセット作成のテスト"""
+        request = RulesetRequest(
+            ruleName="チップありルール",
+            gameMode="four",
+            startingPoints=25000,
+            basePoints=30000,
+            useFloatingUma=False,
+            uma=[30, 10, -10, -30],
+            oka=20,
+            useChips=True,
+            memo="チップありのテスト用ルール"
+        )
+        
+        ruleset = Ruleset.from_request(request, "test-user", False)
+        
+        assert ruleset.useChips == True
+        assert ruleset.ruleName == "チップありルール"
     
     def test_uma_validation_three_players(self):
         """3人麻雀のウマバリデーションテスト"""
@@ -43,7 +64,8 @@ class TestRulesetModel:
                 startingPoints=35000,
                 basePoints=40000,
                 uma=[20, 0, -10, -10],  # 4要素（エラー）
-                oka=15
+                oka=15,
+                useChips=False
             )
     
     def test_uma_validation_four_players(self):
@@ -55,7 +77,8 @@ class TestRulesetModel:
                 startingPoints=25000,
                 basePoints=30000,
                 uma=[30, 10, -40],  # 3要素（エラー）
-                oka=20
+                oka=20,
+                useChips=False
             )
     
     def test_uma_sum_validation(self):
@@ -67,7 +90,8 @@ class TestRulesetModel:
                 startingPoints=25000,
                 basePoints=30000,
                 uma=[30, 10, -10, -20],  # 合計が10（エラー）
-                oka=20
+                oka=20,
+                useChips=False
             )
     
     def test_base_points_validation(self):
@@ -79,7 +103,8 @@ class TestRulesetModel:
                 startingPoints=30000,
                 basePoints=25000,  # 開始点より小さい（エラー）
                 uma=[30, 10, -10, -30],
-                oka=20
+                oka=20,
+                useChips=False
             )
 
 
@@ -97,6 +122,7 @@ class TestPointCalculator:
             basePoints=30000,
             uma=[30, 10, -10, -30],
             oka=20,
+            useChips=False,
             createdBy="test-user"
         )
         
@@ -134,6 +160,7 @@ class TestPointCalculator:
             basePoints=40000,
             uma=[20, 0, -20],
             oka=15,
+            useChips=False,
             createdBy="test-user"
         )
         
