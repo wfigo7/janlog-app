@@ -1,0 +1,52 @@
+{
+  "mcpServers": {
+    "awslabs.aws-documentation-mcp-server": {
+      "command": "uvx",
+      "args": [
+        "--native-tls",
+        "awslabs.aws-documentation-mcp-server@latest"
+      ],
+      "env": {
+        // ZScaler環境化で有効化する
+        // "REQUESTS_CA_BUNDLE": "/usr/local/share/ca-certificates/zscaler.crt",
+        // "SSL_CERT_FILE": "/usr/local/share/ca-certificates/zscaler.crt",
+        "AWS_DOCUMENTATION_PARTITION": "aws"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "search_documentation",
+        "read_documentation"
+      ]
+    },
+    "expo-docs-mcp": {
+      "command": "npx",
+      "args": [
+        "expo-docs-mcp"
+      ],
+      "env": {
+        // ZScaler環境化で有効化する
+        // "NODE_EXTRA_CA_CERTS": "/usr/local/share/ca-certificates/zscaler.crt",
+        "SSL_CERT_FILE": "/usr/local/share/ca-certificates/zscaler.crt"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "search_expo_docs",
+        "get_expo_doc_content",
+        "get_expo_quick_start"
+      ]
+    },
+    "awslabs.cdk-mcp-server": {
+      "command": "uvx",
+      "args": [
+        "--native-tls",
+        "awslabs.cdk-mcp-server@latest"
+      ],
+      "env": {
+        // ZScaler環境化で有効化する
+        // "REQUESTS_CA_BUNDLE": "/usr/local/share/ca-certificates/zscaler.crt",
+        // "SSL_CERT_FILE": "/usr/local/share/ca-certificates/zscaler.crt",
+        "FASTMCP_LOG_LEVEL": "ERROR"
+      }
+    }
+  }
+}
