@@ -342,7 +342,7 @@ components:
         topRate: { type: number }
         lastRate: { type: number }
         totalPoints: { type: number }
-        chipTotal: { type: integer }
+        chipTotal: { type: integer, nullable: true, description: "チップありルールでの対局がある場合のみ表示" }
 
     Ruleset:
       type: object
@@ -355,6 +355,7 @@ components:
           basePoints,
           uma,
           oka,
+          useChips,
           isGlobal,
           createdBy,
         ]
@@ -387,6 +388,12 @@ components:
           {
             type: integer,
             description: "オカポイント（整数、1位が総取り、通常+20 or +15）",
+          }
+        useChips:
+          {
+            type: boolean,
+            default: false,
+            description: "チップを使用するかどうか（true=チップあり、false=チップなし）",
           }
 
         # 階層化されたルール（将来拡張用）
@@ -425,7 +432,7 @@ components:
 
     RulesetInput:
       type: object
-      required: [ruleName, gameMode, startingPoints, basePoints, uma, oka]
+      required: [ruleName, gameMode, startingPoints, basePoints, uma, oka, useChips]
       properties:
         ruleName: { type: string }
         gameMode: { type: string, enum: [three, four] }
@@ -442,6 +449,7 @@ components:
             type: array
             items: { type: integer }
         oka: { type: integer }
+        useChips: { type: boolean, default: false }
         basicRules:
           type: object
           nullable: true
