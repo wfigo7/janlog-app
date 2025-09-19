@@ -35,3 +35,8 @@ docker/dynamodb/*.db
 
 # direnv
 .envrc
+
+# MCP 設定ファイルはローカルで env を追加して使うため ignore
+# 新しいサーバを追加するときは一時的に ignore を外して commit
+mcp.json
+
