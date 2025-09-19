@@ -51,6 +51,12 @@ function Run-FrontendTests {
             npm install
         }
         
+        Write-Host "TypeScript型チェックを実行中..." -ForegroundColor Yellow
+        npm run type-check
+        
+        Write-Host "ESLintを実行中..." -ForegroundColor Yellow
+        npm run lint
+        
         Write-Host "Jestテストを実行中..." -ForegroundColor Yellow
         npm test
         

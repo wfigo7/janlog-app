@@ -53,8 +53,26 @@ run_frontend_tests() {
         npm install
     fi
     
+    echo -e "${YELLOW}TypeScript型チェックを実行中...${NC}"
+    if ! npm run type-check; then
+        echo -e "${RED}TypeScript型チェックエラーが発生しました${NC}"
+        cd ..
+        return 1
+    fi
+    
+    echo -e "${YELLOW}ESLintを実行中...${NC}"
+    if ! npm run lint; then
+        echo -e "${RED}ESLintエラーが発生しました${NC}"
+        cd ..
+        return 1
+    fi
+    
     echo -e "${YELLOW}Jestテストを実行中...${NC}"
-    npm test
+    if ! npm test; then
+        echo -e "${RED}Jestテストが失敗しました${NC}"
+        cd ..
+        return 1
+    fi
     
     cd ..
     echo -e "${GREEN}✓ フロントエンドテスト完了${NC}"
@@ -105,10 +123,28 @@ run_infra_tests() {
         npm install
     fi
     
+    echo -e "${YELLOW}TypeScript型チェックを実行中...${NC}"
+    if ! npm run type-check; then
+        echo -e "${RED}TypeScript型チェックエラーが発生しました${NC}"
+        cd ..
+        return 1
+    fi
+    
+    echo -e "${YELLOW}ESLintを実行中...${NC}"
+    if ! npm run lint; then
+        echo -e "${RED}ESLintエラーが発生しました${NC}"
+        cd ..
+        return 1
+    fi
+    
     # CDKのテストがある場合
     if [ -f "package.json" ] && grep -q "test" package.json; then
         echo -e "${YELLOW}CDKテストを実行中...${NC}"
-        npm test
+        if ! npm test; then
+            echo -e "${RED}CDKテストが失敗しました${NC}"
+            cd ..
+            return 1
+        fi
     else
         echo -e "${YELLOW}CDK構文チェックを実行中...${NC}"
         # 各環境での構文チェック
