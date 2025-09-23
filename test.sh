@@ -94,8 +94,14 @@ run_backend_tests() {
         python -m venv venv
     fi
     
-    # 仮想環境をアクティベート
-    source venv/bin/activate
+    # 仮想環境をアクティベート（クロスプラットフォーム対応）
+    if [[ "$OSTYPE" == "msys"* ]] || [[ "$OSTYPE" == "cygwin"* ]] || [[ "$OS" == "Windows_NT" ]] || [ -f "venv/Scripts/activate" ]; then
+        # Windows (Git Bash/MSYS2)
+        source venv/Scripts/activate
+    else
+        # Linux/Mac
+        source venv/bin/activate
+    fi
     
     echo -e "${YELLOW}依存関係をチェック中...${NC}"
     pip install -r requirements.txt > /dev/null 2>&1
@@ -138,7 +144,7 @@ run_infra_tests() {
     fi
     
     # CDKのテストがある場合
-    if [ -f "package.json" ] && grep -q "test" package.json; then
+    if [ -f "package.json" ] && grep -q '"test"' package.json; then
         echo -e "${YELLOW}CDKテストを実行中...${NC}"
         if ! npm test; then
             echo -e "${RED}CDKテストが失敗しました${NC}"
@@ -147,9 +153,12 @@ run_infra_tests() {
         fi
     else
         echo -e "${YELLOW}CDK構文チェックを実行中...${NC}"
-        # 各環境での構文チェック
-        npm run synth:local || echo -e "${YELLOW}local環境の構文チェックをスキップ${NC}"
-        npm run synth:dev || echo -e "${YELLOW}development環境の構文チェックをスキップ${NC}"
+        # デフォルト環境での構文チェック
+        if ! npm run synth; then
+            echo -e "${RED}CDK構文チェックが失敗しました${NC}"
+            cd ..
+            return 1
+        fi
     fi
     
     cd ..

@@ -4,10 +4,10 @@
 
 ## 使用方法
 
-### Linux/macOS (Bash)
+### Linux/macOS/Windows (Bash)
 
 ```bash
-# 実行権限を付与（初回のみ）
+# 実行権限を付与（初回のみ - Linux/macOSのみ）
 chmod +x test.sh
 
 # 全てのテストを実行
@@ -25,23 +25,7 @@ chmod +x test.sh
 ./test.sh --help
 ```
 
-### Windows (PowerShell)
-
-```powershell
-# 全てのテストを実行
-.\test.ps1
-
-# 特定のコンポーネントのテストのみ実行
-.\test.ps1 frontend
-.\test.ps1 backend
-.\test.ps1 infra
-
-# 複数のコンポーネントを指定
-.\test.ps1 frontend backend
-
-# ヘルプを表示
-.\test.ps1 -h
-```
+**注意**: Windows環境では Git Bash を使用してください。PowerShellでは動作しません。
 
 ## 各コンポーネントのテスト内容
 
@@ -50,7 +34,9 @@ chmod +x test.sh
 - **対象**: React Native/Expoコンポーネント、ユーティリティ関数
 - **実行内容**:
   - 依存関係の自動インストール（必要に応じて）
-  - Jestテストの実行
+  - TypeScript型チェック (`npm run type-check`)
+  - ESLint (`npm run lint`)
+  - Jestテストの実行 (`npm test`)
   - コンポーネントの単体テスト
   - ユーティリティ関数のテスト
 
@@ -69,17 +55,18 @@ chmod +x test.sh
 - **対象**: AWS CDK スタック、構成
 - **実行内容**:
   - 依存関係の自動インストール
-  - CDK構文チェック（各環境）
-  - CDKテスト（設定されている場合）
+  - TypeScript型チェック (`npm run type-check`)
+  - ESLint (`npm run lint`)
+  - CDKテスト (`npm test`) または CDK構文チェック (`npm run synth:local`, `npm run synth:dev`)
 
 ## 前提条件
 
 ### 共通
-- Node.js (v18以上推奨)
+- Node.js (v22以上推奨)
 - npm または yarn
 
 ### バックエンド
-- Python 3.8以上
+- Python 3.12以上
 - pip
 
 ### インフラ
@@ -91,11 +78,6 @@ chmod +x test.sh
 ### 権限エラー (Linux/macOS)
 ```bash
 chmod +x test.sh
-```
-
-### PowerShell実行ポリシーエラー (Windows)
-```powershell
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
 ### 依存関係エラー
@@ -118,11 +100,20 @@ cd infra && npm install
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate  # Linux/macOS
-# または
-venv\Scripts\activate     # Windows
+
+# Linux/macOS
+source venv/bin/activate
+
+# Windows (Git Bash)
+source venv/Scripts/activate
+
+# Windows (PowerShell)
+venv\Scripts\Activate.ps1
+
 pip install -r requirements.txt
 ```
+
+**注意**: test.shスクリプトは自動でクロスプラットフォーム対応の仮想環境アクティベートを行います。
 
 ## CI/CD での使用
 
@@ -146,4 +137,4 @@ GitHub Actions などの CI/CD パイプラインでも使用できます：
 - 追加のチェック処理
 - 通知機能の追加
 
-詳細は `test.sh` または `test.ps1` ファイルを参照してください。
+詳細は `test.sh`ファイルを参照してください。

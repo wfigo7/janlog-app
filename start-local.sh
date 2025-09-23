@@ -12,7 +12,16 @@ sleep 3
 # バックエンド起動（バックグラウンド）
 echo "🚀 バックエンドサーバーを起動中..."
 cd backend
-source venv/bin/activate
+
+# 仮想環境をアクティベート（クロスプラットフォーム対応）
+if [[ "$OSTYPE" == "msys"* ]] || [[ "$OSTYPE" == "cygwin"* ]] || [[ "$OS" == "Windows_NT" ]] || [ -f "venv/Scripts/activate" ]; then
+    # Windows (Git Bash/MSYS2)
+    source venv/Scripts/activate
+else
+    # Linux/Mac
+    source venv/bin/activate
+fi
+
 export JANLOG_ENV=local
 python run_local.py &
 BACKEND_PID=$!

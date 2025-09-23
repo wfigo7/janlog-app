@@ -24,21 +24,41 @@ Janlogのフロントエンドは、React Native + Expoを使用したクロス�
 
 ## 開発環境セットアップ
 
+> **Note**: 初回セットアップは[プロジェクトルートのREADME](../README.md)を参照してください。
+
 ### 前提条件
 
-- Node.js 18+
+- Node.js 22+
 - Expo CLI
 - iOS Simulator (macOS) または Android Emulator
+- バックエンドサーバーが起動済み
 
-### インストール
+### 個別開発時の起動手順
 
+#### 通常の手順
 ```bash
-# プロジェクトルートから
-npm install
+# 1. 環境変数の確認
+cat .env.local  # JWTトークンが設定されていることを確認
 
-# または直接このディレクトリで
-cd frontend
-npm install
+# 2. 開発サーバー起動
+npm run start:local  # ローカル環境用
+
+# 3. アプリの確認
+# - Web: http://localhost:8081
+# - モバイル: QRコードをスキャン
+```
+
+#### direnv使用時（推奨）
+```bash
+# 1. ディレクトリ移動（環境変数が自動読み込み）
+cd frontend  # → .env.localが自動読み込み
+
+# 2. 開発サーバー起動
+npm run start:local
+
+# 3. アプリの確認
+# - Web: http://localhost:8081
+# - モバイル: QRコードをスキャン
 ```
 
 ### 開発サーバー起動

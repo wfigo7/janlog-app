@@ -19,13 +19,15 @@ from app.services.ruleset_service import get_ruleset_service
 
 async def create_default_rulesets():
     """デフォルトのグローバルルールセットを作成"""
+    sys.stdout.reconfigure(encoding='utf-8')
+    print(sys.stdout.encoding)
     try:
         print("デフォルトのグローバルルールセットを作成中...")
         
         ruleset_service = get_ruleset_service()
         rulesets = await ruleset_service.create_default_global_rulesets()
         
-        print(f"✅ {len(rulesets)}個のデフォルトルールセットを作成しました:")
+        print(f"OK: {len(rulesets)}個のデフォルトルールセットを作成しました:")
         
         for ruleset in rulesets:
             print(f"  - {ruleset.ruleName} ({ruleset.gameMode}麻雀)")
@@ -33,10 +35,10 @@ async def create_default_rulesets():
             print(f"    ウマ: {ruleset.uma}, オカ: {ruleset.oka}")
             print()
         
-        print("✅ デフォルトルールセットの作成が完了しました")
+        print("OK: デフォルトルールセットの作成が完了しました")
         
     except Exception as e:
-        print(f"❌ エラーが発生しました: {e}")
+        print(f"ERROR: エラーが発生しました: {e}")
         sys.exit(1)
 
 

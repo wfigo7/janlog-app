@@ -2,40 +2,53 @@
 
 麻雀成績記録アプリのバックエンドAPI（FastAPI + DynamoDB）
 
-## ローカル開発環境セットアップ
+## 開発環境セットアップ
+
+> **Note**: 初回セットアップは[プロジェクトルートのREADME](../README.md)を参照してください。
 
 ### 前提条件
 
 - Python 3.12+
-- Docker & Docker Compose
-- AWS CLI（テーブル確認用、オプション）
+- Docker & Docker Compose（DynamoDB Local用）
+- 仮想環境が作成済み
 
-### 1. DynamoDB Localの起動
+### 個別開発時の起動手順
 
+#### 通常の手順
 ```bash
-# プロジェクトルートで実行
-docker-compose up -d
+# 1. 仮想環境の有効化
+source venv/bin/activate  # Linux/Mac
+# または
+.\venv\Scripts\Activate.ps1  # Windows
 
-# 起動確認
-docker-compose ps
+# 2. 環境変数の確認
+cat .env.local  # JWTトークンが設定されていることを確認
+
+# 3. DynamoDB Localの起動（プロジェクトルートで）
+cd .. && docker-compose up -d dynamodb-local
+
+# 4. テーブル作成（初回のみ）
+python scripts/create_local_tables.py --with-sample-data
+
+# 5. サーバー起動
+python run_local.py
 ```
 
-### 2. Python環境のセットアップ
-
+#### direnv使用時（推奨）
 ```bash
-cd backend
+# 1. ディレクトリ移動（環境変数が自動読み込み）
+cd backend  # → .env.localが自動読み込み
 
-# 仮想環境作成（初回のみ）
-python3 -m venv venv
+# 2. 仮想環境の有効化（手動）
+source venv/Scripts/activate  # Windows
+# または
+source venv/bin/activate      # Linux/Mac
 
-# 仮想環境有効化
-source venv/bin/activate
-
-# 依存関係インストール
-pip install -r requirements.txt
+# 3. 以降は通常と同じ
+python run_local.py
 ```
 
-### 3. DynamoDBテーブル作成
+### 4. DynamoDBテーブル作成
 
 ```bash
 # テーブル作成（サンプルデータ付き）

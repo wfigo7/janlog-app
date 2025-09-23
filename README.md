@@ -52,49 +52,97 @@ Janlogは、フリー雀荘やセット麻雀の成績を個人用に記録・�
 
 ### 前提条件
 
-- Node.js 18+
-- Python 3.11+
+- Node.js 22+
+- Python 3.12+
 - AWS CLI
 - Expo CLI
+- Docker & Docker Compose
+- git
 
-### インストール
+### 推奨ツール
+
+- **direnv** (オプション) - 自動環境変数管理
+  - ディレクトリ移動時に自動で環境変数を読み込み
+  - インストール方法:
+    - Windows: `choco install direnv`
+    - Mac: `brew install direnv`
+    - Linux/手動: `curl -sfL https://direnv.net/install.sh | bash`
+  - 設定: `echo 'eval "$(direnv hook bash)"' >> ~/.bashrc`
+
+### クイックスタート
 
 ```bash
-# Node.js依存関係のインストール（frontend, infra, shared）
-npm install
-npm install --workspaces
+# 1. 依存関係のインストール
+make setup  # または以下を個別実行
 
-# Python依存関係のインストール（backend）
+# Frontend
+cd frontend && npm install && cp .env.sample .env.local
+
+# Backend  
+cd backend && python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt && cp .env.sample .env.local
+
+# Infrastructure
+cd infra && npm install
+
+# 2. ローカル開発環境の起動
+make start-local  # または以下を個別実行
+docker-compose up -d  # DynamoDB Local
+cd backend && python scripts/generate_mock_jwt.py  # JWT生成
+# 生成されたJWTを .env.local に設定
+cd backend && python run_local.py  # バックエンド起動
+cd frontend && npm run start:local  # フロントエンド起動
+```
+
+### direnvを使用した開発（推奨）
+
+direnvをインストールしている場合、ディレクトリ移動時に自動で環境変数が読み込まれます：
+
+```bash
+# プロジェクトルートで
+direnv allow
+
+# 各ディレクトリで初回のみ許可
+cd backend && direnv allow
+cd frontend && direnv allow
+
+# 以降、ディレクトリ移動時に自動で環境変数が読み込まれます
+cd backend  # → 自動で.env.localが読み込まれる
+cd frontend # → 自動で.env.localが読み込まれる
+```
+
+**注意**: direnvはvenvの自動有効化は行いません。Pythonの仮想環境は手動で有効化してください：
+```bash
 cd backend
-pip install -r requirements.txt -r requirements-dev.txt
-cd ..
+source venv/Scripts/activate  # Windows
+# または
+source venv/bin/activate      # Linux/Mac
+```
 
-# フロントエンド開発サーバー起動
-npm run dev:frontend
+### 詳細なセットアップ手順
 
-# バックエンド開発サーバー起動
-npm run dev:backend
+各コンポーネントの詳細な設定については、以下を参照してください：
+
+- **バックエンド**: [backend/README.md](./backend/README.md)
+- **フロントエンド**: [frontend/README.md](./frontend/README.md)  
+- **インフラ**: [infra/README.md](./infra/README.md)
 ```
 
 ### テスト実行
 
 ```bash
 # 全体テスト実行
-npm test
+./test.sh 
 
 # 個別テスト実行
-npm run test:frontend
-npm run test:backend
-npm run test:infra
-npm run test:shared
+./test.sh frontend
+./test.sh backend
+./test.sh infra
 ```
 
 ### デプロイ
 
-```bash
-# インフラデプロイ
-npm run deploy:infra
-```
+未整備
 
 ## ライセンス
 

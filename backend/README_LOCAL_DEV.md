@@ -7,7 +7,7 @@
 ## 前提条件
 
 - Docker & Docker Compose
-- Python 3.9+
+- Python 3.12+
 - AWS CLI（DynamoDB Local操作用、オプション）
 
 ## クイックスタート

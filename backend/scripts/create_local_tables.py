@@ -192,6 +192,7 @@ def create_default_rulesets():
 
 def main():
     """メイン処理"""
+    print(sys.stdout.encoding)
     print("=== Janlog ローカル開発環境 DynamoDB セットアップ ===")
 
     # .env.localファイルを読み込み（backendディレクトリから実行される場合を考慮）

@@ -1,0 +1,7 @@
+# Janlog Project Root - Environment Variables Sample
+# このファイルをコピーして .envrc.local を作成してください
+# cp .envrc.sample .envrc.local
+
+# AWS設定（個人用プロファイル）
+export AWS_PROFILE=personal
+export AWS_DEFAULT_REGION=ap-northeast-1
