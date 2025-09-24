@@ -18,6 +18,7 @@ import { rulesetService } from '../../services/rulesetService';
 import { GameModeTab } from '../common/GameModeTab';
 import RuleSelector from './RuleSelector';
 import EntryMethodSelector from './EntryMethodSelector';
+import { MatchDatePicker } from './MatchDatePicker';
 
 const MatchRegistrationScreen: React.FC = () => {
   const scrollViewRef = useRef<ScrollView>(null);
@@ -26,6 +27,14 @@ const MatchRegistrationScreen: React.FC = () => {
   const [gameMode, setGameMode] = useState<GameMode>('four');
   const [selectedRuleset, setSelectedRuleset] = useState<Ruleset | null>(null);
   const [entryMethod, setEntryMethod] = useState<EntryMethod>('rank_plus_points');
+  const [matchDate, setMatchDate] = useState<string>(() => {
+    // デフォルトで現在日付を設定（ISO 8601形式、時刻00:00:00）
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = (today.getMonth() + 1).toString().padStart(2, '0');
+    const day = today.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}T00:00:00+09:00`;
+  });
   const [rank, setRank] = useState<string>('');
   const [finalPoints, setFinalPoints] = useState<string>('');
   const [rawScore, setRawScore] = useState<string>('');
@@ -45,6 +54,7 @@ const MatchRegistrationScreen: React.FC = () => {
   const [rawScoreError, setRawScoreError] = useState<string | null>(null);
   const [rankError, setRankError] = useState<string | null>(null);
   const [finalPointsError, setFinalPointsError] = useState<string | null>(null);
+  const [dateError, setDateError] = useState<string | null>(null);
 
 
   const maxRank = gameMode === 'four' ? 4 : 3;
@@ -97,6 +107,14 @@ const MatchRegistrationScreen: React.FC = () => {
     } else {
       setFinalPointsError(null);
     }
+  };
+
+  const handleMatchDateChange = (date: string) => {
+    setMatchDate(date);
+
+    // 対局日のバリデーション
+    const validation = validateMatchDate(date);
+    setDateError(validation.isValid ? null : validation.message || null);
   };
 
   const handleRulesetSelect = (ruleset: Ruleset) => {
@@ -176,6 +194,46 @@ const MatchRegistrationScreen: React.FC = () => {
 
     return { isValid: true };
   };
+
+  // 日付のバリデーション関数
+  const validateMatchDate = (dateString: string): { isValid: boolean; message?: string } => {
+    if (!dateString) {
+      return { isValid: false, message: '対局日を選択してください' };
+    }
+
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      now.setHours(23, 59, 59, 999); // 今日の終わりまで許可
+
+      // 未来の日付チェック
+      if (date > now) {
+        return { isValid: false, message: '未来の日付は選択できません' };
+      }
+
+      // 5年以上前の日付チェック
+      const fiveYearsAgo = new Date();
+      fiveYearsAgo.setFullYear(now.getFullYear() - 5);
+      if (date < fiveYearsAgo) {
+        return { isValid: false, message: '5年以上前の日付は選択できません' };
+      }
+
+      return { isValid: true };
+    } catch (error) {
+      return { isValid: false, message: '正しい日付を選択してください' };
+    }
+  };
+
+  // 日付変更ハンドラー
+  const handleDateChange = (date: string) => {
+    setMatchDate(date);
+    
+    // 日付のバリデーション
+    const validation = validateMatchDate(date);
+    setDateError(validation.isValid ? null : validation.message || null);
+  };
+
+
 
   const calculatePointsAutomatically = async (
     ruleset: Ruleset,
@@ -511,6 +569,15 @@ const MatchRegistrationScreen: React.FC = () => {
   };
 
   const handleSubmit = async () => {
+    // 対局日のバリデーション
+    const dateValidation = validateMatchDate(matchDate);
+    if (!dateValidation.isValid) {
+      showNotificationMessage('入力エラーがあります', 'error');
+      // 対局日は画面上部なので、トップにスクロール
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+      return;
+    }
+
     // バリデーション
     if (!selectedRuleset) {
       showNotificationMessage('ルールを選択してください', 'error');
@@ -561,6 +628,7 @@ const MatchRegistrationScreen: React.FC = () => {
     setLoading(true);
     try {
       const matchData: MatchInput = {
+        date: matchDate,
         gameMode,
         entryMethod,
         rulesetId: selectedRuleset.rulesetId,
@@ -576,6 +644,13 @@ const MatchRegistrationScreen: React.FC = () => {
 
       if (result.success) {
         // フォームをリセット
+        // 対局日は現在日付にリセット
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = (today.getMonth() + 1).toString().padStart(2, '0');
+        const day = today.getDate().toString().padStart(2, '0');
+        setMatchDate(`${year}-${month}-${day}T00:00:00+09:00`);
+        
         setRank('');
         setFinalPoints('');
         setRawScore('');
@@ -587,6 +662,7 @@ const MatchRegistrationScreen: React.FC = () => {
         setProvisionalPoints(null);
         setProvisionalDetails(null);
         setShowProvisionalCalculation(false);
+        setDateError(null);
         // ルールセットはリセットしない（同じルールで連続登録することが多いため）
 
         // 成功通知を表示
@@ -624,6 +700,16 @@ const MatchRegistrationScreen: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>ゲームモード</Text>
           <GameModeTab selectedMode={gameMode} onModeChange={handleGameModeChange} />
+        </View>
+
+        {/* 対局日選択 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>対局日</Text>
+          <MatchDatePicker
+            value={matchDate}
+            onChange={handleDateChange}
+            error={dateError}
+          />
         </View>
 
         {/* ルール選択 */}

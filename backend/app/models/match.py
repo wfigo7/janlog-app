@@ -28,11 +28,28 @@ class MatchRequest(BaseModel):
     @field_validator("date")
     @classmethod
     def validate_date(cls, v):
-        """日付のバリデーション"""
+        """日付のバリデーション（要件10.4, 10.5, 10.6対応）"""
+        if not v:
+            raise ValueError("対局日を選択してください")
+        
         try:
-            datetime.fromisoformat(v.replace("Z", "+00:00"))
+            # ISO 8601形式の日付をパース
+            date_obj = datetime.fromisoformat(v.replace("Z", "+00:00"))
         except ValueError:
             raise ValueError("日付はISO形式で入力してください")
+
+        # 現在日時を取得（今日の終わりまで許可）
+        now = datetime.now(date_obj.tzinfo)
+        today_end = now.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+        # 未来の日付チェック（要件10.4）
+        if date_obj > today_end:
+            raise ValueError("未来の日付は選択できません")
+
+        # 5年以上前の日付チェック（要件10.5）
+        five_years_ago = now.replace(year=now.year - 5)
+        if date_obj < five_years_ago:
+            raise ValueError("5年以上前の日付は選択できません")
 
         return v
 

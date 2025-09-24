@@ -60,18 +60,39 @@ jest.mock('../../../src/components/match/RuleSelector', () => {
   };
 });
 
+jest.mock('../../../src/components/match/MatchDatePicker', () => {
+  return {
+    MatchDatePicker: function MockMatchDatePicker({ value, onChange, error }: { value: string; onChange: (date: string) => void; error?: string | null }) {
+      const { TouchableOpacity, Text, View } = require('react-native');
+      return (
+        <View testID="mock-match-date-picker">
+          <TouchableOpacity
+            testID="mock-date-picker-button"
+            onPress={() => onChange('2024-03-15T00:00:00+09:00')}
+          >
+            <Text>対局日選択</Text>
+          </TouchableOpacity>
+          {error && <Text testID="date-error">{error}</Text>}
+        </View>
+      );
+    }
+  };
+});
+
 describe('MatchRegistrationScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it('基本的なレンダリングが正常に動作する', () => {
-    const { getByText } = render(<MatchRegistrationScreen />);
+    const { getByText, getByTestId } = render(<MatchRegistrationScreen />);
     
     // 基本的な要素が表示されることを確認
     expect(getByText('ゲームモード')).toBeTruthy();
     expect(getByText('4人麻雀')).toBeTruthy();
     expect(getByText('3人麻雀')).toBeTruthy();
+    expect(getByText('対局日')).toBeTruthy();
+    expect(getByTestId('mock-match-date-picker')).toBeTruthy();
     expect(getByText('入力方式')).toBeTruthy();
     expect(getByText('順位+最終スコア')).toBeTruthy();
     expect(getByText('順位+素点')).toBeTruthy();
@@ -279,5 +300,13 @@ describe('MatchRegistrationScreen', () => {
     
     // 計算結果がクリアされる
     expect(queryByText('仮計算結果')).toBeNull();
+  });
+
+  it('対局日選択機能が正常に動作する', () => {
+    const { getByText, getByTestId } = render(<MatchRegistrationScreen />);
+    
+    // 対局日セクションが表示される
+    expect(getByText('対局日')).toBeTruthy();
+    expect(getByTestId('mock-match-date-picker')).toBeTruthy();
   });
 });

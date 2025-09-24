@@ -19,6 +19,7 @@ export interface Match {
 }
 
 export interface MatchInput {
+  date: string; // ISO 8601形式の対局日（必須）
   gameMode: GameMode;
   entryMethod: EntryMethod;
   rulesetId: string;

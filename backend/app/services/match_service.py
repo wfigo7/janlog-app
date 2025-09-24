@@ -19,6 +19,9 @@ class MatchService:
 
     async def create_match(self, match_request: MatchRequest, user_id: str) -> Match:
         """対局を作成"""
+        # 日付の自動補完（要件10.7対応）
+        match_request = self._normalize_match_date(match_request)
+        
         # 仮スコア方式の場合は自動計算
         if match_request.entryMethod == "provisional_rank_only":
             match_request = await self._calculate_provisional_score(match_request, user_id)
@@ -36,6 +39,23 @@ class MatchService:
             return match
         except Exception as e:
             raise Exception(f"対局の作成に失敗しました: {str(e)}")
+
+    def _normalize_match_date(self, match_request: MatchRequest) -> MatchRequest:
+        """対局日の正規化（要件10.7: ISO 8601形式、時刻00:00:00自動補完）"""
+        if match_request.date:
+            try:
+                # 日付文字列をパース
+                date_obj = datetime.fromisoformat(match_request.date.replace("Z", "+00:00"))
+                
+                # 時刻を00:00:00に設定してISO 8601形式で再フォーマット
+                normalized_date = date_obj.replace(hour=0, minute=0, second=0, microsecond=0)
+                match_request.date = normalized_date.isoformat()
+                
+            except ValueError:
+                # パースに失敗した場合はそのまま（バリデーションでエラーになる）
+                pass
+        
+        return match_request
 
     async def _calculate_provisional_score(self, match_request: MatchRequest, user_id: str) -> MatchRequest:
         """仮スコア方式の場合の自動計算"""
@@ -188,6 +208,9 @@ class MatchService:
             existing_match = await self.get_match_by_id(user_id, match_id)
             if not existing_match:
                 return None
+            
+            # 日付の自動補完（要件10.7対応）
+            match_request = self._normalize_match_date(match_request)
             
             # チップなしルールの場合はchipCountをnullに設定
             match_request = await self._adjust_chip_count_by_ruleset(match_request, user_id)

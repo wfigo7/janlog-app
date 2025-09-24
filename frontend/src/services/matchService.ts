@@ -38,13 +38,8 @@ export class MatchService {
    */
   static async createMatch(matchInput: MatchInput): Promise<MatchCreateResponse> {
     try {
-      // 現在の日時をISO形式で設定
-      const matchData = {
-        ...matchInput,
-        date: new Date().toISOString(),
-      };
-
-      const result = await apiClient.post<MatchCreateResponse>('/matches', matchData);
+      // MatchInputにはすでにdateフィールドが含まれているのでそのまま送信
+      const result = await apiClient.post<MatchCreateResponse>('/matches', matchInput);
 
       return {
         success: true,
