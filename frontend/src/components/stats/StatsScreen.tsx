@@ -1,7 +1,7 @@
 /**
  * 統計画面（トップ画面）
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { StatsCard } from './StatsCard';
 import { GameModeTab } from '../common/GameModeTab';
 import { RankDistributionCard } from './RankDistributionCard';
@@ -80,6 +81,13 @@ export default function StatsScreen() {
   useEffect(() => {
     loadData();
   }, [selectedMode, dateRange]);
+
+  // 画面がフォーカスされた時にデータを再取得
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [selectedMode, dateRange])
+  );
 
   const onRefresh = () => {
     loadData(true);

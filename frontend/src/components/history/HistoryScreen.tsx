@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { Match } from '../../types/match';
 import { GameMode } from '../../types/common';
 import { GameModeTab } from '../common/GameModeTab';
@@ -65,6 +66,13 @@ const HistoryScreen: React.FC = () => {
   useEffect(() => {
     fetchMatches();
   }, [selectedMode]);
+
+  // 画面がフォーカスされた時にデータを再取得
+  useFocusEffect(
+    useCallback(() => {
+      fetchMatches();
+    }, [selectedMode])
+  );
 
   useEffect(() => {
     if (matches.length > 0) {

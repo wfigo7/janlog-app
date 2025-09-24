@@ -109,6 +109,7 @@ export class ApiClient {
    * DELETEリクエスト
    */
   async delete<T>(endpoint: string): Promise<T> {
+    console.log(`DELETE request to: ${this.baseUrl}${endpoint}`);
     return this.request<T>(endpoint, { method: 'DELETE' });
   }
 }

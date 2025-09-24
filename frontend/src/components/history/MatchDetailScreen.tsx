@@ -1,22 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { Match } from '../../types/match';
 import { GameMode } from '../../types/common';
 import { MatchService } from '../../services/matchService';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
 
 const MatchDetailScreen: React.FC = () => {
   const { matchId } = useLocalSearchParams();
   const matchIdString = Array.isArray(matchId) ? matchId[0] : matchId as string;
   const router = useRouter();
+  const { showAlert, AlertComponent } = useCustomAlert();
+
+
 
   const [match, setMatch] = useState<Match | null>(null);
   const [loading, setLoading] = useState(true);
@@ -26,6 +30,15 @@ const MatchDetailScreen: React.FC = () => {
       fetchMatchDetail();
     }
   }, [matchIdString]);
+
+  // 画面がフォーカスされた時にデータを再取得（編集後の更新を反映）
+  useFocusEffect(
+    useCallback(() => {
+      if (matchIdString) {
+        fetchMatchDetail();
+      }
+    }, [matchIdString])
+  );
 
   const fetchMatchDetail = async () => {
     if (!matchIdString) return;
@@ -41,23 +54,31 @@ const MatchDetailScreen: React.FC = () => {
       }
     } catch (error) {
       console.error('対局詳細取得エラー:', error);
-      Alert.alert('エラー', '対局詳細の取得に失敗しました');
-      router.back();
+      showAlert({
+        title: 'エラー',
+        message: '対局詳細の取得に失敗しました',
+        buttons: [
+          {
+            text: 'OK',
+            style: 'default',
+            onPress: () => router.back(),
+          },
+        ],
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const handleEdit = () => {
-    // TODO: 編集画面への遷移を実装
-    Alert.alert('編集機能', '編集機能は次のフェーズで実装予定です');
+    router.push(`/match/edit/${matchIdString}`);
   };
 
   const handleDelete = () => {
-    Alert.alert(
-      '対局を削除',
-      'この対局を削除しますか？この操作は取り消せません。',
-      [
+    showAlert({
+      title: '対局を削除',
+      message: 'この対局を削除しますか？この操作は取り消せません。',
+      buttons: [
         {
           text: 'キャンセル',
           style: 'cancel',
@@ -65,31 +86,52 @@ const MatchDetailScreen: React.FC = () => {
         {
           text: '削除',
           style: 'destructive',
-          onPress: confirmDelete,
+          onPress: () => {
+            confirmDelete();
+          },
         },
-      ]
-    );
+      ],
+    });
   };
 
   const confirmDelete = async () => {
-    if (!matchIdString) return;
+    if (!matchIdString) {
+      console.log('matchIdString is null or undefined');
+      return;
+    }
 
     try {
       const response = await MatchService.deleteMatch(matchIdString);
 
       if (response.success) {
-        Alert.alert('削除完了', '対局を削除しました', [
-          {
-            text: 'OK',
-            onPress: () => router.back(),
-          },
-        ]);
+        showAlert({
+          title: '削除完了',
+          message: '対局を削除しました',
+          buttons: [
+            {
+              text: 'OK',
+              style: 'default',
+              onPress: () => {
+                router.back();
+              },
+            },
+          ],
+        });
       } else {
         throw new Error(response.message || '削除に失敗しました');
       }
     } catch (error) {
       console.error('対局削除エラー:', error);
-      Alert.alert('エラー', '対局の削除に失敗しました');
+      showAlert({
+        title: 'エラー',
+        message: '対局の削除に失敗しました',
+        buttons: [
+          {
+            text: 'OK',
+            style: 'default',
+          },
+        ],
+      });
     }
   };
 
@@ -236,10 +278,11 @@ const MatchDetailScreen: React.FC = () => {
         <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
           <Text style={styles.editButtonText}>編集</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.deleteButton, styles.disabledButton]} disabled={true}>
-          <Text style={[styles.deleteButtonText, styles.disabledButtonText]}>削除（準備中）</Text>
+        <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+          <Text style={styles.deleteButtonText}>削除</Text>
         </TouchableOpacity>
       </View>
+      <AlertComponent />
     </ScrollView>
   );
 };

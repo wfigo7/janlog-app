@@ -66,6 +66,8 @@ const RuleSelector: React.FC<RuleSelectorProps> = ({
       if (ruleset) {
         setSelectedRuleset(ruleset);
       }
+    } else if (!selectedRulesetId) {
+      setSelectedRuleset(null);
     }
   }, [selectedRulesetId, rulesets]);
 
