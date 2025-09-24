@@ -3,5 +3,5 @@
 # cp .envrc.sample .envrc.local
 
 # AWS設定（個人用プロファイル）
-export AWS_PROFILE=personal
-export AWS_DEFAULT_REGION=ap-northeast-1
+AWS_PROFILE=personal
+AWS_DEFAULT_REGION=ap-northeast-1

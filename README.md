@@ -71,28 +71,28 @@ Janlogは、フリー雀荘やセット麻雀の成績を個人用に記録・�
 
 ### クイックスタート
 
+#### 詳細なセットアップ手順
+
+各コンポーネントの詳細な設定については、以下を参照してください：
+
+- **バックエンド**: [backend/README.md](./backend/README.md)
+- **フロントエンド**: [frontend/README.md](./frontend/README.md)  
+- **インフラ**: [infra/README.md](./infra/README.md)
+```
+
+
 ```bash
-# 1. 依存関係のインストール
-make setup  # または以下を個別実行
-
-# Frontend
-cd frontend && npm install && cp .env.sample .env.local
-
-# Backend  
-cd backend && python -m venv venv && source venv/bin/activate
-pip install -r requirements.txt && cp .env.sample .env.local
-
-# Infrastructure
-cd infra && npm install
+#1. 依存関係のインストール
+make setup # 未実装のため各コンポーネントの詳細なセットアップ手順を参照してください
 
 # 2. ローカル開発環境の起動
-make start-local  # または以下を個別実行
-docker-compose up -d  # DynamoDB Local
-cd backend && python scripts/generate_mock_jwt.py  # JWT生成
-# 生成されたJWTを .env.local に設定
-cd backend && python run_local.py  # バックエンド起動
-cd frontend && npm run start:local  # フロントエンド起動
+make start
+
+# 3. DB初期化
+make db-create-tables
 ```
+
+**注意**: 統合セットアップ機能は未実装です。詳細な手動セットアップ手順は各コンポーネントのREADME.mdを参照してください。
 
 ### direnvを使用した開発（推奨）
 
@@ -119,26 +119,22 @@ source venv/Scripts/activate  # Windows
 source venv/bin/activate      # Linux/Mac
 ```
 
-### 詳細なセットアップ手順
+## 開発コマンド
 
-各コンポーネントの詳細な設定については、以下を参照してください：
-
-- **バックエンド**: [backend/README.md](./backend/README.md)
-- **フロントエンド**: [frontend/README.md](./frontend/README.md)  
-- **インフラ**: [infra/README.md](./infra/README.md)
-```
-
-### テスト実行
+開発に必要な全てのコマンドはMakefileで統一されています。
 
 ```bash
-# 全体テスト実行
-./test.sh 
+# コマンド一覧を確認
+make help
 
-# 個別テスト実行
-./test.sh frontend
-./test.sh backend
-./test.sh infra
+# 開発環境起動
+make start
+
+# テスト実行
+make test
 ```
+
+**詳細な開発コマンドガイド**: [DEVELOPMENT.md](./DEVELOPMENT.md) を参照してください。
 
 ### デプロイ
 
