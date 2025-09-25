@@ -27,10 +27,22 @@ export const MatchDatePicker: React.FC<MatchDatePickerProps> = ({
 }) => {
   const [showPicker, setShowPicker] = useState(false);
 
+  // ISO日付文字列を安全にパースする関数
+  const parseISODate = (isoString: string): Date => {
+    // ISO文字列から年月日を抽出（タイムゾーンに依存しない）
+    const match = isoString.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+      const year = parseInt(match[1], 10);
+      const month = parseInt(match[2], 10) - 1; // Dateオブジェクトでは月は0ベース
+      const day = parseInt(match[3], 10);
+      return new Date(year, month, day);
+    }
+    return new Date();
+  };
 
   const [selectedDate, setSelectedDate] = useState(() => {
     // valueが空の場合は現在日付をデフォルトに設定
-    return value ? new Date(value) : new Date();
+    return value ? parseISODate(value) : new Date();
   });
 
   // 日付の制限を計算
@@ -107,7 +119,7 @@ export const MatchDatePicker: React.FC<MatchDatePickerProps> = ({
   const getDisplayDate = (): string => {
     if (value) {
       try {
-        const date = new Date(value);
+        const date = parseISODate(value);
         return formatDisplayDate(date);
       } catch (error) {
         console.error('日付パースエラー:', error);

@@ -24,7 +24,8 @@ describe('MatchDatePicker', () => {
     jest.clearAllMocks();
     // 日付を固定してテストの一貫性を保つ
     jest.useFakeTimers();
-    jest.setSystemTime(new Date('2024-03-15T12:00:00+09:00'));
+    // タイムゾーンに依存しない日付設定
+    jest.setSystemTime(new Date(2024, 2, 15, 12, 0, 0)); // 2024年3月15日 12:00:00
   });
 
   afterEach(() => {
