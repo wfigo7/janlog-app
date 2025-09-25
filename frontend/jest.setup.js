@@ -3,6 +3,9 @@
 // React Native Testing Libraryのクリーンアップ
 import '@testing-library/jest-native/extend-expect';
 
+// タイムゾーンを固定（CI環境での一貫性のため）
+process.env.TZ = 'Asia/Tokyo';
+
 // console.error を無効化（必要に応じて）
 global.console = {
   ...console,
