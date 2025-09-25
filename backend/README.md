@@ -25,7 +25,7 @@ source venv/bin/activate  # Linux/Mac
 cat .env.local  # JWTトークンが設定されていることを確認
 
 # 3. DynamoDB Localの起動（プロジェクトルートで）
-cd .. && docker-compose up -d dynamodb-local
+cd .. && docker compose up -d dynamodb-local
 
 # 4. テーブル作成（初回のみ）
 python scripts/create_local_tables.py --with-sample-data
@@ -137,10 +137,10 @@ JWT_SECRET_KEY=development-secret-key-for-local-testing
 
 ```bash
 # Docker Composeログ確認
-docker-compose logs dynamodb-local
+docker compose logs dynamodb-local
 
 # コンテナ再起動
-docker-compose restart dynamodb-local
+docker compose restart dynamodb-local
 ```
 
 ### テーブルが見つからない
@@ -156,4 +156,4 @@ python scripts/create_local_tables.py --with-sample-data
 - DynamoDB Local: 8000
 - FastAPI: 8080
 
-ポートが使用中の場合は、`docker-compose.yml` や `run_local.py` で変更してください。
+ポートが使用中の場合は、`compose.yaml` や `run_local.py` で変更してください。

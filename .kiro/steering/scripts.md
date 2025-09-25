@@ -19,10 +19,11 @@
 ### Makefile設計原則（実装済み）
 - **実用性重視**: 実際に使用されるコマンドのみ定義
 - **統一エントリーポイント**: 全ての開発コマンドは`make`経由でアクセス可能
-- **充実したヘルプ**: `make help`で全コマンドの説明を提供（絵文字付き）
+- **自動化されたヘルプ**: `make help`でコメントベースの自動ヘルプ生成（カテゴリ分け、絵文字付き）
 - **色分け表示**: 破壊的コマンドは赤文字で警告表示
 - **短縮形サポート**: 頻繁に使うコマンドの短縮形を提供（tf, tb, ti, sd, sb, sf）
 - **scriptsディレクトリ呼び出し**: 複雑な処理は`/scripts`配下のスクリプトに委譲
+- **シェル安全性**: SHELL, .SHELLFLAGS, .ONESHELLによる堅牢な実行環境
 
 ### スクリプト設計原則（実装済み）
 - **責務分離**: 開発用スクリプトとアプリ固有コード（backend/scripts）を分離
@@ -40,7 +41,7 @@ make start              # 個別ターミナル起動ガイド表示（推奨）
 make start-db      (sd) # DynamoDB Local起動
 make start-backend (sb) # バックエンドサーバー起動
 make start-frontend(sf) # フロントエンド起動
-make stop               # 全サービス停止
+make stop-db            # DynamoDB Local停止
 ```
 
 ### テスト実行
@@ -53,15 +54,22 @@ make test-infra    (ti) # インフラテストのみ
 
 ### データベース管理
 ```bash
-make db-start           # DynamoDB Local起動
-make db-stop            # DynamoDB Local停止
+make db-start           # DynamoDB Local起動（start-dbのエイリアス）
+make db-stop            # DynamoDB Local停止（stop-dbのエイリアス）
 make db-create-tables   # テーブル作成＆初期データセット登録
 make db-clean           # Docker環境クリーンアップ（破壊的）
 ```
 
-### 未実装機能（将来実装予定）
+### その他
 ```bash
 make setup              # 統合セットアップ（現在はREADME.md参照を案内）
+make check              # 開発環境確認
+make clean              # 生成物とキャッシュの削除（破壊的）
+make help               # コマンド一覧表示
+```
+
+### 未実装機能（将来実装予定）
+```bash
 make db-seed            # サンプルデータ投入
 make db-reset           # データリセット
 ```
@@ -104,7 +112,7 @@ make db-reset           # データリセット
 - **統一されたインターフェース**: 全てのコマンドが`make`経由
 
 ## 将来の拡張計画
-- **統合セットアップ**: `make setup`の実装
+- **統合セットアップ**: `make setup`の実装（現在はガイド表示のみ）
 - **データ管理**: `make db-seed`, `make db-reset`の実装
 - **デプロイ支援**: `make deploy-dev`, `make deploy-prod`
 - **開発環境診断**: `make doctor`（環境問題の自動診断）

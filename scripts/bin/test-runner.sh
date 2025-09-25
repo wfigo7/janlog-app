@@ -60,15 +60,42 @@ run_backend_tests() {
     cd backend
     
     # 仮想環境をアクティベート
-    activate_venv || return 1
+    if ! activate_venv; then
+        echo -e "${RED}❌ エラー: 仮想環境のアクティベートに失敗しました${NC}"
+        cd ..
+        return 1
+    fi
     
-    check_python_dependencies
+    if ! check_python_dependencies; then
+        echo -e "${RED}❌ エラー: Python依存関係の確認に失敗しました${NC}"
+        cd ..
+        return 1
+    fi
+    
+    # testsディレクトリの存在確認
+    if [ ! -d "tests" ]; then
+        echo -e "${RED}❌ エラー: testsディレクトリが見つかりません${NC}"
+        echo -e "${YELLOW}解決方法:${NC}"
+        echo -e "  1. testsディレクトリを作成: mkdir tests"
+        echo -e "  2. テストファイルを確認: ls -la tests/"
+        cd ..
+        return 1
+    fi
     
     echo -e "${YELLOW}Pytestを実行中...${NC}"
-    python -m pytest tests/ -v
+    if python -m pytest tests/ -v; then
+        echo -e "${GREEN}✓ バックエンドテスト完了${NC}"
+    else
+        echo -e "${RED}❌ エラー: バックエンドテストが失敗しました${NC}"
+        echo -e "${YELLOW}解決方法:${NC}"
+        echo -e "  1. 個別テストファイルを実行: python -m pytest tests/test_specific.py -v"
+        echo -e "  2. テストの詳細を確認: python -m pytest tests/ -v -s"
+        echo -e "  3. DynamoDB Localが起動していることを確認: make check"
+        cd ..
+        return 1
+    fi
     
     cd ..
-    echo -e "${GREEN}✓ バックエンドテスト完了${NC}"
 }
 
 # インフラテスト実行

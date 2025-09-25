@@ -78,7 +78,7 @@ make clean
 ### 1. DynamoDB Local起動
 
 ```bash
-docker-compose up -d dynamodb-local
+docker compose up -d dynamodb-local
 ```
 
 ### 2. Python環境セットアップ
@@ -189,10 +189,10 @@ print(response.get('Item'))
 
 ```bash
 # Docker コンテナ状態確認
-docker-compose ps
+docker compose ps
 
 # DynamoDB Local ログ確認
-docker-compose logs dynamodb-local
+docker compose logs dynamodb-local
 
 # ポート確認
 netstat -an | grep 8000

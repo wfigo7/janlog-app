@@ -66,7 +66,7 @@
 ```text
 /
   Makefile         # 開発コマンドの統一エントリーポイント
-  docker-compose.yml
+  compose.yaml
   /frontend
   /backend
   /infra
