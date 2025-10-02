@@ -203,10 +203,10 @@
 
 ## フェーズ6: 開発環境構築とデプロイメント
 
-- [ ] 23. DynamoDBスタックの実装
+- [x] 23. DynamoDBスタックの実装
   - CDKでDynamoDBテーブル作成（シングルテーブル設計）
   - GSI（GSI1: MATCH_BY_USER_DATE、GSI2: MATCH_BY_USER_MODE_DATE）の設定
-  - 環境別テーブル名設定（janlog-main-table-{environment}）
+  - 環境別テーブル名設定（janlog-table-{environment}）
   - オンデマンド課金設定
   - 削除保護設定（production環境のみ）
   - _要件: データストレージの構築_

@@ -2,6 +2,7 @@
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 import { S3Stack } from '../lib/stacks/s3-stack';
+import { DynamoDBStack } from '../lib/stacks/dynamodb-stack';
 import { CognitoStack } from '../lib/stacks/cognito-stack';
 import { ApiGatewayStack } from '../lib/stacks/api-gateway-stack';
 import { defaultStackProps } from '../lib/common/stack-props';
@@ -26,6 +27,12 @@ cdk.Tags.of(app).add('ManagedBy', defaultStackProps.ManagedBy!);
 
 // S3スタック
 new S3Stack(app, `JanlogS3Stack-${environment}`, {
+  ...defaultStackProps,
+  environment,
+});
+
+// DynamoDBスタック（全環境で作成）
+new DynamoDBStack(app, `JanlogDynamoDBStack-${environment}`, {
   ...defaultStackProps,
   environment,
 });

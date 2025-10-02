@@ -225,7 +225,7 @@ backend/
 
 ADR-0002に基づき、シングルテーブル設計を採用します。
 
-#### メインテーブル（janlog-table）
+#### メインテーブル（janlog-table-{environment}）
 
 ```
 | PK (Partition Key) | SK (Sort Key)       | エンティティタイプ   |
