@@ -71,16 +71,6 @@ Janlogは、フリー雀荘やセット麻雀の成績を個人用に記録・�
 
 ### クイックスタート
 
-#### 詳細なセットアップ手順
-
-各コンポーネントの詳細な設定については、以下を参照してください：
-
-- **バックエンド**: [backend/README.md](./backend/README.md)
-- **フロントエンド**: [frontend/README.md](./frontend/README.md)  
-- **インフラ**: [infra/README.md](./infra/README.md)
-```
-
-
 ```bash
 # 1. 依存関係のインストール
 make setup # 未実装のため各コンポーネントの詳細なセットアップ手順を参照してください
@@ -94,6 +84,14 @@ make db-create-tables
 # 4. 開発環境確認
 make check
 ```
+
+#### 詳細なセットアップ手順
+
+各コンポーネントの詳細な設定については、以下を参照してください：
+
+- **バックエンド**: [backend/README.md](./backend/README.md)
+- **フロントエンド**: [frontend/README.md](./frontend/README.md)  
+- **インフラ**: [infra/README.md](./infra/README.md)
 
 **注意**: 統合セットアップ機能は未実装です。詳細な手動セットアップ手順は各コンポーネントのREADME.mdを参照してください。
 
@@ -141,6 +139,27 @@ make check
 
 # 生成物とキャッシュの削除
 make clean
+```
+
+### 📁 サブディレクトリからのmake実行対応
+
+*サブディレクトリからでも同じmakeコマンドが使用可能です！**
+
+```bash
+# フロントエンド開発中
+cd frontend
+make start-frontend  # ルートから実行したのと同じ動作
+make tf              # フロントエンドテスト実行
+
+# バックエンド開発中  
+cd backend
+make test-backend    # バックエンドテスト実行
+make tb              # 短縮形も使用可能
+
+# インフラ開発中
+cd infra
+make test-infra      # インフラテスト実行
+make ti              # 短縮形も使用可能
 ```
 
 **詳細な開発コマンドガイド**: [DEVELOPMENT.md](./DEVELOPMENT.md) を参照してください。

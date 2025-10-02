@@ -65,10 +65,14 @@ npm run start:local
 
 ```bash
 # プロジェクトルートから
-npm run dev:frontend
+make start-frontend  # または make sf
 
-# または直接このディレクトリで
+# このディレクトリから（サブディレクトリからのmake実行対応）
 cd frontend
+make start-frontend  # ルートから実行したのと同じ動作
+make sf              # 短縮形も使用可能
+
+# 直接npmコマンドで実行
 npm start
 
 # 特定のプラットフォームで起動
@@ -81,12 +85,40 @@ npm run web      # Web
 
 ```bash
 # プロジェクトルートから
-npm run test:frontend
+make test-frontend  # または make tf
 
-# または直接このディレクトリで
+# このディレクトリから（サブディレクトリからのmake実行対応）
 cd frontend
+make test-frontend  # ルートから実行したのと同じ動作
+make tf             # 短縮形も使用可能
+
+# 直接npmコマンドで実行
 npm test
 ```
+
+### 📁 サブディレクトリからのmake実行対応
+
+**このディレクトリからでもプロジェクトルートと同じmakeコマンドが使用可能です！**
+
+```bash
+cd frontend
+
+# 開発サーバー起動
+make start-frontend  # または make sf
+
+# テスト実行
+make test-frontend   # または make tf
+
+# 全体のヘルプ表示
+make help
+
+# 環境確認
+make check
+
+# その他全てのmakeコマンドが使用可能
+```
+
+この機能により、フロントエンド開発中にディレクトリを移動することなく、必要なコマンドを実行できます。
 
 ## ディレクトリ構造
 

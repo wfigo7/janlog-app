@@ -110,12 +110,37 @@ npx cdk deploy --all --context environment=production
 
 ```bash
 # プロジェクトルートから
-npm run test:infra
+make test-infra  # または make ti
 
-# または直接このディレクトリで
+# このディレクトリから（サブディレクトリからのmake実行対応）
 cd infra
+make test-infra  # ルートから実行したのと同じ動作
+make ti          # 短縮形も使用可能
+
+# 直接npmコマンドで実行
 npm test
 ```
+
+### 📁 サブディレクトリからのmake実行対応
+
+**このディレクトリからでもプロジェクトルートと同じmakeコマンドが使用可能です！**
+
+```bash
+cd infra
+
+# インフラテスト実行
+make test-infra  # または make ti
+
+# 全体のヘルプ表示
+make help
+
+# 環境確認
+make check
+
+# その他全てのmakeコマンドが使用可能
+```
+
+この機能により、インフラ開発中にディレクトリを移動することなく、必要なコマンドを実行できます。
 
 ## ディレクトリ構造
 

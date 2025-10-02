@@ -1,4 +1,4 @@
-# 開発コマンドガイド
+# Makefileコマンドガイド
 
 このプロジェクトでは、Makefileを使用して開発に必要な全てのコマンドを統一的に実行できます。
 
@@ -20,6 +20,45 @@ make check
 # 生成物とキャッシュの削除
 make clean
 ```
+
+## 📁 サブディレクトリからのmake実行対応
+
+**どのディレクトリからでも同じmakeコマンドが使用可能です！**
+
+### 使用例
+
+```bash
+# フロントエンド開発中
+cd frontend
+make start-frontend  # ルートから実行したのと同じ動作
+make tf              # フロントエンドテスト実行
+make help            # ルートのヘルプが表示される
+
+# バックエンド開発中
+cd backend
+make test-backend    # バックエンドテスト実行
+make tb              # 短縮形も使用可能
+make start-db        # DynamoDB Local起動
+
+# インフラ開発中
+cd infra
+make test-infra      # インフラテスト実行
+make ti              # 短縮形も使用可能
+make check           # 環境確認
+```
+
+### 仕組み
+
+- **プロジェクトルート検出**: `.root`マーカーファイルでプロジェクトルートを自動識別
+- **動的委譲**: サブディレクトリのMakefileが全てのコマンドをルートのMakefileに委譲
+- **軽量実装**: サブディレクトリのMakefileは10行程度の最小実装
+- **完全な保守性**: 新しいコマンドを追加してもサブディレクトリのMakefileは変更不要
+
+### 開発効率の向上
+
+- **コンテキストスイッチ削減**: ディレクトリ移動なしでコマンド実行
+- **一貫した操作感**: どこにいても同じコマンドが使用可能
+- **タイピング効率**: 短縮形コマンドもサブディレクトリから使用可能
 
 ## 🚀 ローカル環境起動
 
@@ -55,67 +94,6 @@ make db-stop     # stop-dbのエイリアス
 
 - **ログの分離**: 各サービスのログを個別に確認可能
 - **デバッグの容易さ**: 問題のあるサービスを特定しやすい
-
-## 🔧 エラーハンドリングと問題解決
-
-### 改善されたエラーメッセージ
-
-Makefileとヘルパースクリプトは、エラー発生時に具体的な解決方法を提案します：
-
-```bash
-# 例: 仮想環境が見つからない場合
-❌ エラー: 仮想環境が見つかりません (venv)
-解決方法:
-  1. 仮想環境を作成: python -m venv venv
-  2. 仮想環境をアクティベート: source venv/bin/activate
-  3. 依存関係をインストール: pip install -r requirements.txt
-  4. 詳細な手順: backend/README.md を参照
-```
-
-### よくある問題と解決方法
-
-#### 1. DynamoDB Local接続エラー
-```bash
-make check  # 詳細な診断情報を表示
-make start-db  # DynamoDB Localを起動
-```
-
-#### 2. Python仮想環境の問題
-```bash
-# backend/README.md を参照して仮想環境を作成
-cd backend
-# 詳細な手順はREADME.mdに記載
-```
-
-#### 3. Node.js依存関係の問題
-```bash
-# 各コンポーネントのREADME.mdを参照
-cd frontend  # または infra
-# 詳細な手順はREADME.mdに記載
-```
-
-#### 4. ポート競合の問題
-```bash
-# 使用中のポートを確認
-lsof -i :8000  # DynamoDB Local
-lsof -i :8080  # Backend API
-lsof -i :8081  # Frontend
-```
-
-### テスト失敗時の対応
-
-```bash
-# 全テスト実行（詳細なエラー情報付き）
-make test
-
-# 個別テスト実行
-make test-frontend  # または tf
-make test-backend   # または tb
-make test-infra     # または ti
-
-# 環境確認
-make check
-```
 - **開発効率**: 必要なサービスのみ起動・停止可能
 
 ## 🧪 テスト実行
@@ -232,7 +210,7 @@ make check
 | `make start-db`       | `make sd` | DynamoDB Local起動           |
 | `make start-backend`  | `make sb` | バックエンドサーバー起動     |
 | `make start-frontend` | `make sf` | フロントエンド起動           |
-| `make stop`           | -         | 全サービス停止               |
+| `make stop-db`        | -         | DynamoDB Local停止           |
 
 ### テスト実行
 | コマンド             | 短縮形    | 説明                   |
@@ -296,6 +274,67 @@ make check
    make db-clean    # Docker環境クリーンアップ
    make clean       # 生成物とキャッシュの削除
    ```
+
+## 🔧 エラーハンドリングと問題解決
+
+### 改善されたエラーメッセージ
+
+Makefileとヘルパースクリプトは、エラー発生時に具体的な解決方法を提案します：
+
+```bash
+# 例: 仮想環境が見つからない場合
+❌ エラー: 仮想環境が見つかりません (venv)
+解決方法:
+  1. 仮想環境を作成: python -m venv venv
+  2. 仮想環境をアクティベート: source venv/bin/activate
+  3. 依存関係をインストール: pip install -r requirements.txt
+  4. 詳細な手順: backend/README.md を参照
+```
+
+### よくある問題と解決方法
+
+#### 1. DynamoDB Local接続エラー
+```bash
+make check  # 詳細な診断情報を表示
+make start-db  # DynamoDB Localを起動
+```
+
+#### 2. Python仮想環境の問題
+```bash
+# backend/README.md を参照して仮想環境を作成
+cd backend
+# 詳細な手順はREADME.mdに記載
+```
+
+#### 3. Node.js依存関係の問題
+```bash
+# 各コンポーネントのREADME.mdを参照
+cd frontend  # または infra
+# 詳細な手順はREADME.mdに記載
+```
+
+#### 4. ポート競合の問題
+```bash
+# 使用中のポートを確認
+lsof -i :8000  # DynamoDB Local
+lsof -i :8080  # Backend API
+lsof -i :8081  # Frontend
+```
+
+### テスト失敗時の対応
+
+```bash
+# 全テスト実行（詳細なエラー情報付き）
+make test
+
+# 個別テスト実行
+make test-frontend  # または tf
+make test-backend   # または tb
+make test-infra     # または ti
+
+# 環境確認
+make check
+```
 
 ## 🔧 トラブルシューティング
 
@@ -370,6 +409,21 @@ GitHub Actions などの CI/CD パイプラインでも使用できます：
 - **環境確認**: 問題が発生したら`make check`で各サービスの状態を確認
 
 ## 🔧 Makefile改良履歴
+
+### 2025年10月2日: サブディレクトリからのmake実行対応
+
+**新機能**:
+
+#### サブディレクトリからのmake実行対応
+- **プロジェクトルート検出**: `.root`マーカーファイルでプロジェクトルートを自動識別
+- **動的委譲システム**: `%:`パターンルールで全てのターゲットを自動委譲
+- **サブディレクトリ用Makefile**: frontend/, backend/, infra/に軽量なMakefileを配置
+- **完全な保守性**: ルートのMakefileにコマンド追加時、サブディレクトリのMakefileは変更不要
+
+**効果**:
+- **開発効率向上**: どのディレクトリからでも同じmakeコマンドが使用可能
+- **コンテキストスイッチ削減**: ディレクトリ移動なしでコマンド実行
+- **一貫した操作感**: 短縮形コマンドもサブディレクトリから使用可能
 
 ### 2025年9月25日: 包括的なMakefile改良
 

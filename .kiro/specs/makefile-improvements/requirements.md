@@ -104,3 +104,14 @@
 1. WHEN モノレポ構成を考慮 THEN 各コンポーネント（frontend/backend/infra）の操作が適切に分離されていること
 2. WHEN DynamoDB Localを使用 THEN テーブル作成とデータ投入が確実に実行されること
 3. WHEN 開発環境の確認を実行 THEN Janlogアプリ固有のエンドポイントとポートを検証すること
+
+### Requirement 11: サブディレクトリからのmake実行対応
+
+**User Story:** 開発者として、プロジェクトのサブディレクトリ（frontend/backend/infra）からmakeコマンドを実行してもルートから実行したものとして動作することを期待するので、どのディレクトリにいても同じコマンドを使用できる
+
+#### Acceptance Criteria
+
+1. WHEN サブディレクトリからmakeコマンドを実行 THEN 自動的にプロジェクトルートディレクトリを検出してそこからコマンドを実行すること
+2. WHEN プロジェクトルートが見つからない場合 THEN 適切なエラーメッセージを表示すること
+3. WHEN サブディレクトリからmake helpを実行 THEN ルートのMakefileのヘルプが表示されること
+4. WHEN 全てのmakeコマンド（start-db, test-backend等）がサブディレクトリから実行 THEN ルートから実行した場合と同じ動作をすること

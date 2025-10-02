@@ -51,7 +51,14 @@ python run_local.py
 ### 4. DynamoDBテーブル作成
 
 ```bash
-# テーブル作成（サンプルデータ付き）
+# プロジェクトルートから
+make db-create-tables
+
+# このディレクトリから（サブディレクトリからのmake実行対応）
+cd backend
+make db-create-tables  # ルートから実行したのと同じ動作
+
+# 直接Pythonスクリプトで実行
 python scripts/create_local_tables.py --with-sample-data
 
 # テーブル確認（AWS CLI使用）
@@ -59,18 +66,33 @@ AWS_ACCESS_KEY_ID=dummy AWS_SECRET_ACCESS_KEY=dummy \
 aws dynamodb list-tables --endpoint-url http://localhost:8000
 ```
 
-### 4. バックエンドサーバー起動
+### 5. バックエンドサーバー起動
 
 ```bash
-# ローカル開発サーバー起動
+# プロジェクトルートから
+make start-backend  # または make sb
+
+# このディレクトリから（サブディレクトリからのmake実行対応）
+cd backend
+make start-backend  # ルートから実行したのと同じ動作
+make sb             # 短縮形も使用可能
+
+# 直接Pythonスクリプトで実行
 python run_local.py
 ```
 
 サーバーは http://localhost:8080 で起動します。
 
-### 5. API動作確認
+### 6. API動作確認
 
 ```bash
+# プロジェクトルートから
+make check
+
+# このディレクトリから（サブディレクトリからのmake実行対応）
+cd backend
+make check  # ルートから実行したのと同じ動作
+
 # 別ターミナルで手動テスト実行
 python manual_tests/test_api.py
 python manual_tests/match/test_match_api.py
@@ -79,6 +101,49 @@ python manual_tests/match/test_match_api.py
 curl http://localhost:8080/health
 curl http://localhost:8080/
 ```
+
+### テスト実行
+
+```bash
+# プロジェクトルートから
+make test-backend  # または make tb
+
+# このディレクトリから（サブディレクトリからのmake実行対応）
+cd backend
+make test-backend  # ルートから実行したのと同じ動作
+make tb            # 短縮形も使用可能
+
+# 直接pytestで実行
+pytest tests/ -v
+```
+
+### 📁 サブディレクトリからのmake実行対応
+
+**このディレクトリからでもプロジェクトルートと同じmakeコマンドが使用可能です！**
+
+```bash
+cd backend
+
+# バックエンドサーバー起動
+make start-backend  # または make sb
+
+# テスト実行
+make test-backend   # または make tb
+
+# DynamoDB関連
+make start-db       # DynamoDB Local起動
+make db-create-tables  # テーブル作成
+
+# 全体のヘルプ表示
+make help
+
+# 環境確認
+make check
+
+# その他全てのmakeコマンドが使用可能
+```
+
+この機能により、バックエンド開発中にディレクトリを移動することなく、必要なコマンドを実行できます。
 
 ## 環境変数
 
