@@ -17,7 +17,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { StatsCard } from './StatsCard';
 import { GameModeTab } from '../common/GameModeTab';
 import { RankDistributionCard } from './RankDistributionCard';
-import { DateRangePicker, DateRange } from '../common/DateRangePicker';
+import { FilterBar, FilterOptions } from '../common/FilterBar';
 import { StatsChart } from './StatsChart';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
 import { DetailedStatsCard } from './DetailedStatsCard';
@@ -33,7 +33,7 @@ export default function StatsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode>('four');
-  const [dateRange, setDateRange] = useState<DateRange>({});
+  const [filters, setFilters] = useState<FilterOptions>({});
   const [showCharts, setShowCharts] = useState(false);
   const [showDetailedStats, setShowDetailedStats] = useState(false);
 
@@ -45,16 +45,18 @@ export default function StatsScreen() {
         setLoading(true);
       }
 
-      const filters = {
+      const apiFilters = {
         mode: selectedMode,
-        from: dateRange.from,
-        to: dateRange.to,
+        from: filters.dateRange?.from,
+        to: filters.dateRange?.to,
+        venueId: filters.venueId,
+        rulesetId: filters.rulesetId,
       };
 
       // 統計データとチャートデータを並行取得
       const [statsResponse, chartResponse] = await Promise.all([
-        StatsService.getStatsSummary(filters),
-        StatsService.getChartData(filters),
+        StatsService.getStatsSummary(apiFilters),
+        StatsService.getChartData(apiFilters),
       ]);
 
       if (statsResponse.success) {
@@ -80,13 +82,13 @@ export default function StatsScreen() {
 
   useEffect(() => {
     loadData();
-  }, [selectedMode, dateRange]);
+  }, [selectedMode, filters]);
 
   // 画面がフォーカスされた時にデータを再取得
   useFocusEffect(
     useCallback(() => {
       loadData();
-    }, [selectedMode, dateRange])
+    }, [selectedMode, filters])
   );
 
   const onRefresh = () => {
@@ -97,8 +99,8 @@ export default function StatsScreen() {
     setSelectedMode(mode);
   };
 
-  const onDateRangeChange = (range: DateRange) => {
-    setDateRange(range);
+  const onFiltersChange = (newFilters: FilterOptions) => {
+    setFilters(newFilters);
   };
 
   const toggleCharts = () => {
@@ -133,18 +135,16 @@ export default function StatsScreen() {
       <View style={styles.controlsContainer}>
         <GameModeTab selectedMode={selectedMode} onModeChange={onModeChange} />
 
-        {/* 期間フィルター */}
-        <View style={styles.filterContainer}>
-          <Text style={styles.filterLabel}>期間フィルター</Text>
-          <DateRangePicker
-            value={dateRange}
-            onChange={onDateRangeChange}
-            placeholder="全期間"
-          />
-        </View>
-
-        {/* 表示オプション */}
+        {/* フィルターと表示オプション */}
         <View style={styles.optionsContainer}>
+          <FilterBar
+            value={filters}
+            onChange={onFiltersChange}
+            gameMode={selectedMode}
+            showVenueFilter={true}
+            showRulesetFilter={true}
+          />
+
           <TouchableOpacity
             style={[styles.optionButton, showCharts && styles.optionButtonActive]}
             onPress={toggleCharts}
@@ -370,19 +370,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5E5',
   },
-  filterContainer: {
-    marginTop: 16,
-  },
-  filterLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333333',
-    marginBottom: 8,
-  },
   optionsContainer: {
     flexDirection: 'row',
     marginTop: 16,
     gap: 12,
+    flexWrap: 'wrap',
   },
   optionButton: {
     flexDirection: 'row',

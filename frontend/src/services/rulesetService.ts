@@ -20,7 +20,10 @@ class RulesetService {
       return await apiClient.get<RulesetListResponse>('/rulesets');
     } catch (error) {
       console.error('ルールセット一覧取得エラー:', error);
-      throw new Error('ルールセット一覧の取得に失敗しました');
+      return {
+        success: false,
+        data: []
+      };
     }
   }
 

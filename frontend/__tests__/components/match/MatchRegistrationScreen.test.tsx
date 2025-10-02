@@ -111,7 +111,7 @@ describe('MatchRegistrationScreen', () => {
     expect(getByText('3人麻雀')).toBeTruthy();
     expect(getByText('対局日')).toBeTruthy();
     expect(getByTestId('mock-match-date-picker')).toBeTruthy();
-    expect(getAllByText('入力方式')).toHaveLength(2); // セクションタイトルとEntryMethodSelectorの両方
+    expect(getByText('入力方式')).toBeTruthy(); // セクションタイトルのみ
     expect(getByText('順位+最終スコア')).toBeTruthy();
     expect(getByText('順位+素点')).toBeTruthy();
     expect(getByText('順位のみ')).toBeTruthy();

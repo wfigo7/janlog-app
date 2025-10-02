@@ -14,6 +14,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Match } from '../../types/match';
 import { GameMode } from '../../types/common';
 import { GameModeTab } from '../common/GameModeTab';
+import { FilterBar, FilterOptions } from '../common/FilterBar';
 import { MatchService, PaginationInfo } from '../../services/matchService';
 
 type SortOrder = 'newest' | 'oldest';
@@ -27,6 +28,7 @@ const HistoryScreen: React.FC = () => {
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
   const [pagination, setPagination] = useState<PaginationInfo | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [filters, setFilters] = useState<FilterOptions>({});
 
   // 対局履歴を取得する関数
   const fetchMatches = async (showRefresh = false, loadMore = false) => {
@@ -43,6 +45,10 @@ const HistoryScreen: React.FC = () => {
         mode: selectedMode,
         limit: 20,
         nextKey: loadMore ? pagination?.nextKey : undefined,
+        from: filters.dateRange?.from,
+        to: filters.dateRange?.to,
+        venueId: filters.venueId,
+        rulesetId: filters.rulesetId,
       });
 
       if (response.success && response.data) {
@@ -65,13 +71,13 @@ const HistoryScreen: React.FC = () => {
 
   useEffect(() => {
     fetchMatches();
-  }, [selectedMode]);
+  }, [selectedMode, filters]);
 
   // 画面がフォーカスされた時にデータを再取得
   useFocusEffect(
     useCallback(() => {
       fetchMatches();
-    }, [selectedMode])
+    }, [selectedMode, filters])
   );
 
   useEffect(() => {
@@ -102,6 +108,11 @@ const HistoryScreen: React.FC = () => {
 
   const onModeChange = (mode: GameMode) => {
     setSelectedMode(mode);
+    setPagination(null); // ページネーション情報をリセット
+  };
+
+  const onFiltersChange = (newFilters: FilterOptions) => {
+    setFilters(newFilters);
     setPagination(null); // ページネーション情報をリセット
   };
 
@@ -190,8 +201,16 @@ const HistoryScreen: React.FC = () => {
       <View style={styles.controlsContainer}>
         <GameModeTab selectedMode={selectedMode} onModeChange={onModeChange} />
 
-        {/* ソート機能 */}
-        <View style={styles.sortContainer}>
+        {/* フィルターとソート機能 */}
+        <View style={styles.optionsContainer}>
+          <FilterBar
+            value={filters}
+            onChange={onFiltersChange}
+            gameMode={selectedMode}
+            showVenueFilter={true}
+            showRulesetFilter={true}
+          />
+
           <TouchableOpacity style={styles.sortButton} onPress={toggleSortOrder}>
             <Text style={styles.sortButtonText}>
               {sortOrder === 'newest' ? '新しい順 ↓' : '古い順 ↑'}
@@ -263,9 +282,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5E5',
   },
-  sortContainer: {
-    alignItems: 'flex-end',
+  optionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginTop: 12,
+    gap: 12,
   },
   matchList: {
     flex: 1,

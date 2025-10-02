@@ -37,7 +37,11 @@ const RuleSelector: React.FC<RuleSelectorProps> = ({
     setLoading(true);
     try {
       const response = await rulesetService.getRulesets();
-      setRulesets(response.rulesets);
+      if (response.success) {
+        setRulesets(response.data);
+      } else {
+        throw new Error('ルールセットの取得に失敗しました');
+      }
     } catch (error) {
       showAlert({
         title: 'エラー',
@@ -116,8 +120,6 @@ const RuleSelector: React.FC<RuleSelectorProps> = ({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>ルール</Text>
-
       <TouchableOpacity
         style={styles.selector}
         onPress={() => setModalVisible(true)}

@@ -10,6 +10,8 @@ export interface MatchFilters {
   mode?: GameMode;
   from?: string;
   to?: string;
+  venueId?: string;
+  rulesetId?: string;
   limit?: number;
   nextKey?: string;
 }
@@ -73,6 +75,14 @@ export class MatchService {
 
       if (filters.mode) {
         params.mode = filters.mode;
+      }
+
+      if (filters.venueId) {
+        params.venue_id = filters.venueId;
+      }
+
+      if (filters.rulesetId) {
+        params.ruleset_id = filters.rulesetId;
       }
 
       if (filters.limit) {

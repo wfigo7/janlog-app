@@ -42,8 +42,12 @@ export const VenueSelector: React.FC<VenueSelectorProps> = ({
   // 会場一覧を取得
   const loadVenues = async () => {
     try {
-      const venueList = await venueService.getVenues();
-      setVenues(venueList);
+      const response = await venueService.getVenues();
+      if (response.success) {
+        setVenues(response.data);
+      } else {
+        throw new Error('会場一覧の取得に失敗しました');
+      }
     } catch (error) {
       console.error('会場一覧取得エラー:', error);
       Alert.alert('エラー', '会場一覧の取得に失敗しました');

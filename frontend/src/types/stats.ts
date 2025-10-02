@@ -42,9 +42,11 @@ import { GameMode } from './common';
 import { Match } from './match';
 
 export interface StatsFilters {
-  from?: string;    // 開始日（YYYY-MM-DD）
-  to?: string;      // 終了日（YYYY-MM-DD）
-  mode: GameMode;   // ゲームモード
+  from?: string;      // 開始日（YYYY-MM-DD）
+  to?: string;        // 終了日（YYYY-MM-DD）
+  mode: GameMode;     // ゲームモード
+  venueId?: string;   // 会場ID
+  rulesetId?: string; // ルールセットID
 }
 
 export interface ChartDataResponse {

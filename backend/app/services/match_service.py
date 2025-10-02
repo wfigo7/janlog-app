@@ -128,6 +128,8 @@ class MatchService:
         from_date: Optional[str] = None,
         to_date: Optional[str] = None,
         game_mode: Optional[str] = None,
+        venue_id: Optional[str] = None,
+        ruleset_id: Optional[str] = None,
         limit: Optional[int] = 100,
         last_evaluated_key: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
@@ -157,6 +159,14 @@ class MatchService:
             if game_mode and game_mode != "all":
                 filter_expressions.append("gameMode = :mode")
                 expression_attribute_values[":mode"] = game_mode
+            
+            if venue_id:
+                filter_expressions.append("venueId = :venue_id")
+                expression_attribute_values[":venue_id"] = venue_id
+            
+            if ruleset_id:
+                filter_expressions.append("rulesetId = :ruleset_id")
+                expression_attribute_values[":ruleset_id"] = ruleset_id
             
             # フィルター式を結合
             filter_expression = " AND ".join(filter_expressions) if filter_expressions else None

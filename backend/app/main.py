@@ -153,8 +153,12 @@ async def get_matches(
         None, alias="to", description="終了日（YYYY-MM-DD形式）"
     ),
     mode: Optional[str] = Query("all", description="ゲームモード（three/four/all）"),
+    venue_id: Optional[str] = Query(None, description="会場ID"),
+    ruleset_id: Optional[str] = Query(None, description="ルールセットID"),
     limit: Optional[int] = Query(20, description="取得件数上限"),
-    next_key: Optional[str] = Query(None, description="次のページのキー（Base64エンコード）"),
+    next_key: Optional[str] = Query(
+        None, description="次のページのキー（Base64エンコード）"
+    ),
 ) -> Dict[str, Any]:
     """
     対局一覧を取得（認証なし、固定ユーザーID使用）
@@ -162,22 +166,24 @@ async def get_matches(
     try:
         import json
         import base64
-        
+
         # next_keyをデコード
         last_evaluated_key = None
         if next_key:
             try:
-                decoded_key = base64.b64decode(next_key).decode('utf-8')
+                decoded_key = base64.b64decode(next_key).decode("utf-8")
                 last_evaluated_key = json.loads(decoded_key)
             except Exception as e:
                 logger.warning(f"Invalid next_key format: {e}")
-        
+
         match_service = get_match_service()
         result = await match_service.get_matches(
             user_id=FIXED_USER_ID,
             from_date=from_date,
             to_date=to_date,
             game_mode=mode,
+            venue_id=venue_id,
+            ruleset_id=ruleset_id,
             limit=limit,
             last_evaluated_key=last_evaluated_key,
         )
@@ -187,7 +193,9 @@ async def get_matches(
         if result.get("nextKey"):
             try:
                 key_json = json.dumps(result["nextKey"])
-                encoded_next_key = base64.b64encode(key_json.encode('utf-8')).decode('utf-8')
+                encoded_next_key = base64.b64encode(key_json.encode("utf-8")).decode(
+                    "utf-8"
+                )
             except Exception as e:
                 logger.warning(f"Failed to encode next_key: {e}")
 
@@ -198,7 +206,7 @@ async def get_matches(
                 "total": result["total"],
                 "hasMore": result["hasMore"],
                 "nextKey": encoded_next_key,
-            }
+            },
         }
 
     except Exception as e:
@@ -281,6 +289,8 @@ async def get_stats_summary(
         None, alias="to", description="終了日（YYYY-MM-DD形式）"
     ),
     mode: Optional[str] = Query("four", description="ゲームモード（three/four）"),
+    venue_id: Optional[str] = Query(None, description="会場ID"),
+    ruleset_id: Optional[str] = Query(None, description="ルールセットID"),
 ) -> Dict[str, Any]:
     """
     成績サマリを取得（認証なし、固定ユーザーID使用）
@@ -292,12 +302,48 @@ async def get_stats_summary(
             from_date=from_date,
             to_date=to_date,
             game_mode=mode,
+            venue_id=venue_id,
+            ruleset_id=ruleset_id,
         )
 
         return {"success": True, "data": stats.to_api_response()}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail="統計取得に失敗しました")
+
+
+@app.get("/stats/chart-data")
+async def get_chart_data(
+    from_date: Optional[str] = Query(
+        None, alias="from", description="開始日（YYYY-MM-DD形式）"
+    ),
+    to_date: Optional[str] = Query(
+        None, alias="to", description="終了日（YYYY-MM-DD形式）"
+    ),
+    mode: Optional[str] = Query("four", description="ゲームモード（three/four）"),
+    venue_id: Optional[str] = Query(None, description="会場ID"),
+    ruleset_id: Optional[str] = Query(None, description="ルールセットID"),
+    limit: Optional[int] = Query(50, description="取得件数上限"),
+) -> Dict[str, Any]:
+    """
+    チャート用データを取得（認証なし、固定ユーザーID使用）
+    """
+    try:
+        match_service = get_match_service()
+        result = await match_service.get_matches(
+            user_id=FIXED_USER_ID,
+            from_date=from_date,
+            to_date=to_date,
+            game_mode=mode,
+            venue_id=venue_id,
+            ruleset_id=ruleset_id,
+            limit=limit,
+        )
+
+        return {"success": True, "data": {"matches": result["matches"]}}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="チャートデータ取得に失敗しました")
 
 
 # 会場関連エンドポイント
@@ -310,7 +356,7 @@ async def get_venues() -> Dict[str, Any]:
         venues = await venue_service.get_user_venues(FIXED_USER_ID)
         return {
             "success": True,
-            "data": [venue.dict(by_alias=True) for venue in venues]
+            "data": [venue.dict(by_alias=True) for venue in venues],
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail="会場一覧取得に失敗しました")
@@ -357,16 +403,18 @@ from app.models.ruleset import (
 from app.services.ruleset_service import get_ruleset_service
 
 
-@app.get("/rulesets", response_model=RulesetListResponse)
-async def get_rulesets() -> RulesetListResponse:
+@app.get("/rulesets")
+async def get_rulesets() -> Dict[str, Any]:
     """
     ルールセット一覧を取得する（認証なし、固定ユーザーID使用）
     """
     try:
         ruleset_service = get_ruleset_service()
-        return await ruleset_service.get_rulesets(
+        result = await ruleset_service.get_rulesets(
             user_id=FIXED_USER_ID, include_global=True
         )
+
+        return {"success": True, "data": result.rulesets}
     except Exception as e:
         print(f"ルールセット一覧取得エラー: {e}")
         import traceback

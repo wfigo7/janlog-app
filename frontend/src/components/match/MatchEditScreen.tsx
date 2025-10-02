@@ -36,8 +36,8 @@ const MatchEditScreen: React.FC = () => {
         // ルールセットを読み込み
         const rulesetResponse = await rulesetService.getRulesets();
         let selectedRuleset = null;
-        if (rulesetResponse && rulesetResponse.rulesets) {
-          selectedRuleset = rulesetResponse.rulesets.find(r => r.rulesetId === match.rulesetId) || null;
+        if (rulesetResponse && rulesetResponse.success && rulesetResponse.data) {
+          selectedRuleset = rulesetResponse.data.find((r: any) => r.rulesetId === match.rulesetId) || null;
         }
 
         // フォームデータに変換

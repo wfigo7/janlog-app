@@ -21,6 +21,14 @@ export class StatsService {
       if (filters.to) {
         params.to = filters.to;
       }
+
+      if (filters.venueId) {
+        params.venue_id = filters.venueId;
+      }
+
+      if (filters.rulesetId) {
+        params.ruleset_id = filters.rulesetId;
+      }
       
       return await apiClient.get<StatsResponse>('/stats/summary', params);
       
@@ -46,8 +54,16 @@ export class StatsService {
       if (filters.to) {
         params.to = filters.to;
       }
+
+      if (filters.venueId) {
+        params.venue_id = filters.venueId;
+      }
+
+      if (filters.rulesetId) {
+        params.ruleset_id = filters.rulesetId;
+      }
       
-      return await apiClient.get<ChartDataResponse>('/matches', params);
+      return await apiClient.get<ChartDataResponse>('/stats/chart-data', params);
       
     } catch (error) {
       console.error('チャートデータ取得エラー:', error);

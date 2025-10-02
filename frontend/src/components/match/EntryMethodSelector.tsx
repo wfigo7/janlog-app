@@ -38,10 +38,6 @@ const EntryMethodSelector: React.FC<EntryMethodSelectorProps> = ({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>入力方式</Text>
-      <Text style={styles.sectionDescription}>
-        状況に応じて最適な記録方法を選択してください
-      </Text>
       <View style={styles.methodContainer}>
         {entryMethods.map((method) => (
           <TouchableOpacity

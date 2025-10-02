@@ -30,8 +30,8 @@ export interface AdditionalRule {
 }
 
 export interface RulesetListResponse {
-  rulesets: Ruleset[];
-  total: number;
+  success: boolean;
+  data: Ruleset[];
 }
 
 export interface PointCalculationRequest {
