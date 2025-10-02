@@ -1,6 +1,7 @@
 """
 基本データモデル
 """
+
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from datetime import datetime, timezone, timezone
@@ -15,17 +16,19 @@ class BaseEntity(BaseModel):
     SK: str = Field(..., description="ソートキー")
     entityType: str = Field(..., description="エンティティタイプ")
     createdAt: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat(), description="作成日時"
+        default_factory=lambda: datetime.now(timezone.utc).isoformat(),
+        description="作成日時",
     )
     updatedAt: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat(), description="更新日時"
+        default_factory=lambda: datetime.now(timezone.utc).isoformat(),
+        description="更新日時",
     )
 
     model_config = ConfigDict(
         # DynamoDBの属性名をそのまま使用
         populate_by_name=True,
         # 追加フィールドを許可
-        extra="allow"
+        extra="allow",
     )
 
     @abstractmethod
@@ -44,12 +47,14 @@ class BaseEntity(BaseModel):
         item["PK"] = self.get_pk()
         item["SK"] = self.get_sk()
         item["updatedAt"] = datetime.now(timezone.utc).isoformat()
-        
-        # float値をDecimalに変換（DynamoDB対応）
+
+        # DynamoDB対応の型変換
         for key, value in item.items():
             if isinstance(value, float):
                 item[key] = Decimal(str(value))
-        
+            elif isinstance(value, datetime):
+                item[key] = value.isoformat()
+
         return item
 
 
@@ -66,5 +71,7 @@ class ErrorResponse(BaseModel):
 
     success: bool = False
     error: dict = Field(..., description="エラー情報")
-    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    timestamp: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
     path: Optional[str] = None

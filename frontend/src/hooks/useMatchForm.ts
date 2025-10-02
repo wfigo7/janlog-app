@@ -28,6 +28,7 @@ export const useMatchForm = ({ initialData, onSubmit }: UseMatchFormProps) => {
       finalPoints: '',
       rawScore: '',
       chipCount: '',
+      venueName: '',
       memo: '',
     };
     
@@ -427,6 +428,7 @@ export const useMatchForm = ({ initialData, onSubmit }: UseMatchFormProps) => {
     handleFinalPointsChange,
     handleRawScoreChange,
     handleChipCountChange: (value: string) => setFormData(prev => ({ ...prev, chipCount: value })),
+    handleVenueNameChange: (value: string | undefined) => setFormData(prev => ({ ...prev, venueName: value || '' })),
     handleMemoChange: (value: string) => setFormData(prev => ({ ...prev, memo: value })),
     handleSubmit,
     showSuccessNotification,

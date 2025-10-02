@@ -17,6 +17,7 @@ import { GameModeTab } from '../common/GameModeTab';
 import RuleSelector from './RuleSelector';
 import EntryMethodSelector from './EntryMethodSelector';
 import { MatchDatePicker } from './MatchDatePicker';
+import { VenueSelector } from './VenueSelector';
 
 export interface MatchFormData {
   gameMode: GameMode;
@@ -27,6 +28,7 @@ export interface MatchFormData {
   finalPoints: string;
   rawScore: string;
   chipCount: string;
+  venueName: string;
   memo: string;
 }
 
@@ -66,6 +68,7 @@ export interface MatchFormProps {
   onFinalPointsChange: (value: string) => void;
   onRawScoreChange: (value: string) => void;
   onChipCountChange: (value: string) => void;
+  onVenueNameChange: (value: string | undefined) => void;
   onMemoChange: (value: string) => void;
   onSubmit: () => void;
   
@@ -96,6 +99,7 @@ const MatchForm: React.FC<MatchFormProps> = ({
   onFinalPointsChange,
   onRawScoreChange,
   onChipCountChange,
+  onVenueNameChange,
   onMemoChange,
   onSubmit,
   submitButtonText,
@@ -348,6 +352,15 @@ const MatchForm: React.FC<MatchFormProps> = ({
             />
           </View>
         )}
+
+        {/* 会場選択 */}
+        <View style={styles.section}>
+          <VenueSelector
+            value={formData.venueName || undefined}
+            onValueChange={onVenueNameChange}
+            placeholder="会場を選択..."
+          />
+        </View>
 
         {/* メモ入力 */}
         <View style={styles.section}>

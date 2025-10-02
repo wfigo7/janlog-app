@@ -162,6 +162,11 @@ const HistoryScreen: React.FC = () => {
           <Text style={styles.matchChips}>チップ: {item.chipCount}枚</Text>
         )}
       </View>
+      {item.venueName && (
+        <Text style={styles.matchVenue} numberOfLines={1}>
+          会場: {item.venueName}
+        </Text>
+      )}
       {item.memo && (
         <Text style={styles.matchMemo} numberOfLines={1}>
           {item.memo}
@@ -320,6 +325,11 @@ const styles = StyleSheet.create({
   matchChips: {
     fontSize: 14,
     color: '#666666',
+  },
+  matchVenue: {
+    fontSize: 12,
+    color: '#666666',
+    marginTop: 4,
   },
   matchMemo: {
     fontSize: 12,

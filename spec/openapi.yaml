@@ -240,6 +240,19 @@ paths:
                     rawScore: { type: integer }
                     finalPoints: { type: number }
 
+  /venues:
+    get:
+      summary: ユーザーの会場一覧を取得
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Venue"
+
   /rulesets/templates:
     get:
       summary: ルールテンプレート一覧を取得
@@ -343,6 +356,17 @@ components:
         lastRate: { type: number }
         totalPoints: { type: number }
         chipTotal: { type: integer, nullable: true, description: "チップありルールでの対局がある場合のみ表示" }
+
+    Venue:
+      type: object
+      required: [venueId, venueName, usageCount, lastUsedAt, createdAt, updatedAt]
+      properties:
+        venueId: { type: string, description: "会場ID（UUID）" }
+        venueName: { type: string, description: "会場名（例：雀荘A、友人宅）" }
+        usageCount: { type: integer, description: "使用回数（ソート用）" }
+        lastUsedAt: { type: string, format: date-time, description: "最終使用日時" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
 
     Ruleset:
       type: object

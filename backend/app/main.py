@@ -23,9 +23,11 @@ from app.utils.auth_utils import get_current_user, get_current_user_id
 from app.models.match import MatchRequest, MatchListResponse
 from app.models.stats import StatsSummary
 from app.models.user import UserResponse
+from app.models.venue import VenueResponse
 from app.services.match_service import get_match_service
 from app.services.stats_service import get_stats_service
 from app.services.cognito_service import get_cognito_service
+from app.services.venue_service import venue_service
 
 # FastAPIアプリケーションの初期化
 app = FastAPI(
@@ -296,6 +298,22 @@ async def get_stats_summary(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail="統計取得に失敗しました")
+
+
+# 会場関連エンドポイント
+@app.get("/venues")
+async def get_venues() -> Dict[str, Any]:
+    """
+    ユーザーの会場一覧を取得（認証なし、固定ユーザーID使用）
+    """
+    try:
+        venues = await venue_service.get_user_venues(FIXED_USER_ID)
+        return {
+            "success": True,
+            "data": [venue.dict(by_alias=True) for venue in venues]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="会場一覧取得に失敗しました")
 
 
 # 認証関連エンドポイント

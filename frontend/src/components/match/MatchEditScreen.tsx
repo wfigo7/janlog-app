@@ -50,6 +50,7 @@ const MatchEditScreen: React.FC = () => {
           finalPoints: match.finalPoints?.toString() || '',
           rawScore: match.rawScore?.toString() || '',
           chipCount: match.chipCount?.toString() || '',
+          venueName: match.venueName || '',
           memo: match.memo || '',
         };
 
@@ -96,6 +97,7 @@ const MatchEditScreen: React.FC = () => {
       finalPoints: finalPointsValue,
       rawScore: formData.entryMethod === 'rank_plus_raw' ? parseInt(formData.rawScore) : undefined,
       chipCount: formData.chipCount ? parseInt(formData.chipCount) : undefined,
+      venueName: formData.venueName || undefined,
       memo: formData.memo || undefined,
     };
 
@@ -133,6 +135,7 @@ const MatchEditScreen: React.FC = () => {
     handleFinalPointsChange,
     handleRawScoreChange,
     handleChipCountChange,
+    handleVenueNameChange,
     handleMemoChange,
     handleSubmit: submitForm,
     showSuccessNotification,
@@ -182,6 +185,7 @@ const MatchEditScreen: React.FC = () => {
         onFinalPointsChange={handleFinalPointsChange}
         onRawScoreChange={handleRawScoreChange}
         onChipCountChange={handleChipCountChange}
+        onVenueNameChange={handleVenueNameChange}
         onMemoChange={handleMemoChange}
         onSubmit={submitForm}
         submitButtonText="更新"

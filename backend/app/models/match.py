@@ -23,6 +23,7 @@ class MatchRequest(BaseModel):
     rawScore: Optional[int] = Field(None, description="素点")
     chipCount: Optional[int] = Field(None, description="チップ数")
     venueId: Optional[str] = Field(None, description="会場ID")
+    venueName: Optional[str] = Field(None, description="会場名（新規入力用）")
     memo: Optional[str] = Field(None, description="メモ")
 
     @field_validator("date")
@@ -122,6 +123,7 @@ class Match(BaseEntity):
     rawScore: Optional[int] = Field(None, description="素点")
     chipCount: Optional[int] = Field(None, description="チップ数")
     venueId: Optional[str] = Field(None, description="会場ID")
+    venueName: Optional[str] = Field(None, description="会場名（表示用）")
     memo: Optional[str] = Field(None, description="メモ")
 
     def __init__(self, **data):
@@ -161,6 +163,7 @@ class Match(BaseEntity):
             rawScore=request.rawScore,
             chipCount=request.chipCount,
             venueId=request.venueId,
+            venueName=request.venueName,
             memo=request.memo,
         )
 
@@ -177,6 +180,7 @@ class Match(BaseEntity):
             "rawScore": self.rawScore,
             "chipCount": self.chipCount,
             "venueId": self.venueId,
+            "venueName": self.venueName,
             "memo": self.memo,
         }
 

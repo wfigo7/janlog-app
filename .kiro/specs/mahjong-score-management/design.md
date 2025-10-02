@@ -257,6 +257,21 @@ Attributes:
 - updatedAt (ISO datetime) # データ更新日時（システム自動設定）
 ```
 
+#### 会場データ（VENUE）
+
+```
+PK: USER#{userId}
+SK: VENUE#{venueId}
+Attributes:
+- entityType: "VENUE"
+- venueId (string) # UUID
+- venueName (string) # 表示名（例：「雀荘A」「友人宅」）
+- usageCount (number) # 使用回数（ソート用）
+- lastUsedAt (ISO datetime) # 最終使用日時
+- createdAt (ISO datetime) # データ作成日時（システム自動設定）
+- updatedAt (ISO datetime) # データ更新日時（システム自動設定）
+```
+
 #### 入力バリデーションルール
 
 **対局日（date）:**
@@ -509,6 +524,17 @@ interface Ruleset extends BaseEntity {
   createdBy: string; // 作成者ID
 }
 
+// Venue型
+interface Venue extends BaseEntity {
+  entityType: 'VENUE';
+  PK: `USER#${string}`;
+  SK: `VENUE#${string}`;
+  venueId: string;
+  venueName: string;
+  usageCount: number;
+  lastUsedAt: string;
+}
+
 // UserProfile型
 interface UserProfile extends BaseEntity {
   entityType: 'PROFILE';
@@ -655,10 +681,44 @@ interface ErrorResponse {
 - 画面上部にオレンジ色の警告通知表示
 - 成功時は緑色の完了通知表示
 
-#### アクセシビリティ
-- プレースホルダーテキストの色を薄く設定（#999）
+#### アクセシビリティ・UI統一方針
+- **プレースホルダーテキストの色統一**: 全ての入力フィールドで`placeholderTextColor="#999"`を使用
 - 十分なコントラスト比の確保
 - タッチターゲットサイズの最適化
+- 入力フィールドの一貫したスタイリング
+
+### 会場選択のUX
+
+#### コンボボックス形式のUI
+- **初期表示**: プルダウンボタン + 「会場を選択...」プレースホルダー
+- **既存選択**: プルダウンから即座に選択（1タップ）
+- **新規入力**: 「新しい会場を入力...」選択 → テキスト入力フィールド表示
+- **保存後**: 次回から選択肢に追加（使用回数順でソート）
+
+#### UI構成例
+```
+┌─────────────────────────────┐
+│ 会場                        │
+├─────────────────────────────┤
+│ ▼ 会場を選択...             │  ← プルダウンボタン
+└─────────────────────────────┘
+
+↓ タップすると
+
+┌─────────────────────────────┐
+│ 雀荘サンマ                  │  ← 既存会場1（使用回数順）
+│ 友人宅                      │  ← 既存会場2
+│ 雀荘四麻                    │  ← 既存会場3
+├─────────────────────────────┤
+│ ＋ 新しい会場を入力...       │  ← 新規入力オプション
+└─────────────────────────────┘
+```
+
+#### 重複チェックロジック
+- 入力された会場名を正規化（trim、小文字変換）
+- 既存会場名と完全一致チェック
+- 一致する場合：既存会場を使用、使用回数+1
+- 一致しない場合：新規会場マスタを自動作成
 
 ### 通知システム
 - 成功通知: 緑色（#4CAF50）

@@ -32,6 +32,7 @@ const MatchRegistrationScreen: React.FC = () => {
       finalPoints: finalPointsValue,
       rawScore: formData.entryMethod === 'rank_plus_raw' ? parseInt(formData.rawScore) : undefined,
       chipCount: formData.chipCount ? parseInt(formData.chipCount) : undefined,
+      venueName: formData.venueName || undefined,
       memo: formData.memo || undefined,
     };
 
@@ -51,6 +52,7 @@ const MatchRegistrationScreen: React.FC = () => {
         finalPoints: '',
         rawScore: '',
         chipCount: '',
+        venueName: '',
         memo: '',
       }));
 
@@ -82,6 +84,7 @@ const MatchRegistrationScreen: React.FC = () => {
     handleFinalPointsChange,
     handleRawScoreChange,
     handleChipCountChange,
+    handleVenueNameChange,
     handleMemoChange,
     handleSubmit: submitForm,
     showSuccessNotification,
@@ -114,6 +117,7 @@ const MatchRegistrationScreen: React.FC = () => {
         onFinalPointsChange={handleFinalPointsChange}
         onRawScoreChange={handleRawScoreChange}
         onChipCountChange={handleChipCountChange}
+        onVenueNameChange={handleVenueNameChange}
         onMemoChange={handleMemoChange}
         onSubmit={submitForm}
         submitButtonText="登録"

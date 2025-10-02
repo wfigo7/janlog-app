@@ -22,6 +22,9 @@ class MatchService:
         # 日付の自動補完（要件10.7対応）
         match_request = self._normalize_match_date(match_request)
         
+        # 会場の自動マスタ化処理
+        match_request = await self._process_venue(match_request, user_id)
+        
         # 仮スコア方式の場合は自動計算
         if match_request.entryMethod == "provisional_rank_only":
             match_request = await self._calculate_provisional_score(match_request, user_id)
@@ -54,6 +57,25 @@ class MatchService:
             except ValueError:
                 # パースに失敗した場合はそのまま（バリデーションでエラーになる）
                 pass
+        
+        return match_request
+
+    async def _process_venue(self, match_request: MatchRequest, user_id: str) -> MatchRequest:
+        """会場の自動マスタ化処理"""
+        if match_request.venueName:
+            try:
+                from app.services.venue_service import venue_service
+                
+                # 会場を検索または作成
+                venue = await venue_service.find_or_create_venue(user_id, match_request.venueName)
+                
+                # リクエストに会場IDと正規化された会場名を設定
+                match_request.venueId = venue.venue_id
+                match_request.venueName = venue.venue_name
+                
+            except Exception as e:
+                # 会場処理に失敗した場合はログに記録して続行
+                print(f"会場処理エラー: {e}")
         
         return match_request
 
@@ -211,6 +233,9 @@ class MatchService:
             
             # 日付の自動補完（要件10.7対応）
             match_request = self._normalize_match_date(match_request)
+            
+            # 会場の自動マスタ化処理
+            match_request = await self._process_venue(match_request, user_id)
             
             # チップなしルールの場合はchipCountをnullに設定
             match_request = await self._adjust_chip_count_by_ruleset(match_request, user_id)

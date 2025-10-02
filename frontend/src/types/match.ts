@@ -13,6 +13,7 @@ export interface Match {
   rawScore?: number;
   chipCount?: number;
   venueId?: string;
+  venueName?: string;
   memo?: string;
   createdAt: string;
   updatedAt: string;
@@ -28,5 +29,6 @@ export interface MatchInput {
   rawScore?: number;
   chipCount?: number;
   venueId?: string;
+  venueName?: string;
   memo?: string;
 }

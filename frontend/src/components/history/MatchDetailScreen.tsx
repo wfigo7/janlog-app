@@ -210,6 +210,12 @@ const MatchDetailScreen: React.FC = () => {
             <Text style={styles.infoLabel}>入力方式</Text>
             <Text style={styles.infoValue}>{getEntryMethodText(match.entryMethod)}</Text>
           </View>
+          {match.venueName && (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>会場</Text>
+              <Text style={styles.infoValue}>{match.venueName}</Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -253,22 +259,14 @@ const MatchDetailScreen: React.FC = () => {
       </View>
 
       {/* 追加情報 */}
-      {(match.venueId || match.memo) && (
+      {match.memo && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>追加情報</Text>
           <View style={styles.infoCard}>
-            {match.venueId && (
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>会場</Text>
-                <Text style={styles.infoValue}>{match.venueId}</Text>
-              </View>
-            )}
-            {match.memo && (
-              <View style={styles.memoContainer}>
-                <Text style={styles.infoLabel}>メモ</Text>
-                <Text style={styles.memoText}>{match.memo}</Text>
-              </View>
-            )}
+            <View style={styles.memoContainer}>
+              <Text style={styles.infoLabel}>メモ</Text>
+              <Text style={styles.memoText}>{match.memo}</Text>
+            </View>
           </View>
         </View>
       )}
