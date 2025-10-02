@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -36,21 +36,17 @@ export const VenueSelector: React.FC<VenueSelectorProps> = ({
 }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [venues, setVenues] = useState<Venue[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [showNewVenueInput, setShowNewVenueInput] = useState(false);
   const [newVenueName, setNewVenueName] = useState('');
 
   // 会場一覧を取得
   const loadVenues = async () => {
-    setIsLoading(true);
     try {
       const venueList = await venueService.getVenues();
       setVenues(venueList);
     } catch (error) {
       console.error('会場一覧取得エラー:', error);
       Alert.alert('エラー', '会場一覧の取得に失敗しました');
-    } finally {
-      setIsLoading(false);
     }
   };
 

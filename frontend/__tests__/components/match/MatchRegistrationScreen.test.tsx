@@ -79,6 +79,24 @@ jest.mock('../../../src/components/match/MatchDatePicker', () => {
   };
 });
 
+jest.mock('../../../src/components/match/VenueSelector', () => {
+  return {
+    VenueSelector: function MockVenueSelector({ value, onValueChange }: { value?: string; onValueChange: (value: string | undefined) => void }) {
+      const { TouchableOpacity, Text, View } = require('react-native');
+      return (
+        <View testID="mock-venue-selector">
+          <TouchableOpacity
+            testID="mock-venue-selector-button"
+            onPress={() => onValueChange('テスト会場')}
+          >
+            <Text>会場選択</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+  };
+});
+
 describe('MatchRegistrationScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
