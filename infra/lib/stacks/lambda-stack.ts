@@ -43,6 +43,34 @@ export class LambdaStack extends cdk.Stack {
       // アーキテクチャ指定
       architecture: lambda.Architecture.X86_64,
 
+      // バンドリング設定（不要ファイルを除外）
+      bundling: {
+        assetExcludes: [
+          'venv',
+          '.venv',
+          '__pycache__',
+          '.pytest_cache',
+          'tests',
+          'manual_tests',
+          'scripts',
+          '.env*',
+          '.envrc',
+          '*.md',
+          '.flake8',
+          '.python-version',
+          'pyproject.toml',
+          'pytest.ini',
+          'Makefile',
+          'run_local.py',
+          '.git*',
+          '.vscode',
+          '.idea',
+          '*.log',
+          '*.tmp',
+          '*.temp',
+        ],
+      },
+
       // Lambda Web Adapterレイヤー
       layers: [
         lambda.LayerVersion.fromLayerVersionArn(
