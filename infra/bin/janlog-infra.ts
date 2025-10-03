@@ -47,7 +47,7 @@ if (environment !== 'local') {
   });
 
   // Lambdaスタック（DynamoDB + Cognitoに依存）
-  new LambdaStack(app, `JanlogLambdaStack-${environment}`, {
+  const lambdaStack = new LambdaStack(app, `JanlogLambdaStack-${environment}`, {
     ...defaultStackProps,
     environment,
     dynamodbTable: dynamodbStack.mainTable,
@@ -61,5 +61,6 @@ if (environment !== 'local') {
     environment,
     userPool: cognitoStack.userPool,
     userPoolClient: cognitoStack.userPoolClient,
+    lambdaFunction: lambdaStack.lambdaFunction,
   });
 }

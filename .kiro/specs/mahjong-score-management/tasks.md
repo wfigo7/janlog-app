@@ -219,7 +219,7 @@
   - Lambda関数のタイムアウト・メモリ設定
   - _要件: バックエンドAPIの実行環境構築_
 
-- [ ] 25. API Gateway統合の実装
+- [x] 25. API Gateway統合の実装
   - API GatewayとLambda関数の統合設定
   - プロキシ統合設定（/{proxy+}ルート）
   - JWT Authorizerの有効化（認証付きエンドポイント用）
