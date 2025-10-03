@@ -36,9 +36,9 @@ export class LambdaStack extends cdk.Stack {
     this.lambdaFunction = new lambdaPython.PythonFunction(this, 'JanlogApiFunction', {
       functionName: `janlog-api-${environment}`,
       runtime: lambda.Runtime.PYTHON_3_12,
-      handler: 'lambda_function.lambda_handler',
-      entry: '../backend',
       index: 'lambda_function.py',
+      handler: 'handler',
+      entry: '../backend',
 
       // アーキテクチャ指定
       architecture: lambda.Architecture.X86_64,
@@ -81,9 +81,11 @@ export class LambdaStack extends cdk.Stack {
 
       // 環境変数
       environment: {
-        // LWA必須設定
-        AWS_LWA_INVOKE_MODE: 'RESPONSE_STREAM',
-        AWS_LWA_PORT: '8000',
+        // LWA設定（シンプル版）
+        AWS_LWA_ENABLE: 'true',
+        AWS_LWA_HANDLER: 'app.main:app',
+        READINESS_CHECK_PATH: '/health',
+        PORT: '8000',
 
         // アプリケーション設定
         ENVIRONMENT: environment,
