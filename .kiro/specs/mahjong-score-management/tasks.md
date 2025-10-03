@@ -211,7 +211,7 @@
   - 削除保護設定（production環境のみ）
   - _要件: データストレージの構築_
 
-- [ ] 24. Lambdaスタックの実装
+- [x] 24. Lambdaスタックの実装
   - CDKでLambda関数作成（FastAPI + LWA構成）
   - バックエンドコードのLambdaデプロイ設定
   - 環境変数設定（DynamoDB_TABLE_NAME、ENVIRONMENT等）

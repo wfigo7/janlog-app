@@ -57,7 +57,7 @@ describe('S3Stack', () => {
         template.resourceCountIs('AWS::Lambda::Function', 1);
 
         template.hasResourceProperties('AWS::Lambda::Function', {
-            Runtime: 'nodejs18.x',
+            Runtime: 'nodejs22.x',
             Handler: 'index.handler',
             Timeout: 900,
             MemorySize: 128,

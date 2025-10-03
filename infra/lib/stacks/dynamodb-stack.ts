@@ -34,7 +34,9 @@ export class DynamoDBStack extends cdk.Stack {
                 : cdk.RemovalPolicy.DESTROY,
 
             // ポイントインタイムリカバリ（本番環境では有効化）
-            pointInTimeRecovery: environment === 'production',
+            pointInTimeRecoverySpecification: {
+                pointInTimeRecoveryEnabled: environment === 'production',
+            },
 
             // 暗号化設定
             encryption: dynamodb.TableEncryption.AWS_MANAGED,
