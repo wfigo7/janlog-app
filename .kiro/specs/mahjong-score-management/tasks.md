@@ -219,7 +219,17 @@
   - Lambda関数のタイムアウト・メモリ設定
   - _要件: バックエンドAPIの実行環境構築_
 
-- [x] 25. API Gateway統合の実装
+- [x] 25. Lambda Web Adapterを使用したコンテナベースデプロイメントへの移行
+  - backend/Dockerfileの作成（AWS Lambda Python基本イメージ + LWA）
+  - CDKのPythonFunctionからコンテナイメージベースのLambda関数に変更
+  - ECRリポジトリの作成とCDK設定
+  - backend/Makefileにdocker-build、docker-push、lambda-updateタスクを追加
+  - ローカルでのDocker build & ECR pushテスト
+  - Lambda関数のコンテナイメージ更新テスト
+  - LWAによるFastAPI起動の動作確認
+  - _要件: 現在のPythonFunction + bundling方式の問題解決_
+
+- [ ] 26. API Gateway統合の実装
   - API GatewayとLambda関数の統合設定
   - プロキシ統合設定（/{proxy+}ルート）
   - JWT Authorizerの有効化（認証付きエンドポイント用）
@@ -227,7 +237,7 @@
   - API Gatewayデプロイメント設定
   - _要件: APIエンドポイントの公開_
 
-- [ ] 26. 開発環境疎通確認
+- [ ] 27. 開発環境疎通確認
   - DynamoDB→Lambda→API Gatewayの疎通確認
   - ヘルスチェックエンドポイント（/health）の動作確認
   - 対局登録・取得APIの動作確認
@@ -235,14 +245,14 @@
   - エラーハンドリングの動作確認
   - _要件: バックエンドシステムの動作保証_
 
-- [ ] 27. フロントエンド環境設定
+- [ ] 28. フロントエンド環境設定
   - Expo開発環境設定ファイルの更新
   - API Gateway URLの設定
   - 認証設定（Cognito User Pool情報）
   - 環境別設定の分離（local/development）
   - _要件: フロントエンドの環境設定_
 
-- [ ] 28. Expo→API Gateway疎通確認
+- [ ] 29. Expo→API Gateway疎通確認
   - フロントエンドからAPI Gatewayへの接続確認
   - 対局登録・取得機能の動作確認
   - 統計表示機能の動作確認
@@ -250,7 +260,7 @@
   - ネットワークエラー時の挙動確認
   - _要件: フロントエンド・バックエンド連携の動作保証_
 
-- [ ] 29. Expoアプリの共有設定
+- [ ] 30. Expoアプリの共有設定
   - Expo Development Buildの設定
   - EAS Buildの設定（開発用）
   - 内部配布用の設定
@@ -259,26 +269,26 @@
 
 ## フェーズ7: 最適化とテスト
 
-- [ ] 30. テスト実装
+- [ ] 31. テスト実装
   - バックエンド単体テスト（pytest）
   - フロントエンド単体テスト（Jest）
   - 基本的な統合テスト
   - _テスト戦略に基づく_
 
-- [ ] 31. パフォーマンス最適化
+- [ ] 32. パフォーマンス最適化
   - DynamoDB GSI最適化
   - フロントエンドキャッシュ実装
   - Lambda最適化
   - Lambda Layer実装（依存関係最適化）
   - _パフォーマンス最適化に基づく_
 
-- [ ] 32. デプロイメント自動化
+- [ ] 33. デプロイメント自動化
   - AWS CDKによるインフラ自動化
   - GitHub Actionsによる CI/CD
   - 本番環境デプロイ
   - _CI/CD戦略に基づく_
 
-- [ ] 33. 監視・セキュリティ強化
+- [ ] 34. 監視・セキュリティ強化
   - CloudWatch監視・ログ設定
   - セキュリティ設定の強化
   - カスタムドメイン設定（将来）

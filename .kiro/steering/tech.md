@@ -13,6 +13,7 @@
 ### バックエンド（ADR-0001）
 - **フレームワーク**: FastAPI
 - **ランタイム**: AWS Lambda + Lambda Web Adapter (LWA)
+- **デプロイ方式**: コンテナイメージベース（ECR + Lambda）
 - **言語**: Python（型ヒント使用）
 - **API**: RESTful API（OpenAPI 3.0.3仕様準拠）
 - **API Gateway**: HTTP API（プロキシ統合）
@@ -35,12 +36,13 @@
 ### インフラ
 - **IaC**: AWS CDK
 - **クラウドプロバイダー**: AWS
+- **コンテナレジストリ**: Amazon ECR
 - **デプロイ**: GitHub Actions CI/CD
 - **コスト制約**: 月額1,500円以内
 - **環境分離**: 
   - local: S3スタックのみ
-  - development: S3 + Cognito + API Gateway
-  - production: S3 + Cognito + API Gateway（将来）
+  - development: S3 + Cognito + API Gateway + ECR + Lambda
+  - production: S3 + Cognito + API Gateway + ECR + Lambda（将来）
 
 ## 開発コマンド
 
@@ -65,7 +67,7 @@ npx expo build:ios
 pip install -r requirements.txt
 
 # ローカル実行（local環境）
-uvicorn main:app --reload
+uvicorn app.main:app --reload
 
 # 静的JWT生成（local環境用）
 python scripts/generate_mock_jwt.py
@@ -73,8 +75,13 @@ python scripts/generate_mock_jwt.py
 # テスト実行
 pytest
 
-# デプロイ
-cdk deploy
+# コンテナベースデプロイ（推奨）
+make docker-build    # Dockerイメージビルド
+make docker-push     # ECRにプッシュ
+make lambda-update   # Lambda関数更新
+
+# 従来のCDKデプロイ（設定変更時のみ）
+cd ../infra && cdk deploy --context environment=development
 ```
 
 ### インフラ（CDK）

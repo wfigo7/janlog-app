@@ -1,6 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
-import * as lambdaPython from '@aws-cdk/aws-lambda-python-alpha';
+import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as iam from 'aws-cdk-lib/aws-iam';
@@ -11,6 +11,7 @@ export interface LambdaStackProps extends JanlogStackProps {
   dynamodbTable: dynamodb.Table;
   userPool: cognito.UserPool;
   userPoolClient: cognito.UserPoolClient;
+  ecrRepositoryName: string;
 }
 
 export class LambdaStack extends cdk.Stack {
@@ -19,7 +20,13 @@ export class LambdaStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
 
-    const { environment, dynamodbTable, userPool, userPoolClient } = props;
+    const { environment, dynamodbTable, userPool, userPoolClient, ecrRepositoryName } = props;
+
+    // 既存のECRリポジトリを参照
+    const ecrRepository = ecr.Repository.fromRepositoryName(
+      this, 'ExistingECRRepository', 
+      ecrRepositoryName
+    );
 
     // Lambda実行ロール
     const lambdaRole = new iam.Role(this, 'JanlogLambdaRole', {
@@ -32,61 +39,21 @@ export class LambdaStack extends cdk.Stack {
     // DynamoDB読み書き権限を追加
     dynamodbTable.grantReadWriteData(lambdaRole);
 
-    // Lambda関数の作成（PythonFunction使用）
-    this.lambdaFunction = new lambdaPython.PythonFunction(this, 'JanlogApiFunction', {
+    // ECR読み取り権限を追加
+    ecrRepository.grantPull(lambdaRole);
+
+    // Lambda関数の作成（コンテナイメージベース）
+    this.lambdaFunction = new lambda.Function(this, 'JanlogApiFunction', {
       functionName: `janlog-api-${environment}`,
-      runtime: lambda.Runtime.PYTHON_3_12,
-      index: 'lambda_function.py',
-      handler: 'handler',
-      entry: '../backend',
-
-      // アーキテクチャ指定
+      code: lambda.Code.fromEcrImage(ecrRepository, {
+        tagOrDigest: 'latest',
+      }),
+      handler: lambda.Handler.FROM_IMAGE,
+      runtime: lambda.Runtime.FROM_IMAGE,
       architecture: lambda.Architecture.X86_64,
-
-      // バンドリング設定（不要ファイルを除外）
-      bundling: {
-        assetExcludes: [
-          'venv',
-          '.venv',
-          '__pycache__',
-          '.pytest_cache',
-          'tests',
-          'manual_tests',
-          'scripts',
-          '.env*',
-          '.envrc',
-          '*.md',
-          '.flake8',
-          '.python-version',
-          'pyproject.toml',
-          'pytest.ini',
-          'Makefile',
-          'run_local.py',
-          '.git*',
-          '.vscode',
-          '.idea',
-          '*.log',
-          '*.tmp',
-          '*.temp',
-        ],
-      },
-
-      // Lambda Web Adapterレイヤー
-      layers: [
-        lambda.LayerVersion.fromLayerVersionArn(
-          this, 'LambdaWebAdapterLayer',
-          'arn:aws:lambda:ap-northeast-1:753240598075:layer:LambdaAdapterLayerX86:20'
-        )
-      ],
 
       // 環境変数
       environment: {
-        // LWA設定（シンプル版）
-        AWS_LWA_ENABLE: 'true',
-        AWS_LWA_HANDLER: 'app.main:app',
-        READINESS_CHECK_PATH: '/health',
-        PORT: '8000',
-
         // アプリケーション設定
         ENVIRONMENT: environment,
         DYNAMODB_TABLE_NAME: dynamodbTable.tableName,
@@ -94,14 +61,11 @@ export class LambdaStack extends cdk.Stack {
         // Cognito設定（AWS環境用）
         COGNITO_USER_POOL_ID: userPool.userPoolId,
         COGNITO_CLIENT_ID: userPoolClient.userPoolClientId,
-
-        // Python設定
-        PYTHONPATH: '/var/task',
       },
 
       // リソース設定
       timeout: cdk.Duration.seconds(30),
-      memorySize: 512,
+      memorySize: 1024, // コンテナベースでは少し多めに設定
 
       // IAMロール
       role: lambdaRole,
@@ -122,5 +86,7 @@ export class LambdaStack extends cdk.Stack {
       description: 'Lambda Function ARN',
       exportName: `JanlogLambdaFunctionArn-${environment}`,
     });
+
+
   }
 }

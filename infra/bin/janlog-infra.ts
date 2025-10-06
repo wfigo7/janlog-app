@@ -4,6 +4,7 @@ import * as cdk from 'aws-cdk-lib';
 import { S3Stack } from '../lib/stacks/s3-stack';
 import { DynamoDBStack } from '../lib/stacks/dynamodb-stack';
 import { CognitoStack } from '../lib/stacks/cognito-stack';
+import { ECRStack } from '../lib/stacks/ecr-stack';
 import { LambdaStack } from '../lib/stacks/lambda-stack';
 import { ApiGatewayStack } from '../lib/stacks/api-gateway-stack';
 import { defaultStackProps } from '../lib/common/stack-props';
@@ -38,21 +39,28 @@ const dynamodbStack = new DynamoDBStack(app, `JanlogDynamoDBStack-${environment}
   environment,
 });
 
-// Cognito・Lambda・API Gatewayスタックはlocal環境では作成しない
+// ECR・Cognito・Lambda・API Gatewayスタックはlocal環境では作成しない
 if (environment !== 'local') {
+  // ECRスタック（独立して最初に作成）
+  const ecrStack = new ECRStack(app, `JanlogECRStack-${environment}`, {
+    ...defaultStackProps,
+    environment,
+  });
+
   // Cognitoスタック
   const cognitoStack = new CognitoStack(app, `JanlogCognitoStack-${environment}`, {
     ...defaultStackProps,
     environment,
   });
 
-  // Lambdaスタック（DynamoDB + Cognitoに依存）
+  // Lambdaスタック（DynamoDB + Cognito + ECRに依存）
   const lambdaStack = new LambdaStack(app, `JanlogLambdaStack-${environment}`, {
     ...defaultStackProps,
     environment,
     dynamodbTable: dynamodbStack.mainTable,
     userPool: cognitoStack.userPool,
     userPoolClient: cognitoStack.userPoolClient,
+    ecrRepositoryName: ecrStack.ecrRepository.repositoryName,
   });
 
   // API Gatewayスタック（Lambda + Cognitoに依存）

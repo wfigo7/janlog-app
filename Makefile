@@ -26,6 +26,7 @@ NC=\033[0m
   start start-db start-backend start-frontend stop-db sd sb sf \
   test test-frontend test-backend test-infra test-all tf tb ti \
   db-create-tables db-seed db-reset db-clean db-start db-stop \
+  docker-build docker-push lambda-update deploy-backend \
   check clean
 
 # 完全自動化されたヘルプ生成システム
@@ -249,6 +250,80 @@ db-clean: ## DynamoDB Localクリーンアップ（破壊的） @destructive
 	else
 		echo -e "$(RED)キャンセルしました$(NC)"
 	fi
+
+##@ 🐳 コンテナベースデプロイメント
+
+docker-build: ## Dockerイメージビルド（backend）
+	@echo -e "$(YELLOW)Dockerイメージをビルド中...$(NC)"
+	@cd backend
+	if DOCKER_BUILDKIT=0 docker build -t janlog-api:latest .; then
+		echo -e "$(GREEN)✓ Dockerイメージビルド完了$(NC)"
+	else
+		echo -e "$(RED)❌ Dockerイメージビルドに失敗しました$(NC)"
+		echo -e "$(YELLOW)解決方法:$(NC)"
+		echo -e "  1. Dockerが起動していることを確認: docker --version"
+		echo -e "  2. Dockerfileの構文確認: backend/Dockerfile"
+		echo -e "  3. 依存関係ファイル確認: backend/requirements.txt"
+		exit 1
+	fi
+
+docker-push: ## ECRにイメージプッシュ（backend）
+	@echo -e "$(YELLOW)ECRにイメージをプッシュ中...$(NC)"
+	@cd backend
+	# ECR URI設定（環境変数または.env.localから取得）
+	ECR_URI=$${ECR_URI:-713209208161.dkr.ecr.ap-northeast-1.amazonaws.com/janlog-api-development}
+	# タイムスタンプタグ生成
+	TAG=$$(date +%Y%m%d-%H%M%S)
+	echo -e "$(BLUE)ECR URI: $$ECR_URI$(NC)"
+	echo -e "$(BLUE)Tag: $$TAG$(NC)"
+	# ECRログイン
+	if aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin $$ECR_URI; then
+		echo -e "$(GREEN)✓ ECRログイン成功$(NC)"
+	else
+		echo -e "$(RED)❌ ECRログインに失敗しました$(NC)"
+		echo -e "$(YELLOW)解決方法:$(NC)"
+		echo -e "  1. AWS認証情報を確認: aws sts get-caller-identity"
+		echo -e "  2. ECRリポジトリが存在することを確認"
+		echo -e "  3. ECRへの権限を確認"
+		exit 1
+	fi
+	# イメージタグ付けとプッシュ
+	docker tag janlog-api:latest $$ECR_URI:$$TAG
+	docker tag janlog-api:latest $$ECR_URI:latest
+	if docker push $$ECR_URI:$$TAG && docker push $$ECR_URI:latest; then
+		echo -e "$(GREEN)✓ ECRプッシュ完了$(NC)"
+		echo -e "$(BLUE)プッシュされたタグ: $$TAG, latest$(NC)"
+	else
+		echo -e "$(RED)❌ ECRプッシュに失敗しました$(NC)"
+		exit 1
+	fi
+
+lambda-update: ## Lambda関数コード更新（backend）
+	@echo -e "$(YELLOW)Lambda関数を更新中...$(NC)"
+	@cd backend
+	# 設定値
+	FUNCTION_NAME=$${LAMBDA_FUNCTION_NAME:-janlog-api-development}
+	ECR_URI=$${ECR_URI:-713209208161.dkr.ecr.ap-northeast-1.amazonaws.com/janlog-api-development}
+	echo -e "$(BLUE)Function: $$FUNCTION_NAME$(NC)"
+	echo -e "$(BLUE)Image URI: $$ECR_URI:latest$(NC)"
+	# Lambda関数更新
+	if aws lambda update-function-code \
+		--function-name $$FUNCTION_NAME \
+		--image-uri $$ECR_URI:latest; then
+		echo -e "$(GREEN)✓ Lambda関数更新完了$(NC)"
+		echo -e "$(YELLOW)関数の状態確認中...$(NC)"
+		aws lambda get-function --function-name $$FUNCTION_NAME --query 'Configuration.[State,LastUpdateStatus]' --output table
+	else
+		echo -e "$(RED)❌ Lambda関数更新に失敗しました$(NC)"
+		echo -e "$(YELLOW)解決方法:$(NC)"
+		echo -e "  1. Lambda関数が存在することを確認"
+		echo -e "  2. Lambda更新権限を確認"
+		echo -e "  3. ECRイメージが正常にプッシュされていることを確認"
+		exit 1
+	fi
+
+deploy-backend: docker-build docker-push lambda-update ## 統合デプロイ（build + push + update）
+	@echo -e "$(GREEN)🎉 バックエンドデプロイ完了！$(NC)"
 
 ##@ 🔍 その他
 

@@ -65,6 +65,14 @@ make db-create-tables   # テーブル作成＆初期データセット登録
 make db-clean           # Docker環境クリーンアップ（破壊的）
 ```
 
+### コンテナベースデプロイメント
+```bash
+make docker-build       # Dockerイメージビルド（backend）
+make docker-push        # ECRにイメージプッシュ（backend）
+make lambda-update      # Lambda関数コード更新（backend）
+make deploy-backend     # 統合デプロイ（build + push + update）
+```
+
 ### その他
 ```bash
 make setup              # 統合セットアップ（現在はREADME.md参照を案内）
@@ -152,10 +160,25 @@ make help            # ルートのMakefileのヘルプが表示される
 - **一貫した操作感**: どこにいても同じコマンドが使用可能
 - **保守性**: 新しいコマンド追加時の追加作業なし
 
+## コンテナベースデプロイメント戦略
+
+### 開発フロー
+1. **ローカル開発**: `make start-backend`でuvicorn起動
+2. **コンテナテスト**: `make docker-build`でローカルビルド・テスト
+3. **デプロイ**: `make deploy-backend`で統合デプロイ
+
+### CI/CD統合
+- **GitHub Actions**: コミット時の自動ビルド・デプロイ
+- **ECRタグ戦略**: コミットハッシュ + `latest`タグ
+- **Lambda更新**: `aws lambda update-function-code`による確実な更新
+
+### 問題解決
+- **LWA設定問題**: Dockerfileでの明示的なLWA設定
+
 ## 将来の拡張計画
 - **統合セットアップ**: `make setup`の実装（現在はガイド表示のみ）
 - **データ管理**: `make db-seed`, `make db-reset`の実装
-- **デプロイ支援**: `make deploy-dev`, `make deploy-prod`
+- **デプロイ支援**: `make deploy-dev`, `make deploy-prod`の環境別対応
 - **開発環境診断**: `make doctor`（環境問題の自動診断）
 - **ログ管理**: `make logs`（各サービスのログ表示）
 
