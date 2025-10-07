@@ -229,7 +229,7 @@
   - LWAによるFastAPI起動の動作確認
   - _要件: 現在のPythonFunction + bundling方式の問題解決_
 
-- [ ] 26. API Gateway統合の実装
+- [x] 26. API Gateway統合の実装
   - API GatewayとLambda関数の統合設定
   - プロキシ統合設定（/{proxy+}ルート）
   - JWT Authorizerの有効化（認証付きエンドポイント用）
@@ -237,7 +237,7 @@
   - API Gatewayデプロイメント設定
   - _要件: APIエンドポイントの公開_
 
-- [ ] 27. 開発環境疎通確認
+- [x] 27. 開発環境疎通確認
   - DynamoDB→Lambda→API Gatewayの疎通確認
   - ヘルスチェックエンドポイント（/health）の動作確認
   - 対局登録・取得APIの動作確認

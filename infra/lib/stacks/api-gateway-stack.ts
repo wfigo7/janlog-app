@@ -68,7 +68,7 @@ export class ApiGatewayStack extends cdk.Stack {
     );
 
     // プロキシルート（/{proxy+}）の追加（認証なし）
-    // 現在は認証なしで実装、将来的に認証付きエンドポイントを追加予定
+    // 開発・テスト用の認証なしエンドポイント
     this.httpApi.addRoutes({
       path: '/{proxy+}',
       methods: [
@@ -79,8 +79,7 @@ export class ApiGatewayStack extends cdk.Stack {
         apigatewayv2.HttpMethod.OPTIONS,
       ],
       integration: lambdaIntegration,
-      // 現在は認証なしで実装（フェーズ1）
-      // フェーズ4で認証付きエンドポイント（/api/v1/*）を追加予定
+      // 認証なし（開発・テスト用）
     });
 
     // ヘルスチェック用のルート（認証なし）
@@ -91,18 +90,31 @@ export class ApiGatewayStack extends cdk.Stack {
       // 認証なし
     });
 
-    // 将来の認証付きエンドポイント用のルート（フェーズ4で有効化）
-    // this.httpApi.addRoutes({
-    //   path: '/api/v1/{proxy+}',
-    //   methods: [
-    //     apigatewayv2.HttpMethod.GET,
-    //     apigatewayv2.HttpMethod.POST,
-    //     apigatewayv2.HttpMethod.PUT,
-    //     apigatewayv2.HttpMethod.DELETE,
-    //   ],
-    //   integration: lambdaIntegration,
-    //   authorizer: this.jwtAuthorizer, // JWT認証を適用
-    // });
+    // 認証付きエンドポイント用のルート（/api/v1/*）
+    // L2 ConstructでHttpRouteを作成し、L1でAuthorizerを設定
+    const authMethods = [
+      apigatewayv2.HttpMethod.GET,
+      apigatewayv2.HttpMethod.POST,
+      apigatewayv2.HttpMethod.PUT,
+      apigatewayv2.HttpMethod.DELETE,
+    ];
+
+    const authRoutes: apigatewayv2.HttpRoute[] = [];
+    authMethods.forEach(method => {
+      const route = new apigatewayv2.HttpRoute(this, `JanlogHttpApi${method}ApiV1Route`, {
+        httpApi: this.httpApi,
+        routeKey: apigatewayv2.HttpRouteKey.with('/api/v1/{proxy+}', method),
+        integration: lambdaIntegration,
+      });
+      authRoutes.push(route);
+    });
+
+    // L1 Constructを使用してAuthorizerを設定
+    authRoutes.forEach((route, index) => {
+      const cfnRoute = route.node.defaultChild as apigatewayv2.CfnRoute;
+      cfnRoute.authorizationType = 'JWT';
+      cfnRoute.authorizerId = this.jwtAuthorizer.authorizerId;
+    });
 
     // API Gateway デプロイメント（自動デプロイ）
     // L2 Constructでは自動的にデプロイされる
