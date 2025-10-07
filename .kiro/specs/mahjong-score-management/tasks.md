@@ -252,7 +252,7 @@
   - 環境別設定の分離（local/development）
   - _要件: フロントエンドの環境設定_
 
-- [ ] 29. Expo→API Gateway疎通確認
+- [x] 29. Expo→API Gateway疎通確認
   - フロントエンドからAPI Gatewayへの接続確認
   - 対局登録・取得機能の動作確認
   - 統計表示機能の動作確認
