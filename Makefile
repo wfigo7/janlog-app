@@ -307,12 +307,15 @@ lambda-update: ## Lambda関数コード更新（backend）
 	echo -e "$(BLUE)Function: $$FUNCTION_NAME$(NC)"
 	echo -e "$(BLUE)Image URI: $$ECR_URI:latest$(NC)"
 	# Lambda関数更新
-	if aws lambda update-function-code \
+	if AWS_PAGER="" aws lambda update-function-code \
 		--function-name $$FUNCTION_NAME \
 		--image-uri $$ECR_URI:latest; then
 		echo -e "$(GREEN)✓ Lambda関数更新完了$(NC)"
 		echo -e "$(YELLOW)関数の状態確認中...$(NC)"
-		aws lambda get-function --function-name $$FUNCTION_NAME --query 'Configuration.[State,LastUpdateStatus]' --output table
+		aws lambda get-function \
+			--function-name $$FUNCTION_NAME \
+			--query 'Configuration.[State,LastUpdateStatus]' \
+			--output table
 	else
 		echo -e "$(RED)❌ Lambda関数更新に失敗しました$(NC)"
 		echo -e "$(YELLOW)解決方法:$(NC)"

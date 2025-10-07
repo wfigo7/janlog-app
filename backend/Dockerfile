@@ -4,6 +4,11 @@ FROM public.ecr.aws/lambda/python:3.12
 # LWA を拡張として追加
 COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.9.1 /lambda-adapter /opt/extensions/lambda-adapter
 
+# zscaler証明書
+COPY certifications/zscaler.crt /etc/ssl/certs/zscaler.crt
+ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/zscaler.crt \
+    SSL_CERT_FILE=/etc/ssl/certs/zscaler.crt
+
 # 依存インストール
 WORKDIR /var/task
 COPY requirements.txt .

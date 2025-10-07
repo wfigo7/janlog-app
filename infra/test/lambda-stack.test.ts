@@ -1,45 +1,24 @@
+// test/lambda-stack.image.test.ts
 import * as cdk from 'aws-cdk-lib';
-import * as lambda from 'aws-cdk-lib/aws-lambda';
-import { Template } from 'aws-cdk-lib/assertions';
-import { Construct } from 'constructs';
+import * as ecr from 'aws-cdk-lib/aws-ecr';
+import { Template, Match } from 'aws-cdk-lib/assertions';
 import { LambdaStack } from '../lib/stacks/lambda-stack';
 import { DynamoDBStack } from '../lib/stacks/dynamodb-stack';
 import { CognitoStack } from '../lib/stacks/cognito-stack';
 import { defaultStackProps } from '../lib/common/stack-props';
 
-// PythonFunctionのDockerビルドを無効化するためのモック
-jest.mock('@aws-cdk/aws-lambda-python-alpha', () => {
-    const actual = jest.requireActual('aws-cdk-lib/aws-lambda');
-    return {
-        PythonFunction: class MockPythonFunction extends actual.Function {
-            constructor(scope: Construct, id: string, props: lambda.FunctionProps & { entry?: string; index?: string; bundling?: unknown }) {
-                // PythonFunctionの代わりに通常のFunctionを使用（テスト用）
-                const mockProps: lambda.FunctionProps = {
-                    ...props,
-                    code: actual.Code.fromInline('def lambda_handler(event, context): return {"statusCode": 200}'),
-                    handler: 'index.lambda_handler',
-                    runtime: actual.Runtime.PYTHON_3_12,
-                };
-                // PythonFunction固有のプロパティを削除
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                const { entry, index, bundling, ...cleanProps } = props;
-                super(scope, id, { ...cleanProps, ...mockProps });
-            }
-        }
-    };
-});
-
-describe('LambdaStack', () => {
+describe('LambdaStack (ECR image based)', () => {
     let app: cdk.App;
     let dynamodbStack: DynamoDBStack;
     let cognitoStack: CognitoStack;
+    let ecrRepo: ecr.Repository;
     let lambdaStack: LambdaStack;
     let template: Template;
 
     beforeEach(() => {
         app = new cdk.App();
 
-        // 依存スタックを作成
+        // 依存スタック
         dynamodbStack = new DynamoDBStack(app, 'TestDynamoDBStack', {
             ...defaultStackProps,
             environment: 'test',
@@ -50,79 +29,76 @@ describe('LambdaStack', () => {
             environment: 'test',
         });
 
-        // Lambdaスタックを作成
+        // テスト用のECRリポジトリ（CFN上のリソースとして作るだけ。ビルド/プルは発生しない）
+        const ecrStack = new cdk.Stack(app, 'TestEcrStack', {
+            ...defaultStackProps,
+        });
+        ecrRepo = new ecr.Repository(ecrStack, 'TestEcrRepo', {
+            repositoryName: 'janlog-api-test',
+        });
+
+        // 対象スタック
         lambdaStack = new LambdaStack(app, 'TestLambdaStack', {
             ...defaultStackProps,
             environment: 'test',
             dynamodbTable: dynamodbStack.mainTable,
             userPool: cognitoStack.userPool,
             userPoolClient: cognitoStack.userPoolClient,
+            ecrRepository: ecrRepo,
         });
 
         template = Template.fromStack(lambdaStack);
     });
 
-    test('Lambda関数が作成される', () => {
-        // Lambda関数が1つ作成されることを確認
+    test('Lambda関数が1つ作成される', () => {
         template.resourceCountIs('AWS::Lambda::Function', 1);
     });
 
-    test('Lambda関数名が正しく設定される', () => {
-        // Lambda関数名が環境に応じて設定されることを確認
+    test('Lambda関数名が正しい', () => {
         template.hasResourceProperties('AWS::Lambda::Function', {
             FunctionName: 'janlog-api-test',
         });
     });
 
-    test('Python 3.12ランタイムが設定される', () => {
-        // Python 3.12ランタイムが設定されることを確認（PythonFunctionでサポートされている最新版）
+    test('パッケージタイプがImageで、x86_64・Timeout/Memoryが正しい', () => {
         template.hasResourceProperties('AWS::Lambda::Function', {
-            Runtime: 'python3.12',
+            PackageType: 'Image',
+            Architectures: ['x86_64'],
+            Timeout: 30,
+            MemorySize: 1024,
         });
     });
 
-    test('Lambda Web Adapterレイヤーが設定される', () => {
-        // LWAレイヤーが設定されることを確認
+    test('ECRイメージURI（:latest）を使ってデプロイされる（構造の一部を検証）', () => {
+        // Code.ImageUri は複雑なFn::Joinになるので、:latestが含まれることを確認
         template.hasResourceProperties('AWS::Lambda::Function', {
-            Layers: [
-                'arn:aws:lambda:ap-northeast-1:753240598075:layer:LambdaAdapterLayerX86:20'
-            ],
+            Code: {
+                ImageUri: Match.objectLike({
+                    'Fn::Join': [
+                        '',
+                        Match.arrayWith([':latest']),
+                    ],
+                }),
+            },
         });
     });
 
     test('環境変数が正しく設定される', () => {
-        // 環境変数が正しく設定されることを確認
         template.hasResourceProperties('AWS::Lambda::Function', {
             Environment: {
                 Variables: {
-                    AWS_LWA_INVOKE_MODE: 'RESPONSE_STREAM',
-                    AWS_LWA_PORT: '8000',
                     ENVIRONMENT: 'test',
-                    PYTHONPATH: '/var/task',
+                    // 他の環境変数はFn::ImportValueオブジェクトになるので、存在確認のみ
+                    DYNAMODB_TABLE_NAME: Match.anyValue(),
+                    COGNITO_USER_POOL_ID: Match.anyValue(),
+                    COGNITO_CLIENT_ID: Match.anyValue(),
                 },
             },
         });
     });
 
-    test('アーキテクチャがx86_64に設定される', () => {
-        // アーキテクチャがx86_64に設定されることを確認
-        template.hasResourceProperties('AWS::Lambda::Function', {
-            Architectures: ['x86_64'],
-        });
-    });
-
-    test('タイムアウトとメモリサイズが設定される', () => {
-        // タイムアウトとメモリサイズが設定されることを確認
-        template.hasResourceProperties('AWS::Lambda::Function', {
-            Timeout: 30,
-            MemorySize: 512,
-        });
-    });
-
-    test('IAMロールが作成される', () => {
-        // IAMロールが作成されることを確認
+    test('IAMロールの信頼ポリシーが正しい', () => {
         template.resourceCountIs('AWS::IAM::Role', 1);
-
         template.hasResourceProperties('AWS::IAM::Role', {
             AssumeRolePolicyDocument: {
                 Version: '2012-10-17',
@@ -130,97 +106,115 @@ describe('LambdaStack', () => {
                     {
                         Action: 'sts:AssumeRole',
                         Effect: 'Allow',
-                        Principal: {
-                            Service: 'lambda.amazonaws.com',
-                        },
+                        Principal: { Service: 'lambda.amazonaws.com' },
                     },
                 ],
             },
+            // マネージドポリシーが存在することを確認
+            ManagedPolicyArns: Match.anyValue(),
         });
     });
 
-    test('DynamoDB読み書き権限が設定される', () => {
-        // DynamoDB読み書き権限のIAMポリシーが作成されることを確認
+    test('DynamoDBとECRの権限がロールに付与されている（インラインポリシーの一部を検証）', () => {
+        // grantReadWriteData + grantPull の双方が1つの IAM::Policy に入る想定
         template.resourceCountIs('AWS::IAM::Policy', 1);
 
-        // DynamoDBアクションが含まれていることを確認
-        template.hasResourceProperties('AWS::IAM::Policy', {
-            PolicyDocument: {
-                Statement: [
-                    {
-                        Action: [
-                            'dynamodb:BatchGetItem',
-                            'dynamodb:GetRecords',
-                            'dynamodb:GetShardIterator',
-                            'dynamodb:Query',
-                            'dynamodb:GetItem',
-                            'dynamodb:Scan',
-                            'dynamodb:ConditionCheckItem',
-                            'dynamodb:BatchWriteItem',
-                            'dynamodb:PutItem',
-                            'dynamodb:UpdateItem',
-                            'dynamodb:DeleteItem',
-                            'dynamodb:DescribeTable',
-                        ],
-                        Effect: 'Allow',
-                    },
-                ],
-            },
+        // より柔軟なテスト：必要なアクションが含まれていることを個別に確認
+        const policyTemplate = template.findResources('AWS::IAM::Policy');
+        const policyResource = Object.values(policyTemplate)[0] as any;
+        const statements = policyResource.Properties.PolicyDocument.Statement;
+
+        // DynamoDBアクションを含むステートメントが存在することを確認
+        const dynamoStatement = statements.find((stmt: any) =>
+            stmt.Action.some((action: string) => action.startsWith('dynamodb:'))
+        );
+        expect(dynamoStatement).toBeDefined();
+        expect(dynamoStatement.Effect).toBe('Allow');
+        expect(dynamoStatement.Action).toEqual(expect.arrayContaining([
+            'dynamodb:GetItem',
+            'dynamodb:PutItem',
+            'dynamodb:UpdateItem',
+            'dynamodb:DeleteItem',
+        ]));
+
+        // ECRアクションを含むステートメントが存在することを確認
+        const ecrStatement = statements.find((stmt: any) =>
+            stmt.Action.some((action: string) => action.startsWith('ecr:'))
+        );
+        expect(ecrStatement).toBeDefined();
+        expect(ecrStatement.Effect).toBe('Allow');
+        expect(ecrStatement.Action).toEqual(expect.arrayContaining([
+            'ecr:BatchGetImage',
+            'ecr:GetDownloadUrlForLayer',
+            'ecr:BatchCheckLayerAvailability',
+        ]));
+    });
+
+    test('タグ Component=API が付与されている', () => {
+        template.hasResourceProperties('AWS::Lambda::Function', {
+            Tags: Match.arrayWith([
+                Match.objectLike({ Key: 'Component', Value: 'API' }),
+            ]),
         });
     });
 
     test('CloudFormation出力が設定される', () => {
-        // CloudFormation出力が設定されることを確認
         template.hasOutput('LambdaFunctionName', {
             Description: 'Lambda Function Name',
+            Export: {
+                Name: 'JanlogLambdaFunctionName-test',
+            },
         });
-
         template.hasOutput('LambdaFunctionArn', {
             Description: 'Lambda Function ARN',
+            Export: {
+                Name: 'JanlogLambdaFunctionArn-test',
+            },
         });
     });
 
-    test('lambdaFunctionプロパティが正しく設定される', () => {
-        // lambdaFunctionプロパティがLambda関数インスタンスであることを確認
+    test('スタック基本プロパティの確認', () => {
+        expect(lambdaStack.stackName).toBe('TestLambdaStack');
+        expect(lambdaStack.region).toBe('ap-northeast-1');
         expect(lambdaStack.lambdaFunction).toBeDefined();
-        // CDKトークンのため、実際の関数名の検証はCloudFormationテンプレートで行う
         expect(lambdaStack.lambdaFunction.functionName).toBeDefined();
     });
 
-    test('スタックが正しいプロパティで作成される', () => {
-        // スタックが正しい環境設定で作成されることを確認
-        expect(lambdaStack.stackName).toBe('TestLambdaStack');
-        expect(lambdaStack.region).toBe('ap-northeast-1');
-    });
-
-    test('development環境でも正しく動作する', () => {
-        // development環境用のスタックを作成
+    test('development 環境でも同様に動作', () => {
         const devApp = new cdk.App();
 
-        const devDynamodbStack = new DynamoDBStack(devApp, 'DevDynamoDBStack', {
+        const devDynamo = new DynamoDBStack(devApp, 'DevDynamoDBStack', {
+            ...defaultStackProps,
+            environment: 'development',
+        });
+        const devCognito = new CognitoStack(devApp, 'DevCognitoStack', {
             ...defaultStackProps,
             environment: 'development',
         });
 
-        const devCognitoStack = new CognitoStack(devApp, 'DevCognitoStack', {
+        // ECRリポジトリは適切なStackスコープ内で作成
+        const devEcrStack = new cdk.Stack(devApp, 'DevEcrStack', {
             ...defaultStackProps,
-            environment: 'development',
+        });
+        const devRepo = new ecr.Repository(devEcrStack, 'DevEcrRepo', {
+            repositoryName: 'janlog-dev-repo',
         });
 
-        const devLambdaStack = new LambdaStack(devApp, 'DevLambdaStack', {
+        const devLambda = new LambdaStack(devApp, 'DevLambdaStack', {
             ...defaultStackProps,
             environment: 'development',
-            dynamodbTable: devDynamodbStack.mainTable,
-            userPool: devCognitoStack.userPool,
-            userPoolClient: devCognitoStack.userPoolClient,
+            dynamodbTable: devDynamo.mainTable,
+            userPool: devCognito.userPool,
+            userPoolClient: devCognito.userPoolClient,
+            ecrRepository: devRepo,
         });
 
-        const devTemplate = Template.fromStack(devLambdaStack);
+        const devTemplate = Template.fromStack(devLambda);
 
-        // development環境でもLambda関数が作成される
         devTemplate.resourceCountIs('AWS::Lambda::Function', 1);
         devTemplate.hasResourceProperties('AWS::Lambda::Function', {
             FunctionName: 'janlog-api-development',
+            PackageType: 'Image',
         });
     });
 });

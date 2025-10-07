@@ -11,7 +11,7 @@ export interface LambdaStackProps extends JanlogStackProps {
   dynamodbTable: dynamodb.Table;
   userPool: cognito.UserPool;
   userPoolClient: cognito.UserPoolClient;
-  ecrRepositoryName: string;
+  ecrRepository: ecr.Repository;
 }
 
 export class LambdaStack extends cdk.Stack {
@@ -20,13 +20,7 @@ export class LambdaStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
 
-    const { environment, dynamodbTable, userPool, userPoolClient, ecrRepositoryName } = props;
-
-    // 既存のECRリポジトリを参照
-    const ecrRepository = ecr.Repository.fromRepositoryName(
-      this, 'ExistingECRRepository', 
-      ecrRepositoryName
-    );
+    const { environment, dynamodbTable, userPool, userPoolClient, ecrRepository } = props;
 
     // Lambda実行ロール
     const lambdaRole = new iam.Role(this, 'JanlogLambdaRole', {

@@ -60,7 +60,7 @@ if (environment !== 'local') {
     dynamodbTable: dynamodbStack.mainTable,
     userPool: cognitoStack.userPool,
     userPoolClient: cognitoStack.userPoolClient,
-    ecrRepositoryName: ecrStack.ecrRepository.repositoryName,
+    ecrRepository: ecrStack.ecrRepository,
   });
 
   // API Gatewayスタック（Lambda + Cognitoに依存）
