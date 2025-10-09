@@ -6,6 +6,10 @@ import 'react-native-reanimated';
 import 'react-native-get-random-values';
 import 'react-native-url-polyfill/auto';
 
+// Buffer polyfill for react-native-svg
+import { Buffer } from 'buffer';
+global.Buffer = Buffer;
+
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider } from '../src/contexts/AuthContext';
 import { AuthGuard } from '../src/components/auth/AuthGuard';

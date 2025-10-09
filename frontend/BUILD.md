@@ -133,6 +133,35 @@ APKを直接インストールする場合、Androidの設定で「提供元不�
    eas login
    ```
 
+4. **Buffer モジュールエラー**
+   
+   `react-native-svg`や`react-native-chart-kit`使用時に以下のエラーが発生する場合：
+   ```
+   Error: Unable to resolve module buffer from .../react-native-svg/src/utils/fetchData.ts
+   ```
+   
+   **解決方法**: 
+   - `buffer`パッケージがインストールされていることを確認
+   - `metro.config.js`でbufferエイリアスが設定されていることを確認
+   - `app/_layout.tsx`でグローバルBufferポリフィルが設定されていることを確認
+   
+   **設定内容**:
+   ```javascript
+   // metro.config.js
+   const { getDefaultConfig } = require('expo/metro-config');
+   const config = getDefaultConfig(__dirname);
+   config.resolver.alias = {
+     ...config.resolver.alias,
+     buffer: 'buffer',
+   };
+   ```
+   
+   ```typescript
+   // app/_layout.tsx (最上部)
+   import { Buffer } from 'buffer';
+   global.Buffer = Buffer;
+   ```
+
 ### インストールできない場合
 
 1. **ストレージ容量不足**: 空き容量を確保してください
@@ -168,8 +197,50 @@ APKを直接インストールする場合、Androidの設定で「提供元不�
 - **APK配布**: 完全無料
 - **ストレージ**: Expo Dashboardに保存（無料枠あり）
 
+## 技術的な詳細
+
+### Node.js Polyfills
+
+このアプリでは、React Native環境でNode.jsモジュールを使用するため、以下のpolyfillを設定しています：
+
+- **buffer**: `react-native-svg`が内部で使用するNode.jsの`Buffer`クラス
+- **url**: URLパースのためのpolyfill（`react-native-url-polyfill`）
+- **crypto**: 暗号化機能のためのpolyfill（`react-native-get-random-values`）
+
+### Metro Bundler設定
+
+`metro.config.js`では以下の設定を行っています：
+
+```javascript
+const { getDefaultConfig } = require('expo/metro-config');
+const config = getDefaultConfig(__dirname);
+
+// Node.js polyfills
+config.resolver.alias = {
+  ...config.resolver.alias,
+  buffer: 'buffer',
+};
+
+// プラットフォームサポート
+config.resolver.platforms = ['ios', 'android', 'native', 'web'];
+```
+
+### グローバルPolyfill
+
+`app/_layout.tsx`でランタイム時にグローバルオブジェクトを設定：
+
+```typescript
+// Buffer polyfill for react-native-svg
+import { Buffer } from 'buffer';
+global.Buffer = Buffer;
+```
+
+これにより、`react-native-chart-kit` → `react-native-svg` → `buffer`の依存関係チェーンが正常に動作します。
+
 ## 参考リンク
 
 - [Expo EAS Build公式ドキュメント](https://docs.expo.dev/build/introduction/)
 - [Android APKビルド](https://docs.expo.dev/build-reference/apk/)
 - [Expo Dashboard](https://expo.dev/)
+- [Metro Configuration](https://docs.expo.dev/guides/customizing-metro/)
+- [React Native Polyfills](https://github.com/facebook/react-native/tree/main/packages/polyfills)
