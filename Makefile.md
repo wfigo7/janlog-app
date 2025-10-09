@@ -158,26 +158,41 @@ make setup
 make db-start    # 起動
 make db-stop     # 停止
 
-# テーブル作成＆初期データセット登録
-make db-create-tables
+# データベース統合初期化（推奨）
+make db-init     # テーブル作成 + 全seed投入
 
-# Docker環境クリーンアップ（破壊的操作）
-make db-clean
+# 個別実行
+make db-seed-only        # Seedのみ投入（テーブル作成スキップ）
+make db-seed-users       # ユーザーseedのみ投入
+make db-seed-rulesets    # ルールセットseedのみ投入
 ```
+
+### 破壊的操作（注意が必要）
+
+```bash
+# テーブル再作成（local環境のみ）
+make db-recreate         # 既存テーブルを削除して再作成
+
+# テーブルデータをクリア（local環境のみ）
+make db-clear-data       # テーブル内の全データを削除
+
+# Docker環境完全削除
+make db-destroy          # DynamoDB Local完全削除（Docker環境破壊）
+```
+
+**注意**: 破壊的操作は確認プロンプトが表示されます。
 
 ### 未実装機能
 
 以下の機能は将来実装予定です：
 
 ```bash
-# サンプルデータ投入（未実装）
-make db-seed
+# 対局データseed投入（未実装）
+make db-seed-matches
 
-# データリセット（未実装）
-make db-reset
+# 会場データseed投入（未実装）
+make db-seed-venues
 ```
-
-現在は`make db-create-tables`でテーブル削除＆再作成＋初期データ投入が行われます。
 
 ## 🔍 開発環境確認
 
@@ -221,14 +236,19 @@ make check
 | `make test-infra`    | `make ti` | インフラテスト         |
 
 ### データベース管理
-| コマンド                | 説明                         | 状態       |
-| ----------------------- | ---------------------------- | ---------- |
-| `make db-start`         | DynamoDB Local起動           | ✅ 実装済み |
-| `make db-stop`          | DynamoDB Local停止           | ✅ 実装済み |
-| `make db-create-tables` | テーブル作成＆初期データ登録 | ✅ 実装済み |
-| `make db-seed`          | サンプルデータ投入           | ⚠️ 未実装   |
-| `make db-reset`         | データリセット               | ⚠️ 未実装   |
-| `make db-clean`         | Docker環境クリーンアップ     | ✅ 実装済み |
+| コマンド                | 説明                                      | 状態       |
+| ----------------------- | ----------------------------------------- | ---------- |
+| `make db-start`         | DynamoDB Local起動                        | ✅ 実装済み |
+| `make db-stop`          | DynamoDB Local停止                        | ✅ 実装済み |
+| `make db-init`          | データベース統合初期化（テーブル + seed） | ✅ 実装済み |
+| `make db-seed-only`     | Seedのみ投入（テーブル作成スキップ）      | ✅ 実装済み |
+| `make db-seed-users`    | ユーザーseedのみ投入                      | ✅ 実装済み |
+| `make db-seed-rulesets` | ルールセットseedのみ投入                  | ✅ 実装済み |
+| `make db-recreate`      | テーブル再作成（破壊的）                  | ✅ 実装済み |
+| `make db-clear-data`    | テーブルデータクリア（破壊的）            | ✅ 実装済 |
+| `make db-destroy`       | Docker環境完全削除（破壊的）              | ✅ 実装済み |
+| `make db-seed-matches`  | 対局データseed投入                        | ⚠️ 未実装   |
+| `make db-seed-venues`   | 会場データseed投入                        | ⚠️ 未実装   |
 
 ### その他
 | コマンド     | 説明                     | 状態                      |
@@ -257,22 +277,27 @@ make check
    make sf       # ターミナル3: フロントエンド起動
    ```
 
-3. **開発中のテスト**:
+3. **データベース初期化**（初回のみ）:
+   ```bash
+   make db-init  # テーブル作成 + seedデータ投入
+   ```
+
+4. **開発中のテスト**:
    ```bash
    make tb       # バックエンドテスト（高速）
    make tf       # フロントエンドテスト
    ```
 
-4. **コミット前の確認**:
+5. **コミット前の確認**:
    ```bash
    make test     # 全コンポーネントテスト
    make check    # 全サービス起動確認
    ```
 
-5. **環境リセット**（必要時）:
+6. **環境リセット**（必要時）:
    ```bash
-   make db-clean    # Docker環境クリーンアップ
-   make clean       # 生成物とキャッシュの削除
+   make db-recreate    # テーブル再作成（データ削除）
+   make db-destroy     # Docker環境完全削除
    ```
 
 ## 🔧 エラーハンドリングと問題解決
@@ -376,7 +401,23 @@ docker compose ps
 docker compose logs dynamodb-local
 
 # 完全リセット
-make db-clean
+make db-destroy
+```
+
+### データベース関連エラー
+
+```bash
+# テーブルが見つからない
+make db-init          # テーブル作成 + seed投入
+
+# データをリセットしたい
+make db-recreate      # テーブル再作成（確認プロンプトあり）
+
+# データのみクリアしたい
+make db-clear-data    # テーブル構造は保持（確認プロンプトあり）
+
+# Seedデータのみ再投入したい
+make db-seed-only     # テーブル作成をスキップ
 ```
 
 ## 📚 関連ドキュメント

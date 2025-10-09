@@ -119,15 +119,16 @@ rulesets:
 
 #### create_tables.py
 
-**責務**: DynamoDBテーブルの作成・削除
+**責務**: DynamoDBテーブルの作成・削除・データクリア
 
 **インターフェース**:
 ```python
 def main():
     """
     コマンドライン引数:
-        --environment: 環境名（local/development）
-        --recreate: 既存テーブルを削除して再作成
+        --environment: 環境名（local/development/production）
+        --recreate: 既存テーブルを削除して再作成（local環境のみ）
+        --clear-data: テーブル内の全データを削除（local/development環境のみ）
         --force: 確認なしで実行（危険）
     """
     pass
@@ -136,11 +137,15 @@ def create_table(environment: str) -> bool:
     """テーブルを作成"""
     pass
 
-def delete_table(environment: str) -> bool:
-    """テーブルを削除"""
+def delete_table(environment: str, force: bool = False) -> bool:
+    """テーブルを削除（local環境のみ）"""
     pass
 
-def table_exists(environment: str) -> bool:
+def clear_table_data(environment: str, force: bool = False) -> bool:
+    """テーブル内の全データを削除（local/development環境のみ）"""
+    pass
+
+def table_exists(dynamodb, table_name: str) -> bool:
     """テーブルの存在確認"""
     pass
 ```
@@ -148,8 +153,17 @@ def table_exists(environment: str) -> bool:
 **動作**:
 - local環境: DynamoDB Local（http://localhost:8000）に接続
 - development環境: AWS DynamoDB（ap-northeast-1）に接続
+- production環境: AWS DynamoDB（ap-northeast-1）に接続
 - テーブル定義はADR-0002に準拠（PK, SK, GSI1）
-- development環境での削除は警告を表示
+
+**オプション動作**:
+- `--recreate`: 
+  - local環境: テーブル削除→再作成（確認プロンプトあり、--forceで省略可）
+  - development/production環境: エラーメッセージを表示して終了
+- `--clear-data`:
+  - local/development環境: テーブル内の全データを削除（確認プロンプトあり、--forceで省略可）
+  - production環境: エラーメッセージを表示して終了
+- テーブルが既に存在する場合: スキップして適切なガイダンスを表示
 
 #### seed_users.py
 

@@ -1,27 +1,27 @@
 # Implementation Plan
 
-- [ ] 1. プロジェクト構造のセットアップ
+- [x] 1. プロジェクト構造のセットアップ
   - `backend/seeds/`ディレクトリを作成
   - `backend/scripts/db/`ディレクトリを作成
   - `backend/scripts/db/__init__.py`を作成
   - _Requirements: 1.1, 2.1_
 
-- [ ] 2. Seedデータファイルの作成
-  - [ ] 2.1 ユーザーseedファイルの作成
+- [x] 2. Seedデータファイルの作成
+  - [x] 2.1 ユーザーseedファイルの作成
     - `backend/seeds/users.yaml`を作成
     - 既存の`create_local_tables.py`からテストユーザーデータを抽出
     - YAML形式でユーザーデータを定義（userId, email, displayName, role）
     - コメントでデータ構造を説明
     - _Requirements: 1.1, 1.2, 3.1_
 
-  - [ ] 2.2 ルールセット参照ファイルの作成
+  - [x] 2.2 ルールセット参照ファイルの作成
     - `backend/seeds/rulesets.yaml`を作成（参照用ドキュメント）
     - `PointCalculator.get_common_rule_templates()`の内容を可視化
     - コメントで実際はコードから生成されることを明記
     - _Requirements: 1.1, 1.3_
 
-- [ ] 3. 共通ユーティリティの実装
-  - [ ] 3.1 スクリプト共通ユーティリティの実装
+- [x] 3. 共通ユーティリティの実装
+  - [x] 3.1 スクリプト共通ユーティリティの実装
     - `backend/scripts/db/utils.py`を作成
     - `get_dynamodb_client(environment)`関数を実装（環境別のDynamoDBクライアント取得）
     - `load_env_file(environment)`関数を実装（環境変数ファイル読み込み）
@@ -35,8 +35,8 @@
     - 環境別のDynamoDBクライアント取得をテスト
     - _Requirements: 3.1, 6.1, 6.2_
 
-- [ ] 4. テーブル作成スクリプトの実装
-  - [ ] 4.1 テーブル作成スクリプトの実装
+- [x] 4. テーブル作成スクリプトの実装
+  - [x] 4.1 テーブル作成スクリプトの実装
     - `backend/scripts/db/create_tables.py`を作成
     - コマンドライン引数パーサーを実装（--environment, --recreate, --force）
     - `create_table(environment)`関数を実装（テーブル作成）
@@ -47,14 +47,14 @@
     - エラーハンドリングと詳細なログ出力
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 6.1, 6.2, 6.4, 9.1, 9.2, 9.3, 9.4_
 
-  - [ ]* 4.2 テーブル作成スクリプトのテスト
+  - [x] 4.2 テーブル作成スクリプトのテスト
     - local環境でのテーブル作成をテスト
     - テーブル削除→再作成をテスト
     - エラーケースのテスト（接続失敗、権限エラー等）
     - _Requirements: 2.1, 2.2, 6.1_
 
-- [ ] 5. ユーザーseed投入スクリプトの実装
-  - [ ] 5.1 ユーザーseed投入スクリプトの実装
+- [x] 5. ユーザーseed投入スクリプトの実装
+  - [x] 5.1 ユーザーseed投入スクリプトの実装
     - `backend/scripts/db/seed_users.py`を作成
     - コマンドライン引数パーサーを実装（--environment, --force, --file）
     - `load_users_from_yaml(file_path)`関数を実装（YAMLファイル読み込み）
@@ -65,14 +65,14 @@
     - エラーハンドリングと詳細なログ出力
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 6.1, 6.2, 6.5, 9.1, 9.2, 9.3, 9.5_
 
-  - [ ]* 5.2 ユーザーseed投入スクリプトのテスト
+  - [x] 5.2 ユーザーseed投入スクリプトのテスト
     - YAMLファイル読み込みのテスト
     - ユーザー投入のテスト（新規・上書き）
     - エラーケースのテスト（YAMLパースエラー、データ不正等）
     - _Requirements: 3.1, 3.2, 3.3_
 
-- [ ] 6. ルールセットseed投入スクリプトの実装
-  - [ ] 6.1 ルールセットseed投入スクリプトの実装
+- [x] 6. ルールセットseed投入スクリプトの実装
+  - [x] 6.1 ルールセットseed投入スクリプトの実装
     - `backend/scripts/db/seed_rulesets.py`を作成（既存の`create_default_rulesets.py`をベースに）
     - コマンドライン引数パーサーを実装（--environment, --force, --clean）
     - `seed_rulesets(environment, force, clean)`関数を実装（ルールセット投入）
@@ -83,14 +83,14 @@
     - エラーハンドリングと詳細なログ出力
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 6.1, 6.2, 6.5, 9.1, 9.2, 9.3_
 
-  - [ ]* 6.2 ルールセットseed投入スクリプトのテスト
+  - [x] 6.2 ルールセットseed投入スクリプトのテスト
     - ルールセット投入のテスト（新規・上書き・クリーン）
     - グローバルルールセットのみ削除されることを確認
     - ユーザー個人のルールセットが保持されることを確認
     - _Requirements: 4.1, 4.2, 4.5, 4.6_
 
-- [ ] 7. 統合初期化スクリプトの実装
-  - [ ] 7.1 統合初期化スクリプトの実装
+- [x] 7. 統合初期化スクリプトの実装
+  - [x] 7.1 統合初期化スクリプトの実装
     - `backend/scripts/db/init_db.py`を作成
     - コマンドライン引数パーサーを実装（--environment, --skip-tables, --skip-users, --skip-rulesets, --force, --clean-rulesets）
     - `init_database()`関数を実装（統合初期化処理）
@@ -107,8 +107,8 @@
     - エラー発生時の中断をテスト
     - _Requirements: 5.1, 5.3, 5.4, 5.5, 5.6, 5.7_
 
-- [ ] 8. Makefileの更新
-  - [ ] 8.1 新しいMakefileターゲットの追加
+- [x] 8. Makefileの更新
+  - [x] 8.1 新しいMakefileターゲットの追加
     - `db-init`ターゲットを追加（統合初期化スクリプト呼び出し）
     - `db-seed`ターゲットを追加（seedデータ投入のみ、--skip-tablesオプション付き）
     - `db-seed-users`ターゲットを追加（ユーザーseed投入のみ）
@@ -116,32 +116,27 @@
     - 各ターゲットに適切な説明コメントを追加
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
-  - [ ] 8.2 既存のdb-create-tablesターゲットの更新
-    - 既存の`db-create-tables`ターゲットを新しい`init_db.py`を呼び出すように変更
-    - 互換性を維持（同じ動作をする）
-    - _Requirements: 7.6, 10.3_
-
-- [ ] 9. 既存スクリプトのマイグレーション
-  - [ ] 9.1 既存スクリプトの削除
+- [x] 9. 既存スクリプトのマイグレーション
+  - [x] 9.1 既存スクリプトの削除
     - `backend/scripts/create_local_tables.py`を削除
     - `backend/scripts/create_default_rulesets.py`を削除（`seed_rulesets.py`に統合済み）
     - _Requirements: 10.1, 10.2_
 
-  - [ ] 9.2 動作確認とテスト
+  - [x] 9.2 動作確認とテスト
     - local環境での初期化をテスト（`make db-init`）
     - 個別スクリプトの実行をテスト（`make db-seed-users`, `make db-seed-rulesets`）
     - 既存のMakefileコマンドの互換性をテスト（`make db-create-tables`）
     - development環境でのseed投入をテスト（テーブル作成スキップ）
     - _Requirements: 10.3, 10.4_
 
-- [ ] 10. ドキュメントの更新
-  - [ ] 10.1 READMEの更新
+- [x] 10. ドキュメントの更新
+  - [x] 10.1 READMEの更新
     - `backend/README.md`に新しいスクリプトの使用方法を追加
     - 環境別の実行例を追加
     - トラブルシューティングセクションを追加
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
 
-  - [ ] 10.2 ステアリングファイルの更新
+  - [x] 10.2 ステアリングファイルの更新
     - `.kiro/steering/scripts.md`に新しいスクリプトの情報を追加
     - Makefileコマンドの一覧を更新
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_

@@ -26,8 +26,11 @@
 1. WHEN 開発者が`create_tables.py`を実行する THEN テーブル作成のみが実行される SHALL
 2. WHEN 開発者がテーブル作成を実行する AND `--environment local`を指定する THEN DynamoDB Localにテーブルが作成される SHALL
 3. WHEN 開発者がテーブル作成を実行する AND `--environment development`を指定する THEN AWS DynamoDBへの接続を試みる SHALL
-4. WHEN 開発者が`--recreate`オプションを指定する THEN 既存テーブルを削除してから再作成する SHALL
-5. WHEN development環境でテーブルが既に存在する THEN スキップするか、警告を表示する SHALL
+4. WHEN 開発者が`--recreate`オプションを指定する AND local環境である THEN 既存テーブルを削除してから再作成する SHALL
+5. WHEN 開発者が`--recreate`オプションを指定する AND development/production環境である THEN エラーメッセージを表示して終了する SHALL
+6. WHEN 開発者が`--clear-data`オプションを指定する AND local/development環境である THEN テーブル内の全データを削除する SHALL
+7. WHEN 開発者が`--clear-data`オプションを指定する AND production環境である THEN エラーメッセージを表示して終了する SHALL
+8. WHEN development環境でテーブルが既に存在する THEN スキップして適切なメッセージを表示する SHALL
 
 ### Requirement 3: ユーザーseed投入スクリプト
 

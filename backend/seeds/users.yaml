@@ -1,0 +1,49 @@
+# backend/seeds/users.yaml
+# テストユーザーデータ定義
+#
+# このファイルは、開発環境やテスト環境で使用するユーザーデータを定義します。
+# seed_users.pyスクリプトがこのファイルを読み込み、DynamoDBにユーザーを登録します。
+#
+# データ構造:
+# - userId: ユーザーID（一意）
+# - email: メールアドレス
+# - displayName: 表示名
+# - role: ロール（"user" または "admin"）
+#
+# DynamoDBに保存される際のデータ構造:
+# {
+#   "PK": "USER#{userId}",
+#   "SK": "PROFILE",
+#   "entityType": "PROFILE",
+#   "userId": str,
+#   "email": str,
+#   "displayName": str,
+#   "role": str,
+#   "createdAt": str (ISO 8601),
+#   "lastLoginAt": str (ISO 8601)
+# }
+
+users:
+  # 一般ユーザー（既存のtest-user-001）
+  - userId: test-user-001
+    email: test@example.com
+    displayName: テストユーザー
+    role: user
+    
+  # 管理者ユーザー
+  - userId: test-admin-001
+    email: admin@example.com
+    displayName: 管理者ユーザー
+    role: admin
+    
+  # 追加テストユーザー
+  - userId: test-user-002
+    email: test2@example.com
+    displayName: テストユーザー2
+    role: user
+    
+  # 追加テストユーザー（3人麻雀用）
+  - userId: test-user-003
+    email: test3@example.com
+    displayName: テストユーザー3
+    role: user

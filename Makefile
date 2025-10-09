@@ -25,7 +25,7 @@ NC=\033[0m
   setup \
   start start-db start-backend start-frontend stop-db sd sb sf \
   test test-frontend test-backend test-infra test-all tf tb ti \
-  db-create-tables db-seed db-reset db-clean db-start db-stop \
+  db-init db-seed-only db-seed-users db-seed-rulesets db-recreate db-clear-data db-destroy db-start db-stop \
   docker-build docker-push lambda-update deploy-backend \
   check clean
 
@@ -63,7 +63,8 @@ help: ## ヘルプ表示
 	@echo -e "$(GREEN)💡 使用例:$(NC)"
 	@echo "  make start                # 個別ターミナル起動ガイド表示"
 	@echo "  make test-backend         # バックエンドのみテスト"
-	@echo "  make db-create-tables     # データベース初期化"
+	@echo "  make db-init              # データベース初期化（テーブル作成 + seed投入）"
+	@echo "  make db-seed-only         # Seedのみ投入（テーブル作成スキップ）"
 
 ##@ ⚙️  セットアップ
 
@@ -200,41 +201,119 @@ db-stop: stop-db ## DynamoDB Local停止（エイリアス） @alias
 
 ##@ 🗄️  データベース管理
 
-db-create-tables: ## テーブル作成＆初期データセット登録
-	@echo -e "$(YELLOW)DynamoDBテーブル作成＆初期データセット登録中...$(NC)"
+db-init: ## データベース統合初期化（テーブル作成 + 全seed投入）
+	@echo -e "$(YELLOW)データベースを初期化中...$(NC)"
 	@cd backend
 	source ../$(COMMON_SCRIPT)
 	if activate_venv; then
-		if python scripts/create_local_tables.py; then
-			echo -e "$(GREEN)✓ テーブル作成完了（test-user-001、デフォルトルールセット含む）$(NC)"
+		if python scripts/db/init_db.py --environment local; then
+			echo -e "$(GREEN)✓ データベース初期化完了$(NC)"
 		else
-			echo -e "$(RED)❌ テーブル作成に失敗しました$(NC)"
+			echo -e "$(RED)❌ データベース初期化に失敗しました$(NC)"
 			echo -e "$(YELLOW)解決方法:$(NC)"
 			echo -e "  1. DynamoDB Localが起動していることを確認: make start-db"
 			echo -e "  2. DynamoDB Localの接続確認: make check"
-			echo -e "  3. 既存のテーブルがある場合: make db-clean && make start-db"
 			exit 1
 		fi
 	else
 		echo -e "$(RED)❌ Python仮想環境のアクティベートに失敗しました$(NC)"
 		echo -e "$(YELLOW)解決方法:$(NC)"
-		echo -e "  1. 仮想環境を作成: cd backend && python -m venv .venv"
-		echo -e "  2. 依存関係をインストール: cd backend && .venv/bin/pip install -r requirements.txt"
-		echo -e "  3. 詳細な手順: backend/README.md を参照"
+		echo -e "  1. 仮想環境を作成: cd backend && python -m venv venv"
+		echo -e "  2. 依存関係をインストール: cd backend && venv/bin/pip install -r requirements.txt"
 		exit 1
 	fi
 
-db-seed: ## サンプルデータ投入（未実装）
-	@echo -e "$(RED)⚠️  db-seed機能は未実装です$(NC)"
-	@echo -e "$(YELLOW)現在はdb-create-tablesで初期データも含めて作成されます$(NC)"
-	@echo "将来的に既存テーブルへのデータ追加機能として実装予定"
+db-seed-only: ## Seedのみ投入（テーブル作成スキップ）
+	@echo -e "$(YELLOW)Seedデータを投入中...$(NC)"
+	@cd backend
+	source ../$(COMMON_SCRIPT)
+	if activate_venv; then
+		if python scripts/db/init_db.py --environment local --seeds-only; then
+			echo -e "$(GREEN)✓ Seed投入完了$(NC)"
+		else
+			echo -e "$(RED)❌ Seed投入に失敗しました$(NC)"
+			exit 1
+		fi
+	else
+		echo -e "$(RED)❌ Python仮想環境のアクティベートに失敗しました$(NC)"
+		exit 1
+	fi
 
-db-reset: ## データリセット（未実装）
-	@echo -e "$(RED)⚠️  db-reset機能は未実装です$(NC)"
-	@echo -e "$(YELLOW)現在はdb-create-tablesでテーブル削除＆再作成されます$(NC)"
-	@echo "将来的にデータのみリセット機能として実装予定"
+db-seed-users: ## ユーザーseedのみ投入
+	@echo -e "$(YELLOW)ユーザーseedを投入中...$(NC)"
+	@cd backend
+	source ../$(COMMON_SCRIPT)
+	if activate_venv; then
+		if python scripts/db/init_db.py --environment local --only users; then
+			echo -e "$(GREEN)✓ ユーザーseed投入完了$(NC)"
+		else
+			echo -e "$(RED)❌ ユーザーseed投入に失敗しました$(NC)"
+			exit 1
+		fi
+	else
+		echo -e "$(RED)❌ Python仮想環境のアクティベートに失敗しました$(NC)"
+		exit 1
+	fi
 
-db-clean: ## DynamoDB Localクリーンアップ（破壊的） @destructive
+db-seed-rulesets: ## ルールセットseedのみ投入
+	@echo -e "$(YELLOW)ルールセットseedを投入中...$(NC)"
+	@cd backend
+	source ../$(COMMON_SCRIPT)
+	if activate_venv; then
+		if python scripts/db/init_db.py --environment local --only rulesets; then
+			echo -e "$(GREEN)✓ ルールセットseed投入完了$(NC)"
+		else
+			echo -e "$(RED)❌ ルールセットseed投入に失敗しました$(NC)"
+			exit 1
+		fi
+	else
+		echo -e "$(RED)❌ Python仮想環境のアクティベートに失敗しました$(NC)"
+		exit 1
+	fi
+
+db-recreate: ## テーブル再作成（local環境のみ、破壊的） @destructive
+	@echo -e "$(RED)⚠️  既存テーブルを削除して再作成します$(NC)"
+	@read -p "続行しますか？ (y/N): " confirm
+	if [ "$$confirm" = "y" ]; then
+		@cd backend
+		source ../$(COMMON_SCRIPT)
+		if activate_venv; then
+			if python scripts/db/init_db.py --environment local --recreate; then
+				echo -e "$(GREEN)✓ テーブル再作成完了$(NC)"
+			else
+				echo -e "$(RED)❌ テーブル再作成に失敗しました$(NC)"
+				exit 1
+			fi
+		else
+			echo -e "$(RED)❌ Python仮想環境のアクティベートに失敗しました$(NC)"
+			exit 1
+		fi
+	else
+		echo -e "$(RED)キャンセルしました$(NC)"
+	fi
+
+db-clear-data: ## テーブルデータをクリア（local環境のみ、破壊的） @destructive
+	@echo -e "$(RED)⚠️  テーブル内の全データを削除します$(NC)"
+	@read -p "続行しますか？ (y/N): " confirm
+	if [ "$$confirm" = "y" ]; then
+		@cd backend
+		source ../$(COMMON_SCRIPT)
+		if activate_venv; then
+			if python scripts/db/init_db.py --environment local --clear-data; then
+				echo -e "$(GREEN)✓ データクリア完了$(NC)"
+			else
+				echo -e "$(RED)❌ データクリアに失敗しました$(NC)"
+				exit 1
+			fi
+		else
+			echo -e "$(RED)❌ Python仮想環境のアクティベートに失敗しました$(NC)"
+			exit 1
+		fi
+	else
+		echo -e "$(RED)キャンセルしました$(NC)"
+	fi
+
+db-destroy: ## DynamoDB Local完全削除（Docker環境破壊） @destructive
 	@echo -e "$(RED)⚠️  このプロジェクトのDocker Composeリソースを削除します$(NC)"
 	@echo -e "$(YELLOW)削除対象:$(NC)"
 	@echo -e "  - このプロジェクトのコンテナ"
