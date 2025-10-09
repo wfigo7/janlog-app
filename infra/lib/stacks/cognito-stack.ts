@@ -1,5 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
+import * as logs from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 import { JanlogStackProps } from '../common/stack-props';
 
@@ -11,6 +12,18 @@ export class CognitoStack extends cdk.Stack {
     super(scope, id, props);
 
     const { environment } = props;
+
+    // CloudWatch Logs用のロググループを作成
+    // Cognitoは自動的にこのロググループに認証イベントを書き込む
+    new logs.LogGroup(this, 'CognitoLogs', {
+      logGroupName: `/aws/cognito/janlog-user-pool-${environment}`,
+      retention: environment === 'production'
+        ? logs.RetentionDays.ONE_MONTH
+        : logs.RetentionDays.ONE_WEEK,
+      removalPolicy: environment === 'production'
+        ? cdk.RemovalPolicy.RETAIN
+        : cdk.RemovalPolicy.DESTROY,
+    });
 
     // Cognito User Pool
     this.userPool = new cognito.UserPool(this, 'JanlogUserPool', {
@@ -63,6 +76,10 @@ Janlogアプリ
         ? cdk.RemovalPolicy.RETAIN
         : cdk.RemovalPolicy.DESTROY,
     });
+
+    // CloudWatch Logsへのログ設定
+    // Cognitoは自動的にCloudWatch Logsに書き込むため、ロググループを作成するだけで有効化される
+    // ログは認証イベント（ログイン成功/失敗、パスワードリセット等）が記録される
 
     // User Pool Client
     this.userPoolClient = new cognito.UserPoolClient(this, 'JanlogUserPoolClient', {

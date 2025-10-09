@@ -48,6 +48,14 @@ Janlogは、フリー雀荘やセット麻雀の成績を個人用に記録・�
 - **Alert.alert禁止**: React Native標準の`Alert.alert`は使用せず、カスタムアラートコンポーネントを使用
 - **詳細**: [frontend/docs/UI_GUIDELINES.md](frontend/docs/UI_GUIDELINES.md) を参照
 
+### 監視・ログ
+
+本番環境でのトラブルシューティングのため、CloudWatch Logsを使用しています：
+
+- **API Gatewayアクセスログ**: リクエスト/レスポンス、エラー情報
+- **Cognito認証ログ**: ログイン成功/失敗、認証エラー
+- **詳細**: [docs/monitoring-logs.md](docs/monitoring-logs.md) を参照
+
 ## 開発環境セットアップ
 
 ### 前提条件

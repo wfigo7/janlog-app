@@ -1,5 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import { Construct } from 'constructs';
 import { JanlogStackProps } from '../common/stack-props';
 
@@ -97,5 +98,44 @@ export class DynamoDBStack extends cdk.Stack {
             description: 'GSI2 Index Name for Match by User Mode Date',
             exportName: `JanlogGSI2IndexName-${environment}`,
         });
+
+        // CloudWatch Alarms（production環境のみ）
+        if (environment === 'production') {
+            // DynamoDB読み取りスロットリングアラーム
+            const readThrottleAlarm = new cloudwatch.Alarm(this, 'DynamoDBReadThrottleAlarm', {
+                metric: this.mainTable.metricUserErrors({
+                    period: cdk.Duration.minutes(5),
+                }),
+                threshold: 10,
+                evaluationPeriods: 2,
+                alarmDescription: 'DynamoDB read throttling detected',
+                alarmName: `janlog-dynamodb-read-throttle-${environment}`,
+                treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+            });
+
+            // DynamoDB書き込みスロットリングアラーム
+            const writeThrottleAlarm = new cloudwatch.Alarm(this, 'DynamoDBWriteThrottleAlarm', {
+                metric: this.mainTable.metricSystemErrorsForOperations({
+                    operations: [dynamodb.Operation.PUT_ITEM, dynamodb.Operation.UPDATE_ITEM],
+                    period: cdk.Duration.minutes(5),
+                }),
+                threshold: 10,
+                evaluationPeriods: 2,
+                alarmDescription: 'DynamoDB write throttling detected',
+                alarmName: `janlog-dynamodb-write-throttle-${environment}`,
+                treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+            });
+
+            // 出力
+            new cdk.CfnOutput(this, 'ReadThrottleAlarmName', {
+                value: readThrottleAlarm.alarmName,
+                description: 'DynamoDB Read Throttle Alarm Name',
+            });
+
+            new cdk.CfnOutput(this, 'WriteThrottleAlarmName', {
+                value: writeThrottleAlarm.alarmName,
+                description: 'DynamoDB Write Throttle Alarm Name',
+            });
+        }
     }
 }

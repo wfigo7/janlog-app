@@ -3,6 +3,9 @@ import * as apigatewayv2 from 'aws-cdk-lib/aws-apigatewayv2';
 import * as apigatewayv2Integrations from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
+import * as logs from 'aws-cdk-lib/aws-logs';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import { Construct } from 'constructs';
 import { JanlogStackProps } from '../common/stack-props';
 
@@ -21,12 +24,23 @@ export class ApiGatewayStack extends cdk.Stack {
 
     const { environment, userPool, userPoolClient, lambdaFunction } = props;
 
+    // CloudWatch Logs用のロググループを作成
+    const apiLogGroup = new logs.LogGroup(this, 'ApiGatewayAccessLogs', {
+      logGroupName: `/aws/apigateway/janlog-api-${environment}`,
+      retention: environment === 'production'
+        ? logs.RetentionDays.ONE_MONTH
+        : logs.RetentionDays.ONE_WEEK,
+      removalPolicy: environment === 'production'
+        ? cdk.RemovalPolicy.RETAIN
+        : cdk.RemovalPolicy.DESTROY,
+    });
+
     // HTTP API Gateway（L2 Constructを使用）
     this.httpApi = new apigatewayv2.HttpApi(this, 'JanlogHttpApi', {
       apiName: `janlog-api-${environment}`,
       description: 'Janlog REST API',
       corsPreflight: {
-        allowOrigins: environment === 'production' 
+        allowOrigins: environment === 'production'
           ? ['https://janlog.app'] // 本番では制限
           : ['*'], // 開発環境では全許可
         allowMethods: [
@@ -110,7 +124,7 @@ export class ApiGatewayStack extends cdk.Stack {
     });
 
     // L1 Constructを使用してAuthorizerを設定
-    authRoutes.forEach((route, index) => {
+    authRoutes.forEach((route) => {
       const cfnRoute = route.node.defaultChild as apigatewayv2.CfnRoute;
       cfnRoute.authorizationType = 'JWT';
       cfnRoute.authorizerId = this.jwtAuthorizer.authorizerId;
@@ -118,6 +132,78 @@ export class ApiGatewayStack extends cdk.Stack {
 
     // API Gateway デプロイメント（自動デプロイ）
     // L2 Constructでは自動的にデプロイされる
+
+    // アクセスログの設定（L1 Constructを使用）
+    const defaultStage = this.httpApi.defaultStage?.node.defaultChild as apigatewayv2.CfnStage;
+    if (defaultStage) {
+      defaultStage.accessLogSettings = {
+        destinationArn: apiLogGroup.logGroupArn,
+        format: JSON.stringify({
+          requestId: '$context.requestId',
+          ip: '$context.identity.sourceIp',
+          requestTime: '$context.requestTime',
+          httpMethod: '$context.httpMethod',
+          routeKey: '$context.routeKey',
+          status: '$context.status',
+          protocol: '$context.protocol',
+          responseLength: '$context.responseLength',
+          errorMessage: '$context.error.message',
+          errorMessageString: '$context.error.messageString',
+          authorizerError: '$context.authorizer.error',
+          integrationErrorMessage: '$context.integrationErrorMessage',
+        }),
+      };
+
+      // 詳細なメトリクスを有効化
+      // 注意: HTTP APIでは実行ログ（loggingLevel, dataTraceEnabled）はサポートされていない
+      // アクセスログのみがサポートされる
+      defaultStage.defaultRouteSettings = {
+        detailedMetricsEnabled: true,
+        throttlingBurstLimit: 100,
+        throttlingRateLimit: 50,
+      };
+    }
+
+    // API GatewayがCloudWatch Logsに書き込む権限を付与
+    apiLogGroup.grantWrite(new iam.ServicePrincipal('apigateway.amazonaws.com'));
+
+    // CloudWatch Alarms（production環境のみ）
+    if (environment === 'production') {
+      // 4xxエラー率アラーム
+      const clientErrorAlarm = new cloudwatch.Alarm(this, 'ApiGateway4xxAlarm', {
+        metric: this.httpApi.metricClientError({
+          period: cdk.Duration.minutes(5),
+        }),
+        threshold: 50, // 5分間に50回以上
+        evaluationPeriods: 2,
+        alarmDescription: 'API Gateway 4xx error rate is too high',
+        alarmName: `janlog-api-4xx-errors-${environment}`,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      });
+
+      // 5xxエラー率アラーム
+      const serverErrorAlarm = new cloudwatch.Alarm(this, 'ApiGateway5xxAlarm', {
+        metric: this.httpApi.metricServerError({
+          period: cdk.Duration.minutes(5),
+        }),
+        threshold: 10, // 5分間に10回以上
+        evaluationPeriods: 1,
+        alarmDescription: 'API Gateway 5xx error rate is too high',
+        alarmName: `janlog-api-5xx-errors-${environment}`,
+        treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      });
+
+      // 出力
+      new cdk.CfnOutput(this, 'ClientErrorAlarmName', {
+        value: clientErrorAlarm.alarmName,
+        description: 'API Gateway 4xx Error Alarm Name',
+      });
+
+      new cdk.CfnOutput(this, 'ServerErrorAlarmName', {
+        value: serverErrorAlarm.alarmName,
+        description: 'API Gateway 5xx Error Alarm Name',
+      });
+    }
 
     // 出力
     new cdk.CfnOutput(this, 'HttpApiUrl', {
