@@ -287,7 +287,7 @@
   - CDKスタックの更新
   - _要件: Web版アプリ配信用ストレージの最適化_
 
-- [ ] 32. CloudFront配信設定の実装
+- [x] 32. CloudFront配信設定の実装
   - CDKでCloudFrontディストリビューション作成
   - S3バケット（janlog-frontend-{environment}）をオリジンとして設定
   - OAC（Origin Access Control）設定によるS3アクセス制限

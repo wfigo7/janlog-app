@@ -2,6 +2,7 @@
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 import { S3Stack } from '../lib/stacks/s3-stack';
+import { CloudFrontStack } from '../lib/stacks/cloudfront-stack';
 import { DynamoDBStack } from '../lib/stacks/dynamodb-stack';
 import { CognitoStack } from '../lib/stacks/cognito-stack';
 import { ECRStack } from '../lib/stacks/ecr-stack';
@@ -28,9 +29,16 @@ cdk.Tags.of(app).add('Developer', defaultStackProps.developer!);
 cdk.Tags.of(app).add('ManagedBy', defaultStackProps.ManagedBy!);
 
 // S3スタック
-new S3Stack(app, `JanlogS3Stack-${environment}`, {
+const s3Stack = new S3Stack(app, `JanlogS3Stack-${environment}`, {
   ...defaultStackProps,
   environment,
+});
+
+// CloudFrontスタック（バケット名を文字列として渡して循環参照を回避）
+new CloudFrontStack(app, `JanlogCloudFrontStack-${environment}`, {
+  ...defaultStackProps,
+  environment,
+  frontendBucketName: `janlog-frontend-${environment}`,
 });
 
 // DynamoDBスタック（全環境で作成）
