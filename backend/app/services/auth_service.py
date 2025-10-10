@@ -3,11 +3,14 @@
 Cognito JWT トークンの検証とユーザー情報の取得を行う
 """
 import json
+import logging
 import requests
 from typing import Optional, Dict, Any
 from jose import jwt, JWTError
 from fastapi import HTTPException, status
 from app.config.settings import settings
+
+logger = logging.getLogger(__name__)
 
 
 class AuthService:
@@ -126,26 +129,34 @@ class AuthService:
         """
         JWTトークンからユーザー情報を取得する
         """
-        payload = self.verify_token(token)
-        
-        # Cognitoのペイロードからユーザー情報を抽出
-        user_info = {
-            'user_id': payload.get('sub'),
-            'email': payload.get('email'),
-            'email_verified': payload.get('email_verified', False),
-            'cognito_username': payload.get('cognito:username'),
-            'token_use': payload.get('token_use'),
-            'auth_time': payload.get('auth_time'),
-            'exp': payload.get('exp'),
-            'iat': payload.get('iat'),
-        }
-        
-        # カスタム属性があれば追加
-        for key, value in payload.items():
-            if key.startswith('custom:'):
-                user_info[key] = value
-        
-        return user_info
+        try:
+            payload = self.verify_token(token)
+            
+            # Cognitoのペイロードからユーザー情報を抽出
+            user_info = {
+                'user_id': payload.get('sub'),
+                'email': payload.get('email'),
+                'email_verified': payload.get('email_verified', False),
+                'cognito_username': payload.get('cognito:username'),
+                'token_use': payload.get('token_use'),
+                'auth_time': payload.get('auth_time'),
+                'exp': payload.get('exp'),
+                'iat': payload.get('iat'),
+            }
+            
+            # カスタム属性があれば追加
+            for key, value in payload.items():
+                if key.startswith('custom:'):
+                    user_info[key] = value
+            
+            user_id = user_info.get('user_id', 'unknown')
+            logger.debug(f"トークンからユーザー情報取得成功 - sub: {user_id}")
+            return user_info
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.warning(f"トークンからユーザー情報取得失敗: {str(e)}")
+            raise
 
     def get_user_role(self, token: str) -> str:
         """
@@ -162,11 +173,17 @@ class AuthService:
         管理者権限を要求する
         """
         role = self.get_user_role(token)
+        payload = self.verify_token(token)
+        user_id = payload.get('sub', 'unknown')
+        
         if role != 'admin':
+            logger.warning(f"管理者権限チェック失敗 - sub: {user_id}, role: {role}")
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="管理者権限が必要です"
             )
+        
+        logger.debug(f"管理者権限チェック成功 - sub: {user_id}")
 
 
 # シングルトンインスタンス

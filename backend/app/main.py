@@ -2,7 +2,7 @@
 Janlog Backend - FastAPI Application with Lambda Web Adapter
 """
 
-from fastapi import FastAPI, HTTPException, Query, Depends
+from fastapi import FastAPI, HTTPException, Query, Depends, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
@@ -11,6 +11,10 @@ from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 from dotenv import load_dotenv
 
+# ロギング設定
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 # 環境変数の読み込み（開発環境用）
@@ -46,6 +50,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# APIルーター（/api/v1プレフィックス）
+api_router = APIRouter(prefix="/api/v1")
 
 
 # レスポンスモデル
@@ -114,23 +121,24 @@ async def internal_error_handler(request, exc):
     )
 
 
-# 対局記録API（認証なし、固定ユーザーID使用）
-FIXED_USER_ID = "test-user-001"  # 開発用固定ユーザーID
+# ========================================
+# 認証付きエンドポイント（/api/v1）
+# ========================================
 
 
 # 対局関連エンドポイント
-# 認証なし版（固定ユーザーID使用）
-FIXED_USER_ID = "test-user-001"  # 開発用固定ユーザーID
-
-
-@app.post("/matches", status_code=201)
-async def create_match(request: MatchRequest) -> Dict[str, Any]:
+@api_router.post("/matches", status_code=201)
+async def create_match(
+    request: MatchRequest, user_id: str = Depends(get_current_user_id)
+) -> Dict[str, Any]:
     """
-    対局を登録（認証なし、固定ユーザーID使用）
+    対局を登録（認証付き）
     """
     try:
+        logger.info(f"対局登録開始 - user_id: {user_id}")
         match_service = get_match_service()
-        match = await match_service.create_match(request, FIXED_USER_ID)
+        match = await match_service.create_match(request, user_id)
+        logger.debug(f"対局登録成功 - matchId: {match.matchId}, user_id: {user_id}")
 
         return {
             "success": True,
@@ -139,13 +147,18 @@ async def create_match(request: MatchRequest) -> Dict[str, Any]:
         }
 
     except ValueError as e:
+        logger.warning(
+            f"対局登録バリデーションエラー - user_id: {user_id}, error: {str(e)}"
+        )
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        logger.error(f"対局登録失敗 - user_id: {user_id}, error: {str(e)}")
         raise HTTPException(status_code=500, detail="対局登録に失敗しました")
 
 
-@app.get("/matches")
+@api_router.get("/matches")
 async def get_matches(
+    user_id: str = Depends(get_current_user_id),
     from_date: Optional[str] = Query(
         None, alias="from", description="開始日（YYYY-MM-DD形式）"
     ),
@@ -161,11 +174,13 @@ async def get_matches(
     ),
 ) -> Dict[str, Any]:
     """
-    対局一覧を取得（認証なし、固定ユーザーID使用）
+    対局一覧を取得（認証付き）
     """
     try:
         import json
         import base64
+
+        logger.info(f"対局一覧取得開始 - user_id: {user_id}, mode: {mode}")
 
         # next_keyをデコード
         last_evaluated_key = None
@@ -178,7 +193,7 @@ async def get_matches(
 
         match_service = get_match_service()
         result = await match_service.get_matches(
-            user_id=FIXED_USER_ID,
+            user_id=user_id,
             from_date=from_date,
             to_date=to_date,
             game_mode=mode,
@@ -187,6 +202,8 @@ async def get_matches(
             limit=limit,
             last_evaluated_key=last_evaluated_key,
         )
+
+        logger.debug(f"対局一覧取得成功 - user_id: {user_id}, count: {result['total']}")
 
         # next_keyをエンコード
         encoded_next_key = None
@@ -210,41 +227,59 @@ async def get_matches(
         }
 
     except Exception as e:
+        logger.error(f"対局一覧取得失敗 - user_id: {user_id}, error: {str(e)}")
         raise HTTPException(status_code=500, detail="対局一覧取得に失敗しました")
 
 
-@app.get("/matches/{match_id}")
-async def get_match(match_id: str) -> Dict[str, Any]:
+@api_router.get("/matches/{match_id}")
+async def get_match(
+    match_id: str, user_id: str = Depends(get_current_user_id)
+) -> Dict[str, Any]:
     """
-    対局詳細を取得（認証なし、固定ユーザーID使用）
+    対局詳細を取得（認証付き）
     """
     try:
+        logger.info(f"対局詳細取得開始 - user_id: {user_id}, match_id: {match_id}")
         match_service = get_match_service()
-        match = await match_service.get_match_by_id(FIXED_USER_ID, match_id)
+        match = await match_service.get_match_by_id(user_id, match_id)
 
         if not match:
+            logger.warning(
+                f"対局が見つかりません - user_id: {user_id}, match_id: {match_id}"
+            )
             raise HTTPException(status_code=404, detail="対局が見つかりません")
 
+        logger.debug(f"対局詳細取得成功 - user_id: {user_id}, match_id: {match_id}")
         return {"success": True, "data": match.to_api_response()}
 
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(
+            f"対局詳細取得失敗 - user_id: {user_id}, match_id: {match_id}, error: {str(e)}"
+        )
         raise HTTPException(status_code=500, detail="対局取得に失敗しました")
 
 
-@app.put("/matches/{match_id}")
-async def update_match(match_id: str, request: MatchRequest) -> Dict[str, Any]:
+@api_router.put("/matches/{match_id}")
+async def update_match(
+    match_id: str, request: MatchRequest, user_id: str = Depends(get_current_user_id)
+) -> Dict[str, Any]:
     """
-    対局を更新（認証なし、固定ユーザーID使用）
+    対局を更新（認証付き）
     """
     try:
+        logger.info(f"対局更新開始 - user_id: {user_id}, match_id: {match_id}")
         match_service = get_match_service()
-        match = await match_service.update_match(FIXED_USER_ID, match_id, request)
+        match = await match_service.update_match(user_id, match_id, request)
 
         if not match:
+            logger.warning(
+                f"対局が見つかりません - user_id: {user_id}, match_id: {match_id}"
+            )
             raise HTTPException(status_code=404, detail="対局が見つかりません")
 
+        logger.debug(f"対局更新成功 - user_id: {user_id}, match_id: {match_id}")
         return {
             "success": True,
             "message": "対局を更新しました",
@@ -254,34 +289,51 @@ async def update_match(match_id: str, request: MatchRequest) -> Dict[str, Any]:
     except HTTPException:
         raise
     except ValueError as e:
+        logger.warning(
+            f"対局更新バリデーションエラー - user_id: {user_id}, match_id: {match_id}, error: {str(e)}"
+        )
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        logger.error(
+            f"対局更新失敗 - user_id: {user_id}, match_id: {match_id}, error: {str(e)}"
+        )
         raise HTTPException(status_code=500, detail="対局更新に失敗しました")
 
 
-@app.delete("/matches/{match_id}")
-async def delete_match(match_id: str) -> Dict[str, Any]:
+@api_router.delete("/matches/{match_id}")
+async def delete_match(
+    match_id: str, user_id: str = Depends(get_current_user_id)
+) -> Dict[str, Any]:
     """
-    対局を削除（認証なし、固定ユーザーID使用）
+    対局を削除（認証付き）
     """
     try:
+        logger.info(f"対局削除開始 - user_id: {user_id}, match_id: {match_id}")
         match_service = get_match_service()
-        success = await match_service.delete_match(FIXED_USER_ID, match_id)
+        success = await match_service.delete_match(user_id, match_id)
 
         if not success:
+            logger.warning(
+                f"対局が見つかりません - user_id: {user_id}, match_id: {match_id}"
+            )
             raise HTTPException(status_code=404, detail="対局が見つかりません")
 
+        logger.debug(f"対局削除成功 - user_id: {user_id}, match_id: {match_id}")
         return {"success": True, "message": "対局を削除しました"}
 
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(
+            f"対局削除失敗 - user_id: {user_id}, match_id: {match_id}, error: {str(e)}"
+        )
         raise HTTPException(status_code=500, detail="対局削除に失敗しました")
 
 
 # 統計API
-@app.get("/stats/summary")
+@api_router.get("/stats/summary")
 async def get_stats_summary(
+    user_id: str = Depends(get_current_user_id),
     from_date: Optional[str] = Query(
         None, alias="from", description="開始日（YYYY-MM-DD形式）"
     ),
@@ -293,12 +345,13 @@ async def get_stats_summary(
     ruleset_id: Optional[str] = Query(None, description="ルールセットID"),
 ) -> Dict[str, Any]:
     """
-    成績サマリを取得（認証なし、固定ユーザーID使用）
+    成績サマリを取得（認証付き）
     """
     try:
+        logger.info(f"統計サマリ取得開始 - user_id: {user_id}, mode: {mode}")
         stats_service = get_stats_service()
         stats = await stats_service.calculate_stats_summary(
-            user_id=FIXED_USER_ID,
+            user_id=user_id,
             from_date=from_date,
             to_date=to_date,
             game_mode=mode,
@@ -306,14 +359,17 @@ async def get_stats_summary(
             ruleset_id=ruleset_id,
         )
 
+        logger.debug(f"統計サマリ取得成功 - user_id: {user_id}, count: {stats.count}")
         return {"success": True, "data": stats.to_api_response()}
 
     except Exception as e:
+        logger.error(f"統計サマリ取得失敗 - user_id: {user_id}, error: {str(e)}")
         raise HTTPException(status_code=500, detail="統計取得に失敗しました")
 
 
-@app.get("/stats/chart-data")
+@api_router.get("/stats/chart-data")
 async def get_chart_data(
+    user_id: str = Depends(get_current_user_id),
     from_date: Optional[str] = Query(
         None, alias="from", description="開始日（YYYY-MM-DD形式）"
     ),
@@ -326,12 +382,13 @@ async def get_chart_data(
     limit: Optional[int] = Query(50, description="取得件数上限"),
 ) -> Dict[str, Any]:
     """
-    チャート用データを取得（認証なし、固定ユーザーID使用）
+    チャート用データを取得（認証付き）
     """
     try:
+        logger.info(f"チャートデータ取得開始 - user_id: {user_id}, mode: {mode}")
         match_service = get_match_service()
         result = await match_service.get_matches(
-            user_id=FIXED_USER_ID,
+            user_id=user_id,
             from_date=from_date,
             to_date=to_date,
             game_mode=mode,
@@ -340,30 +397,39 @@ async def get_chart_data(
             limit=limit,
         )
 
+        logger.debug(
+            f"チャートデータ取得成功 - user_id: {user_id}, count: {len(result['matches'])}"
+        )
         return {"success": True, "data": {"matches": result["matches"]}}
 
     except Exception as e:
+        logger.error(f"チャートデータ取得失敗 - user_id: {user_id}, error: {str(e)}")
         raise HTTPException(status_code=500, detail="チャートデータ取得に失敗しました")
 
 
 # 会場関連エンドポイント
-@app.get("/venues")
-async def get_venues() -> Dict[str, Any]:
+@api_router.get("/venues")
+async def get_venues(
+    user_id: str = Depends(get_current_user_id),
+) -> Dict[str, Any]:
     """
-    ユーザーの会場一覧を取得（認証なし、固定ユーザーID使用）
+    ユーザーの会場一覧を取得（認証付き）
     """
     try:
-        venues = await venue_service.get_user_venues(FIXED_USER_ID)
+        logger.info(f"会場一覧取得開始 - user_id: {user_id}")
+        venues = await venue_service.get_user_venues(user_id)
+        logger.debug(f"会場一覧取得成功 - user_id: {user_id}, count: {len(venues)}")
         return {
             "success": True,
             "data": [venue.dict(by_alias=True) for venue in venues],
         }
     except Exception as e:
+        logger.error(f"会場一覧取得失敗 - user_id: {user_id}, error: {str(e)}")
         raise HTTPException(status_code=500, detail="会場一覧取得に失敗しました")
 
 
 # 認証関連エンドポイント
-@app.get("/me", response_model=UserResponse)
+@api_router.get("/me", response_model=UserResponse)
 async def get_current_user_info(
     current_user: Dict[str, Any] = Depends(get_current_user),
 ) -> UserResponse:
@@ -371,12 +437,19 @@ async def get_current_user_info(
     現在のユーザー情報を取得する
     """
     try:
+        user_id = current_user["user_id"]
+        logger.info(f"ユーザー情報取得開始 - user_id: {user_id}")
+
         cognito_service = get_cognito_service()
-        user_info = await cognito_service.get_user_info(current_user["user_id"])
+        user_info = await cognito_service.get_user_info(user_id)
 
         if not user_info:
+            logger.warning(f"ユーザー情報が見つかりません - user_id: {user_id}")
             raise HTTPException(status_code=404, detail="ユーザー情報が見つかりません")
 
+        logger.debug(
+            f"ユーザー情報取得成功 - user_id: {user_id}, email: {user_info['email']}"
+        )
         return UserResponse(
             user_id=user_info["user_id"],
             email=user_info["email"],
@@ -388,10 +461,11 @@ async def get_current_user_info(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"ユーザー情報取得失敗 - error: {str(e)}")
         raise HTTPException(status_code=500, detail="ユーザー情報の取得に失敗しました")
 
 
-# ルールセット関連API（認証なし、固定ユーザーID使用）
+# ルールセット関連API
 from app.models.ruleset import (
     RulesetRequest,
     RulesetListResponse,
@@ -403,87 +477,129 @@ from app.models.ruleset import (
 from app.services.ruleset_service import get_ruleset_service
 
 
-@app.get("/rulesets")
-async def get_rulesets() -> Dict[str, Any]:
+@api_router.get("/rulesets")
+async def get_rulesets(
+    user_id: str = Depends(get_current_user_id),
+) -> Dict[str, Any]:
     """
-    ルールセット一覧を取得する（認証なし、固定ユーザーID使用）
+    ルールセット一覧を取得する（認証付き）
     """
     try:
+        logger.info(f"ルールセット一覧取得開始 - user_id: {user_id}")
         ruleset_service = get_ruleset_service()
         result = await ruleset_service.get_rulesets(
-            user_id=FIXED_USER_ID, include_global=True
+            user_id=user_id, include_global=True
         )
 
+        logger.debug(
+            f"ルールセット一覧取得成功 - user_id: {user_id}, count: {len(result.rulesets)}"
+        )
         return {"success": True, "data": result.rulesets}
     except Exception as e:
-        print(f"ルールセット一覧取得エラー: {e}")
-        import traceback
-
-        traceback.print_exc()
+        logger.error(f"ルールセット一覧取得失敗 - user_id: {user_id}, error: {str(e)}")
         raise HTTPException(
             status_code=500, detail=f"ルールセット一覧取得に失敗しました: {str(e)}"
         )
 
 
-@app.post("/rulesets", response_model=dict, status_code=201)
-async def create_ruleset(request: RulesetRequest) -> dict:
+@api_router.post("/rulesets", response_model=dict, status_code=201)
+async def create_ruleset(
+    request: RulesetRequest, user_id: str = Depends(get_current_user_id)
+) -> dict:
     """
-    ルールセットを作成する（認証なし、固定ユーザーID使用）
+    ルールセットを作成する（認証付き）
     """
     try:
+        logger.info(
+            f"ルールセット作成開始 - user_id: {user_id}, ruleName: {request.ruleName}"
+        )
         ruleset_service = get_ruleset_service()
         ruleset = await ruleset_service.create_ruleset(
             request=request,
-            created_by=FIXED_USER_ID,
+            created_by=user_id,
             is_global=False,  # 個人ルールとして作成
         )
 
+        logger.debug(
+            f"ルールセット作成成功 - user_id: {user_id}, rulesetId: {ruleset.rulesetId}"
+        )
         return {
             "success": True,
             "message": "ルールセットを作成しました",
             "data": ruleset.to_api_response(),
         }
     except ValueError as e:
+        logger.warning(
+            f"ルールセット作成バリデーションエラー - user_id: {user_id}, error: {str(e)}"
+        )
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        logger.error(f"ルールセット作成失敗 - user_id: {user_id}, error: {str(e)}")
         raise HTTPException(status_code=500, detail="ルールセット作成に失敗しました")
 
 
-@app.get("/rulesets/{ruleset_id}", response_model=dict)
-async def get_ruleset(ruleset_id: str) -> dict:
+@api_router.get("/rulesets/{ruleset_id}", response_model=dict)
+async def get_ruleset(
+    ruleset_id: str, user_id: str = Depends(get_current_user_id)
+) -> dict:
     """
-    特定のルールセットを取得する（認証なし、固定ユーザーID使用）
+    特定のルールセットを取得する（認証付き）
     """
     try:
+        logger.info(
+            f"ルールセット取得開始 - user_id: {user_id}, ruleset_id: {ruleset_id}"
+        )
         ruleset_service = get_ruleset_service()
         ruleset = await ruleset_service.get_ruleset(
-            ruleset_id=ruleset_id, user_id=FIXED_USER_ID
+            ruleset_id=ruleset_id, user_id=user_id
         )
 
         if not ruleset:
+            logger.warning(
+                f"ルールセットが見つかりません - user_id: {user_id}, ruleset_id: {ruleset_id}"
+            )
             raise HTTPException(status_code=404, detail="ルールセットが見つかりません")
 
+        logger.debug(
+            f"ルールセット取得成功 - user_id: {user_id}, ruleset_id: {ruleset_id}"
+        )
         return {"success": True, "data": ruleset.to_api_response()}
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(
+            f"ルールセット取得失敗 - user_id: {user_id}, ruleset_id: {ruleset_id}, error: {str(e)}"
+        )
         raise HTTPException(status_code=500, detail="ルールセット取得に失敗しました")
 
 
-@app.put("/rulesets/{ruleset_id}", response_model=dict)
-async def update_ruleset(ruleset_id: str, request: RulesetRequest) -> dict:
+@api_router.put("/rulesets/{ruleset_id}", response_model=dict)
+async def update_ruleset(
+    ruleset_id: str,
+    request: RulesetRequest,
+    user_id: str = Depends(get_current_user_id),
+) -> dict:
     """
-    ルールセットを更新する（認証なし、固定ユーザーID使用）
+    ルールセットを更新する（認証付き）
     """
     try:
+        logger.info(
+            f"ルールセット更新開始 - user_id: {user_id}, ruleset_id: {ruleset_id}"
+        )
         ruleset_service = get_ruleset_service()
         ruleset = await ruleset_service.update_ruleset(
-            ruleset_id=ruleset_id, request=request, user_id=FIXED_USER_ID
+            ruleset_id=ruleset_id, request=request, user_id=user_id
         )
 
         if not ruleset:
+            logger.warning(
+                f"ルールセットが見つかりません - user_id: {user_id}, ruleset_id: {ruleset_id}"
+            )
             raise HTTPException(status_code=404, detail="ルールセットが見つかりません")
 
+        logger.debug(
+            f"ルールセット更新成功 - user_id: {user_id}, ruleset_id: {ruleset_id}"
+        )
         return {
             "success": True,
             "message": "ルールセットを更新しました",
@@ -492,158 +608,117 @@ async def update_ruleset(ruleset_id: str, request: RulesetRequest) -> dict:
     except HTTPException:
         raise
     except ValueError as e:
+        logger.warning(
+            f"ルールセット更新バリデーションエラー - user_id: {user_id}, ruleset_id: {ruleset_id}, error: {str(e)}"
+        )
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        logger.error(
+            f"ルールセット更新失敗 - user_id: {user_id}, ruleset_id: {ruleset_id}, error: {str(e)}"
+        )
         raise HTTPException(status_code=500, detail="ルールセット更新に失敗しました")
 
 
-@app.delete("/rulesets/{ruleset_id}")
-async def delete_ruleset(ruleset_id: str) -> dict:
+@api_router.delete("/rulesets/{ruleset_id}")
+async def delete_ruleset(
+    ruleset_id: str, user_id: str = Depends(get_current_user_id)
+) -> dict:
     """
-    ルールセットを削除する（認証なし、固定ユーザーID使用）
+    ルールセットを削除する（認証付き）
     """
     try:
+        logger.info(
+            f"ルールセット削除開始 - user_id: {user_id}, ruleset_id: {ruleset_id}"
+        )
         ruleset_service = get_ruleset_service()
         success = await ruleset_service.delete_ruleset(
-            ruleset_id=ruleset_id, user_id=FIXED_USER_ID
+            ruleset_id=ruleset_id, user_id=user_id
         )
 
         if not success:
+            logger.warning(
+                f"ルールセットが見つかりません - user_id: {user_id}, ruleset_id: {ruleset_id}"
+            )
             raise HTTPException(status_code=404, detail="ルールセットが見つかりません")
 
+        logger.debug(
+            f"ルールセット削除成功 - user_id: {user_id}, ruleset_id: {ruleset_id}"
+        )
         return {"success": True, "message": "ルールセットを削除しました"}
     except HTTPException:
         raise
     except ValueError as e:
+        logger.warning(
+            f"ルールセット削除バリデーションエラー - user_id: {user_id}, ruleset_id: {ruleset_id}, error: {str(e)}"
+        )
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        logger.error(
+            f"ルールセット削除失敗 - user_id: {user_id}, ruleset_id: {ruleset_id}, error: {str(e)}"
+        )
         raise HTTPException(status_code=500, detail="ルールセット削除に失敗しました")
 
 
-@app.post("/rulesets/calculate", response_model=PointCalculationResponse)
+@api_router.post("/rulesets/calculate", response_model=PointCalculationResponse)
 async def calculate_points(
-    request: PointCalculationRequest,
+    request: PointCalculationRequest, user_id: str = Depends(get_current_user_id)
 ) -> PointCalculationResponse:
     """
     ポイント計算を実行する（プレビュー用）
     """
     try:
+        logger.info(
+            f"ポイント計算開始 - user_id: {user_id}, ruleset_id: {request.rulesetId}"
+        )
         ruleset_service = get_ruleset_service()
-        return await ruleset_service.calculate_points(request, FIXED_USER_ID)
+        result = await ruleset_service.calculate_points(request, user_id)
+        logger.debug(
+            f"ポイント計算成功 - user_id: {user_id}, finalPoints: {result.finalPoints}"
+        )
+        return result
     except ValueError as e:
+        logger.warning(
+            f"ポイント計算バリデーションエラー - user_id: {user_id}, error: {str(e)}"
+        )
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        logger.error(f"ポイント計算失敗 - user_id: {user_id}, error: {str(e)}")
         raise HTTPException(status_code=500, detail="ポイント計算に失敗しました")
 
 
-@app.get("/rulesets-templates", response_model=RuleTemplateResponse)
+@api_router.get("/rulesets-templates", response_model=RuleTemplateResponse)
 async def get_rule_templates() -> RuleTemplateResponse:
     """
     ルールテンプレート一覧を取得する
     """
     try:
+        logger.info("ルールテンプレート一覧取得開始")
         ruleset_service = get_ruleset_service()
-        return await ruleset_service.get_rule_templates()
+        result = await ruleset_service.get_rule_templates()
+        logger.debug(f"ルールテンプレート一覧取得成功 - count: {len(result.templates)}")
+        return result
     except Exception as e:
+        logger.error(f"ルールテンプレート取得失敗 - error: {str(e)}")
         raise HTTPException(
             status_code=500, detail="ルールテンプレート取得に失敗しました"
         )
 
 
-@app.get("/rulesets-rule-options", response_model=RuleOptionsResponse)
+@api_router.get("/rulesets-rule-options", response_model=RuleOptionsResponse)
 async def get_rule_options() -> RuleOptionsResponse:
     """
     ルール選択肢一覧を取得する（UI用）
     """
     try:
+        logger.info("ルール選択肢一覧取得開始")
         ruleset_service = get_ruleset_service()
-        return await ruleset_service.get_rule_options()
+        result = await ruleset_service.get_rule_options()
+        logger.debug("ルール選択肢一覧取得成功")
+        return result
     except Exception as e:
+        logger.error(f"ルール選択肢取得失敗 - error: {str(e)}")
         raise HTTPException(status_code=500, detail="ルール選択肢取得に失敗しました")
 
 
-# 招待機能はCognitoコンソールから直接実行するため、APIエンドポイントは不要
-
-
-# 認証付きエンドポイント（将来フェーズ2で使用）
-@app.post("/api/v1/matches", status_code=201)
-async def create_match_authenticated(
-    request: MatchRequest, user_id: str = Depends(get_current_user_id)
-) -> Dict[str, Any]:
-    """
-    対局を登録（認証付き）
-    """
-    try:
-        match_service = get_match_service()
-        match = await match_service.create_match(request, user_id)
-
-        return {
-            "success": True,
-            "message": "対局を登録しました",
-            "data": match.to_api_response(),
-        }
-
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="対局登録に失敗しました")
-
-
-@app.get("/api/v1/matches")
-async def get_matches_authenticated(
-    user_id: str = Depends(get_current_user_id),
-    from_date: Optional[str] = Query(
-        None, alias="from", description="開始日（YYYY-MM-DD形式）"
-    ),
-    to_date: Optional[str] = Query(
-        None, alias="to", description="終了日（YYYY-MM-DD形式）"
-    ),
-    mode: Optional[str] = Query("all", description="ゲームモード（three/four/all）"),
-    limit: Optional[int] = Query(100, description="取得件数上限"),
-) -> MatchListResponse:
-    """
-    対局一覧を取得（認証付き）
-    """
-    try:
-        match_service = get_match_service()
-        result = await match_service.get_matches(
-            user_id=user_id,
-            from_date=from_date,
-            to_date=to_date,
-            game_mode=mode,
-            limit=limit,
-        )
-
-        return result
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="対局一覧取得に失敗しました")
-
-
-@app.get("/api/v1/stats/summary")
-async def get_stats_summary_authenticated(
-    user_id: str = Depends(get_current_user_id),
-    from_date: Optional[str] = Query(
-        None, alias="from", description="開始日（YYYY-MM-DD形式）"
-    ),
-    to_date: Optional[str] = Query(
-        None, alias="to", description="終了日（YYYY-MM-DD形式）"
-    ),
-    mode: Optional[str] = Query("four", description="ゲームモード（three/four）"),
-) -> Dict[str, Any]:
-    """
-    成績サマリを取得（認証付き）
-    """
-    try:
-        stats_service = get_stats_service()
-        stats = await stats_service.calculate_stats_summary(
-            user_id=user_id,
-            from_date=from_date,
-            to_date=to_date,
-            game_mode=mode,
-        )
-
-        return {"success": True, "data": stats.to_api_response()}
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="統計取得に失敗しました")
+# APIルーターをアプリに登録
+app.include_router(api_router)
