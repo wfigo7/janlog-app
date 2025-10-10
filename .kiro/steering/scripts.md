@@ -16,6 +16,8 @@
 ├── frontend/Makefile  # サブディレクトリ用Makefile（ルートに委譲）
 ├── backend/Makefile   # サブディレクトリ用Makefile（ルートに委譲）
 ├── infra/Makefile     # サブディレクトリ用Makefile（ルートに委譲）
+├── frontend/scripts/  # フロントエンド固有スクリプト
+│   └── deploy-web.sh           # Web版S3デプロイスクリプト
 ├── backend/scripts/   # バックエンド固有スクリプト
 │   ├── db/            # データベース管理スクリプト
 │   │   ├── __init__.py
@@ -88,6 +90,16 @@ make docker-build       # Dockerイメージビルド（backend）
 make docker-push        # ECRにイメージプッシュ（backend）
 make lambda-update      # Lambda関数コード更新（backend）
 make deploy-backend     # 統合デプロイ（build + push + update）
+```
+
+### Web版デプロイ
+```bash
+make web-build          # Expo Web版ビルド（development環境）
+make web-build-prod     # Expo Web版ビルド（production環境）
+make web-deploy         # Expo Web版をS3にデプロイ（development環境）
+make web-deploy-prod    # Expo Web版をS3にデプロイ（production環境）
+make web-build-deploy   # Expo Web版のビルドとデプロイを一括実行（development環境）
+make web-build-deploy-prod # Expo Web版のビルドとデプロイを一括実行（production環境）
 ```
 
 ### その他
@@ -280,6 +292,48 @@ cd backend && python scripts/db/create_tables.py --environment local --recreate 
 
 新しいseedタイプを追加する場合は、同じパターンでYAMLファイルとスクリプトを追加できます。
 
+## Web版デプロイの詳細
+
+### Expo Web版ビルドの仕組み
+- **ビルドコマンド**: `npm run web:build:dev`（development環境）
+- **出力先**: `frontend/dist/`ディレクトリ
+- **環境変数の扱い**:
+  - ビルド前に`.env.local`を一時的に`.env.local.bak`にリネーム
+  - `.env.development`または`.env.production`が使用される
+  - ビルド後に`.env.local`を元に戻す
+- **静的ファイル生成**: HTML、JavaScript、CSS、アセット（フォント、画像等）
+
+### デプロイスクリプトの機能
+- **スクリプト**: `frontend/scripts/deploy-web.sh`
+- **主な処理**:
+  1. CloudFront Distribution IDの自動取得
+  2. S3へのファイルアップロード（キャッシュ制御付き）
+     - 静的アセット: `max-age=31536000, immutable`（1年間キャッシュ）
+     - HTML/JSON: `max-age=0, must-revalidate`（キャッシュなし）
+  3. CloudFrontキャッシュの無効化（`/*`パス）
+- **環境対応**: development/production環境別のバケット名とDistribution ID
+
+### 使用例
+```bash
+# development環境へのデプロイ
+make web-build-deploy
+
+# production環境へのデプロイ
+make web-build-deploy-prod
+
+# ビルドのみ（デプロイなし）
+make web-build
+
+# デプロイのみ（ビルド済みの場合）
+make web-deploy
+```
+
+### 注意事項
+- **WSL環境**: AWS CLIからのS3アップロードで接続エラーが発生する場合があります
+- **手動アップロード**: エラー時はAWSコンソールから手動でアップロードしてください
+- **キャッシュ無効化**: デプロイ後、CloudFrontのキャッシュ無効化には数分かかります
+- **環境変数**: Web版ビルド時は`.env.local`が無視され、環境別の設定ファイルが使用されます
+
 ## 将来の拡張計画
 - **統合セットアップ**: `make setup`の実装（現在はガイド表示のみ）
 - **データリセット**: `make db-reset`の実装（テーブル削除 + 再作成 + seed投入）
@@ -290,6 +344,6 @@ cd backend && python scripts/db/create_tables.py --environment local --recreate 
 - **ログ管理**: `make logs`（各サービスのログ表示）
 
 ## 関連ドキュメント
-- **DEVELOPMENT.md**: 全コマンドの詳細ガイド
+- **Makefile.md**: 全コマンドの詳細ガイド
 - **ADR-0006**: スクリプト配置方針の設計決定
 - **README.md**: プロジェクト概要と基本的な使用方法

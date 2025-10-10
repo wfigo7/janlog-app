@@ -56,6 +56,22 @@ Janlogは、フリー雀荘やセット麻雀の成績を個人用に記録・�
 - **Cognito認証ログ**: ログイン成功/失敗、認証エラー
 - **詳細**: [docs/monitoring-logs.md](docs/monitoring-logs.md) を参照
 
+## デプロイ
+
+### Web版デプロイ
+
+Expo Web版をCloudFront + S3で配信できます。
+
+```bash
+# development環境へのビルドとデプロイ
+make web-build-deploy
+
+# production環境へのビルドとデプロイ
+make web-build-deploy-prod
+```
+
+詳細は [.kiro/steering/scripts.md](.kiro/steering/scripts.md#web版デプロイの詳細) を参照してください。
+
 ## 開発環境セットアップ
 
 ### 前提条件
@@ -170,7 +186,7 @@ make test-infra      # インフラテスト実行
 make ti              # 短縮形も使用可能
 ```
 
-**詳細な開発コマンドガイド**: [DEVELOPMENT.md](./DEVELOPMENT.md) を参照してください。
+**詳細な開発コマンドガイド**: [Makefile.md](./Makefile.md) を参照してください。
 
 ### デプロイ
 

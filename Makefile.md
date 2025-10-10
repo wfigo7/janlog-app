@@ -245,10 +245,20 @@ make check
 | `make db-seed-users`    | ユーザーseedのみ投入                      | ✅ 実装済み |
 | `make db-seed-rulesets` | ルールセットseedのみ投入                  | ✅ 実装済み |
 | `make db-recreate`      | テーブル再作成（破壊的）                  | ✅ 実装済み |
-| `make db-clear-data`    | テーブルデータクリア（破壊的）            | ✅ 実装済 |
+| `make db-clear-data`    | テーブルデータクリア（破壊的）            | ✅ 実装済   |
 | `make db-destroy`       | Docker環境完全削除（破壊的）              | ✅ 実装済み |
 | `make db-seed-matches`  | 対局データseed投入                        | ⚠️ 未実装   |
 | `make db-seed-venues`   | 会場データseed投入                        | ⚠️ 未実装   |
+
+### Web版デプロイ
+| コマンド                     | 説明                                   | 状態       |
+| ---------------------------- | -------------------------------------- | ---------- |
+| `make web-build`             | Expo Web版ビルド（development）        | ✅ 実装済み |
+| `make web-build-prod`        | Expo Web版ビルド（production）         | ✅ 実装済み |
+| `make web-deploy`            | S3/CloudFrontへデプロイ（development） | ✅ 実装済み |
+| `make web-deploy-prod`       | S3/CloudFrontへデプロイ（production）  | ✅ 実装済み |
+| `make web-build-deploy`      | ビルド+デプロイ一括実行（development） | ✅ 実装済み |
+| `make web-build-deploy-prod` | ビルド+デプロイ一括実行（production）  | ✅ 実装済み |
 
 ### その他
 | コマンド     | 説明                     | 状態                      |
@@ -257,6 +267,126 @@ make check
 | `make check` | 開発環境確認             | ✅ 実装済み                |
 | `make clean` | 生成物とキャッシュの削除 | ✅ 実装済み                |
 | `make help`  | コマンド一覧表示         | ✅ 実装済み                |
+
+## 🌐 Web版デプロイ
+
+Expo Web版のビルドとS3/CloudFrontへのデプロイを自動化します。
+
+### 基本的な使い方
+
+```bash
+# 開発環境へのデプロイ（推奨）
+make web-build-deploy
+
+# 本番環境へのデプロイ
+make web-build-deploy-prod
+
+# ビルドのみ実行
+make web-build
+
+# 既にビルド済みの場合、デプロイのみ実行
+make web-deploy
+```
+
+### コマンド詳細
+
+#### `make web-build`
+Expo Web版をビルド（development環境）
+
+- ビルド前に`.env.local`を一時的にリネーム（`.env.local.bak`）
+- `.env.development`の設定を使用してビルド
+  - `AUTH_MODE=cognito`
+  - `API_BASE_URL=https://p9ujawfcfd.execute-api.ap-northeast-1.amazonaws.com`
+- ビルド後に`.env.local`を元に戻す
+- 出力先: `frontend/dist/`
+
+#### `make web-deploy`
+S3/CloudFrontへデプロイ（development環境）
+
+- `frontend/dist/`の内容をS3バケット（`janlog-frontend-development`）にアップロード
+- CloudFront Distribution IDを自動取得
+- キャッシュ制御ヘッダーを設定
+  - 静的アセット（JS/CSS/フォント等）: `max-age=31536000, immutable`
+  - HTML/JSON: `max-age=0, must-revalidate`
+- CloudFrontキャッシュを無効化（`/*`）
+- デプロイ完了後のURLを表示
+
+#### `make web-build-deploy`
+ビルドとデプロイを一括実行（development環境）
+
+- `web-build`と`web-deploy`を順次実行
+- 最も一般的な使用方法
+
+### 環境変数の扱い
+
+#### ローカル開発時（`expo start --web`）
+```bash
+# .env.localが使用される
+AUTH_MODE=mock
+API_BASE_URL=http://localhost:8080
+```
+
+#### Web版ビルド時（`make web-build`）
+```bash
+# .env.developmentが使用される（.env.localは一時的に無視）
+AUTH_MODE=cognito
+API_BASE_URL=https://p9ujawfcfd.execute-api.ap-northeast-1.amazonaws.com
+```
+
+この仕組みにより、ローカル開発ではモック認証を使用し、デプロイ版では実際のCognito認証を使用できます。
+
+### デプロイ先URL
+
+- **Development**: https://d22hxlne3gt92u.cloudfront.net/
+- **Production**: （未設定）
+
+### トラブルシューティング
+
+#### WSL環境でのS3アップロードエラー
+
+**症状**: `Connection was closed before we received a valid response`
+
+**原因**: WSL環境からのAWS CLIによるS3アップロードで接続エラーが発生する場合があります
+
+**解決策**:
+1. AWSコンソールから手動でアップロード
+2. または、Windows側のAWS CLIを使用
+3. ビルド成果物は`frontend/dist/`に正常に生成されています
+
+#### キャッシュが更新されない
+
+**症状**: デプロイ後も古いコンテンツが表示される
+
+**原因**: CloudFrontのキャッシュが残っている
+
+**解決策**:
+```bash
+# 手動でキャッシュ無効化
+aws cloudfront create-invalidation \
+  --distribution-id E3KMTCS9PL5LFL \
+  --paths "/*"
+```
+
+キャッシュ無効化には数分かかる場合があります。ブラウザのキャッシュもクリアしてください。
+
+#### 環境変数が正しく反映されない
+
+**症状**: Web版でモックログイン画面が表示される
+
+**原因**: `.env.local`が優先されている
+
+**解決策**:
+- `make web-build`を使用（`.env.local`を自動的に無視）
+- または、手動で`.env.local`をリネームしてからビルド
+
+### 関連ファイル
+
+- `frontend/package.json` - ビルドスクリプト定義
+- `frontend/scripts/deploy-web.sh` - デプロイスクリプト
+- `frontend/.env.local` - ローカル開発用環境変数
+- `frontend/.env.development` - development環境用環境変数
+- `frontend/.env.production` - production環境用環境変数
+- `Makefile` - Web版デプロイコマンド定義（行491-）
 
 ## 🛠️ 開発ワークフロー
 
@@ -511,4 +641,3 @@ GitHub Actions などの CI/CD パイプラインでも使用できます：
 - **開発効率向上**: 自動化されたヘルプ生成とエラーハンドリング改善
 - **安全性向上**: 破壊的操作の制限とプロジェクト固有リソースのみの操作
 - **保守性向上**: ターゲット定義とヘルプ説明の自動同期
-- **互換性確保**: Docker Compose V2対応と最新環境への対応

@@ -407,6 +407,32 @@ lambda-update: ## Lambda関数コード更新（backend）
 deploy-backend: docker-build docker-push lambda-update ## 統合デプロイ（build + push + update）
 	@echo -e "$(GREEN)🎉 バックエンドデプロイ完了！$(NC)"
 
+##@ Web版デプロイ
+
+web-build: ## Expo Web版ビルド（development環境）
+	@echo -e "$(GREEN)Expo Web版をビルド中...$(NC)"
+	cd frontend && npm run web:build:dev
+	@echo -e "$(GREEN)✓ ビルド完了: frontend/dist/$(NC)"
+
+web-build-prod: ## Expo Web版ビルド（production環境）
+	@echo -e "$(GREEN)Expo Web版をビルド中（production）...$(NC)"
+	cd frontend && npm run web:build:prod
+	@echo -e "$(GREEN)✓ ビルド完了: frontend/dist/$(NC)"
+
+web-deploy: ## Expo Web版をS3にデプロイ（development環境）
+	@echo -e "$(GREEN)Expo Web版をデプロイ中...$(NC)"
+	cd frontend && ./scripts/deploy-web.sh development
+	@echo -e "$(GREEN)✓ デプロイ完了$(NC)"
+
+web-deploy-prod: ## Expo Web版をS3にデプロイ（production環境）
+	@echo -e "$(GREEN)Expo Web版をデプロイ中（production）...$(NC)"
+	cd frontend && ./scripts/deploy-web.sh production
+	@echo -e "$(GREEN)✓ デプロイ完了$(NC)"
+
+web-build-deploy: web-build web-deploy ## Expo Web版のビルドとデプロイを一括実行（development環境）
+
+web-build-deploy-prod: web-build-prod web-deploy-prod ## Expo Web版のビルドとデプロイを一括実行（production環境）
+
 ##@ 🔍 その他
 
 check: ## 開発環境確認

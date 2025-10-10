@@ -298,7 +298,7 @@
   - 環境別ディストリビューション作成（development/production）
   - _要件: Web版アプリの配信基盤構築_
 
-- [ ] 33. Expo Web版ビルドとデプロイ
+- [x] 33. Expo Web版ビルドとデプロイ
   - Expo Web設定の追加（app.json/app.config.js）
   - Web版ビルドコマンドの実装（npx expo export:web）
   - ビルド出力ディレクトリの確認（dist/）
