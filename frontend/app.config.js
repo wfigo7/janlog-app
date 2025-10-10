@@ -12,13 +12,16 @@ const COGNITO_CLIENT_ID = process.env.EXPO_PUBLIC_COGNITO_CLIENT_ID || '';
 const COGNITO_REGION = process.env.EXPO_PUBLIC_COGNITO_REGION || 'ap-northeast-1';
 const DEBUG = process.env.EXPO_PUBLIC_DEBUG || 'false';
 
-console.log('=== Expo App Config ===');
-console.log('APP_ENV:', APP_ENV);
-console.log('AUTH_MODE:', AUTH_MODE);
-console.log('API_BASE_URL:', API_BASE_URL);
-console.log('COGNITO_USER_POOL_ID:', COGNITO_USER_POOL_ID);
-console.log('COGNITO_CLIENT_ID:', COGNITO_CLIENT_ID);
-console.log('======================');
+// デバッグモードまたは環境変数DEBUG_CONFIGが設定されている場合のみログ出力
+if (DEBUG === 'true' || process.env.DEBUG_CONFIG === 'true') {
+  console.log('=== Expo App Config ===');
+  console.log('APP_ENV:', APP_ENV);
+  console.log('AUTH_MODE:', AUTH_MODE);
+  console.log('API_BASE_URL:', API_BASE_URL);
+  console.log('COGNITO_USER_POOL_ID:', COGNITO_USER_POOL_ID);
+  console.log('COGNITO_CLIENT_ID:', COGNITO_CLIENT_ID);
+  console.log('======================');
+}
 
 export default {
   expo: {

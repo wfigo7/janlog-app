@@ -9,7 +9,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -22,10 +21,7 @@ import { MockLoginScreen } from './MockLoginScreen';
 const AUTH_MODE = process.env.EXPO_PUBLIC_AUTH_MODE || 'mock';
 
 export function LoginScreen() {
-  // mockモードの場合はMockLoginScreenを表示
-  if (AUTH_MODE === 'mock') {
-    return <MockLoginScreen />;
-  }
+  // React Hooksは常にトップレベルで呼び出す必要がある
   const { login, isLoading, error, clearError } = useAuth();
   const { showAlert, AlertComponent } = useCustomAlert();
   const [credentials, setCredentials] = useState<LoginCredentials>({
@@ -33,6 +29,11 @@ export function LoginScreen() {
     password: '',
   });
   const [showPassword, setShowPassword] = useState(false);
+
+  // mockモードの場合はMockLoginScreenを表示
+  if (AUTH_MODE === 'mock') {
+    return <MockLoginScreen />;
+  }
 
   /**
    * ログイン処理
