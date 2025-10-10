@@ -7,7 +7,14 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "APP_ENV": "development"
+        "APP_ENV": "development",
+        "EXPO_PUBLIC_ENV": "development",
+        "EXPO_PUBLIC_AUTH_MODE": "cognito",
+        "EXPO_PUBLIC_API_BASE_URL": "https://p9ujawfcfd.execute-api.ap-northeast-1.amazonaws.com",
+        "EXPO_PUBLIC_COGNITO_USER_POOL_ID": "ap-northeast-1_XBTxTbEZF",
+        "EXPO_PUBLIC_COGNITO_CLIENT_ID": "4u37654rhubjei088dj85clscq",
+        "EXPO_PUBLIC_COGNITO_REGION": "ap-northeast-1",
+        "EXPO_PUBLIC_DEBUG": "true"
       },
       "android": {
         "buildType": "apk"
@@ -16,7 +23,14 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "APP_ENV": "development"
+        "APP_ENV": "development",
+        "EXPO_PUBLIC_ENV": "development",
+        "EXPO_PUBLIC_AUTH_MODE": "cognito",
+        "EXPO_PUBLIC_API_BASE_URL": "https://p9ujawfcfd.execute-api.ap-northeast-1.amazonaws.com",
+        "EXPO_PUBLIC_COGNITO_USER_POOL_ID": "ap-northeast-1_XBTxTbEZF",
+        "EXPO_PUBLIC_COGNITO_CLIENT_ID": "4u37654rhubjei088dj85clscq",
+        "EXPO_PUBLIC_COGNITO_REGION": "ap-northeast-1",
+        "EXPO_PUBLIC_DEBUG": "true"
       },
       "android": {
         "buildType": "apk"
@@ -24,7 +38,14 @@
     },
     "production": {
       "env": {
-        "APP_ENV": "production"
+        "APP_ENV": "production",
+        "EXPO_PUBLIC_ENV": "production",
+        "EXPO_PUBLIC_AUTH_MODE": "cognito",
+        "EXPO_PUBLIC_API_BASE_URL": "https://p9ujawfcfd.execute-api.ap-northeast-1.amazonaws.com",
+        "EXPO_PUBLIC_COGNITO_USER_POOL_ID": "ap-northeast-1_XBTxTbEZF",
+        "EXPO_PUBLIC_COGNITO_CLIENT_ID": "4u37654rhubjei088dj85clscq",
+        "EXPO_PUBLIC_COGNITO_REGION": "ap-northeast-1",
+        "EXPO_PUBLIC_DEBUG": "false"
       },
       "android": {
         "buildType": "apk"

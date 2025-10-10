@@ -3,19 +3,22 @@
  * 環境変数を動的に読み込む
  */
 
-// EASビルド時は.env.developmentを使用、ローカルでは.env.localを優先
+// EASビルド時の環境変数を取得
 const APP_ENV = process.env.APP_ENV || process.env.EXPO_PUBLIC_ENV || 'local';
+const AUTH_MODE = process.env.EXPO_PUBLIC_AUTH_MODE || 'mock';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+const COGNITO_USER_POOL_ID = process.env.EXPO_PUBLIC_COGNITO_USER_POOL_ID || '';
+const COGNITO_CLIENT_ID = process.env.EXPO_PUBLIC_COGNITO_CLIENT_ID || '';
+const COGNITO_REGION = process.env.EXPO_PUBLIC_COGNITO_REGION || 'ap-northeast-1';
+const DEBUG = process.env.EXPO_PUBLIC_DEBUG || 'false';
 
-console.log('Loading app config for environment:', APP_ENV);
-
-// 環境に応じた.envファイルを読み込む
-// ローカル開発時: .env.local（存在する場合）
-// EASビルド時: .env.development（APP_ENV=developmentの場合）
-if (APP_ENV === 'local') {
-  console.log('Using .env.local for local development');
-} else {
-  console.log(`Using .env.${APP_ENV} for EAS build`);
-}
+console.log('=== Expo App Config ===');
+console.log('APP_ENV:', APP_ENV);
+console.log('AUTH_MODE:', AUTH_MODE);
+console.log('API_BASE_URL:', API_BASE_URL);
+console.log('COGNITO_USER_POOL_ID:', COGNITO_USER_POOL_ID);
+console.log('COGNITO_CLIENT_ID:', COGNITO_CLIENT_ID);
+console.log('======================');
 
 export default {
   expo: {
@@ -65,8 +68,14 @@ export default {
       eas: {
         projectId: '19442353-ca80-4ebe-8303-89f51b767ab9',
       },
-      // 環境情報を追加
+      // 環境変数をextraに明示的に設定（Constants.expoConfig.extraでアクセス可能）
       appEnv: APP_ENV,
+      authMode: AUTH_MODE,
+      apiBaseUrl: API_BASE_URL,
+      cognitoUserPoolId: COGNITO_USER_POOL_ID,
+      cognitoClientId: COGNITO_CLIENT_ID,
+      cognitoRegion: COGNITO_REGION,
+      debug: DEBUG,
     },
     owner: 'wfigo7',
   },
