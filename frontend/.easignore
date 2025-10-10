@@ -1,0 +1,15 @@
+# EAS Build時に除外するファイル
+
+# ローカル環境変数ファイル
+.env.local
+.env*.local
+
+# 開発用ファイル
+*.test.ts
+*.test.tsx
+__tests__/
+__mocks__/
+
+# ドキュメント
+*.md
+!README.md

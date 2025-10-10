@@ -24,21 +24,29 @@ export class ApiClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`;
+    // 認証トークンを取得
+    const accessToken = await authService.getAccessToken();
+    
+    // 常に /api/v1 プレフィックスを追加（認証必須）
+    // ただし /health エンドポイントは例外
+    const apiEndpoint = endpoint === '/health' ? endpoint : `/api/v1${endpoint}`;
+    const url = `${this.baseUrl}${apiEndpoint}`;
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
     try {
-      // 認証トークンを取得してヘッダーに追加
-      const accessToken = await authService.getAccessToken();
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         ...(options.headers as Record<string, string> || {}),
       };
 
+      // 認証トークンを常に送信（モックまたは実JWT）
       if (accessToken) {
         headers['Authorization'] = `Bearer ${accessToken}`;
+      } else {
+        // トークンがない場合はエラー
+        throw new Error('認証トークンが取得できません。再度ログインしてください。');
       }
 
       const response = await fetch(url, {

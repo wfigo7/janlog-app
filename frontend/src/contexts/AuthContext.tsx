@@ -97,7 +97,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       dispatch({ type: 'AUTH_START' });
       const user = await authService.getCurrentUser();
-      
+
       if (user) {
         dispatch({ type: 'AUTH_SUCCESS', payload: user });
       } else {
@@ -115,9 +115,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const login = async (credentials: LoginCredentials) => {
     try {
       dispatch({ type: 'AUTH_START' });
-      
-      // 簡易ログインを使用（SRP実装が複雑なため）
-      const user = await authService.simpleLogin(credentials);
+
+      // authService.login()が環境に応じて適切な認証方式を選択
+      const user = await authService.login(credentials);
       dispatch({ type: 'AUTH_SUCCESS', payload: user });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '認証に失敗しました';

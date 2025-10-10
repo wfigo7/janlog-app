@@ -17,8 +17,15 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { LoginCredentials } from '../../types/auth';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
+import { MockLoginScreen } from './MockLoginScreen';
+
+const AUTH_MODE = process.env.EXPO_PUBLIC_AUTH_MODE || 'mock';
 
 export function LoginScreen() {
+  // mockモードの場合はMockLoginScreenを表示
+  if (AUTH_MODE === 'mock') {
+    return <MockLoginScreen />;
+  }
   const { login, isLoading, error, clearError } = useAuth();
   const { showAlert, AlertComponent } = useCustomAlert();
   const [credentials, setCredentials] = useState<LoginCredentials>({

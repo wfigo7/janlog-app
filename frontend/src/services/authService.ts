@@ -25,6 +25,7 @@ import {
   CognitoTokens,
   AuthError,
 } from '../types/auth';
+import { MOCK_USERS, MockUser } from '../config/mockUsers';
 
 // 環境設定
 const COGNITO_REGION = process.env.EXPO_PUBLIC_COGNITO_REGION || 'ap-northeast-1';
@@ -77,13 +78,6 @@ class AuthService {
    */
   async simpleLogin(credentials: LoginCredentials): Promise<User> {
     console.log('SimpleLogin called with AUTH_MODE:', AUTH_MODE);
-    
-    // local環境の場合はモック認証
-    if (AUTH_MODE === 'mock') {
-      console.log('Using mock authentication');
-      return this.mockLogin(credentials);
-    }
-
     console.log('Using Cognito authentication');
     console.log('COGNITO_CLIENT_ID:', COGNITO_CLIENT_ID);
     console.log('COGNITO_REGION:', COGNITO_REGION);
@@ -137,25 +131,43 @@ class AuthService {
 
   /**
    * モックログイン（local環境用）
+   * credentialsのemailをモックユーザーIDとして使用
    */
   private async mockLogin(credentials: LoginCredentials): Promise<User> {
-    // 簡単な検証
-    if (!credentials.email || !credentials.password) {
-      throw new Error('メールアドレスとパスワードを入力してください');
+    console.log('Mock login with userId:', credentials.email);
+    
+    // モックユーザーを検索
+    const mockUser = MOCK_USERS.find(u => u.id === credentials.email);
+    
+    if (!mockUser) {
+      throw new Error('モックユーザーが見つかりません');
     }
 
     // モックJWTを保存
-    if (MOCK_JWT && Platform.OS !== 'web') {
-      await SecureStore.setItemAsync(ID_TOKEN_KEY, MOCK_JWT);
+    if (Platform.OS !== 'web') {
+      await SecureStore.setItemAsync(ID_TOKEN_KEY, mockUser.jwt);
+    } else {
+      // Web環境ではsessionStorageを使用
+      sessionStorage.setItem(ID_TOKEN_KEY, mockUser.jwt);
     }
 
     // モックユーザーを返す
     return {
-      userId: 'test-user-001',
-      email: credentials.email,
-      displayName: 'テストユーザー',
-      role: 'user',
+      userId: mockUser.id,
+      email: mockUser.email,
+      displayName: mockUser.name,
+      role: mockUser.role,
     };
+  }
+
+  /**
+   * モックユーザー一覧を取得（local環境用）
+   */
+  getMockUsers(): MockUser[] {
+    if (AUTH_MODE !== 'mock') {
+      return [];
+    }
+    return MOCK_USERS;
   }
 
   /**
@@ -164,7 +176,7 @@ class AuthService {
   async logout(): Promise<void> {
     try {
       console.log('Starting logout process...');
-      
+
       // Cognitoからグローバルサインアウト
       if (AUTH_MODE !== 'mock') {
         const accessToken = await this.getStoredAccessToken();
@@ -206,28 +218,36 @@ class AuthService {
   async getCurrentUser(): Promise<User | null> {
     try {
       console.log('Getting current user, AUTH_MODE:', AUTH_MODE);
-      
+
       if (AUTH_MODE === 'mock') {
-        const mockToken = Platform.OS !== 'web' 
-          ? await SecureStore.getItemAsync(ID_TOKEN_KEY)
-          : MOCK_JWT;
+        let mockToken: string | null = null;
         
+        if (Platform.OS !== 'web') {
+          mockToken = await SecureStore.getItemAsync(ID_TOKEN_KEY);
+        } else {
+          mockToken = sessionStorage.getItem(ID_TOKEN_KEY);
+        }
+
         console.log('Mock token exists:', !!mockToken);
-        
+
         if (mockToken) {
-          return {
-            userId: 'test-user-001',
-            email: 'test@example.com',
-            displayName: 'テストユーザー',
-            role: 'user',
-          };
+          // JWTからユーザー情報を取得
+          const mockUser = MOCK_USERS.find(u => u.jwt === mockToken);
+          if (mockUser) {
+            return {
+              userId: mockUser.id,
+              email: mockUser.email,
+              displayName: mockUser.name,
+              role: mockUser.role,
+            };
+          }
         }
         return null;
       }
 
       const accessToken = await this.getStoredAccessToken();
       console.log('Access token exists:', !!accessToken);
-      
+
       if (!accessToken) {
         return null;
       }
@@ -287,7 +307,12 @@ class AuthService {
    */
   async getAccessToken(): Promise<string | null> {
     if (AUTH_MODE === 'mock') {
-      return MOCK_JWT || null;
+      // mockモードでは保存されているトークンを返す
+      if (Platform.OS !== 'web') {
+        return await SecureStore.getItemAsync(ID_TOKEN_KEY);
+      } else {
+        return sessionStorage.getItem(ID_TOKEN_KEY);
+      }
     }
 
     return await this.getStoredAccessToken();
@@ -300,7 +325,11 @@ class AuthService {
    */
   private async storeTokens(tokens: CognitoTokens): Promise<void> {
     if (Platform.OS === 'web') {
-      // Web環境では保存しない（セキュリティ上の理由）
+      // Web環境ではsessionStorageを使用（開発用）
+      // 注意: 本番環境ではより安全な方法を検討してください
+      sessionStorage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
+      sessionStorage.setItem(ID_TOKEN_KEY, tokens.idToken);
+      sessionStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
       return;
     }
 
@@ -316,7 +345,7 @@ class AuthService {
    */
   private async getStoredAccessToken(): Promise<string | null> {
     if (Platform.OS === 'web') {
-      return null;
+      return sessionStorage.getItem(ACCESS_TOKEN_KEY);
     }
 
     return await SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
@@ -327,13 +356,16 @@ class AuthService {
    */
   private async clearStoredTokens(): Promise<void> {
     if (Platform.OS === 'web') {
+      sessionStorage.removeItem(ACCESS_TOKEN_KEY);
+      sessionStorage.removeItem(ID_TOKEN_KEY);
+      sessionStorage.removeItem(REFRESH_TOKEN_KEY);
       return;
     }
 
     await Promise.all([
-      SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY).catch(() => {}),
-      SecureStore.deleteItemAsync(ID_TOKEN_KEY).catch(() => {}),
-      SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY).catch(() => {}),
+      SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY).catch(() => { }),
+      SecureStore.deleteItemAsync(ID_TOKEN_KEY).catch(() => { }),
+      SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY).catch(() => { }),
     ]);
   }
 
