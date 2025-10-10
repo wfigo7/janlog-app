@@ -141,7 +141,7 @@
 
 ## フェーズ4: 認証機能の実装
 
-- [] 16. フロントエンド認証実装
+- [x] 16. フロントエンド認証実装
   - ログイン画面の実装
   - Cognitoとの認証連携
   - トークン管理（Secure Storage）
@@ -276,6 +276,40 @@
   - 内部配布用の設定
   - テスト用アプリの配布準備
   - _要件: アプリの配布・テスト環境構築_
+
+- [x] 31. S3バケットの最適化と再作成
+  - 既存バケット（janlog-test-bucket-development-713209208161）の削除
+  - 命名規則に従った新バケット作成（janlog-frontend-development）
+  - 静的Webサイトホスティング設定
+  - パブリックアクセスブロック設定（CloudFront経由のみアクセス可能）
+  - バケットポリシー設定（OAC用）
+  - 環境別バケット作成対応（development/production）
+  - CDKスタックの更新
+  - _要件: Web版アプリ配信用ストレージの最適化_
+
+- [ ] 32. CloudFront配信設定の実装
+  - CDKでCloudFrontディストリビューション作成
+  - S3バケット（janlog-frontend-{environment}）をオリジンとして設定
+  - OAC（Origin Access Control）設定によるS3アクセス制限
+  - デフォルトルートオブジェクト設定（index.html）
+  - SPA対応のエラーページ設定（404→index.html）
+  - キャッシュポリシー設定（静的アセット最適化）
+  - HTTPS強制設定
+  - 環境別ディストリビューション作成（development/production）
+  - _要件: Web版アプリの配信基盤構築_
+
+- [ ] 33. Expo Web版ビルドとデプロイ
+  - Expo Web設定の追加（app.json/app.config.js）
+  - Web版ビルドコマンドの実装（npx expo export:web）
+  - ビルド出力ディレクトリの確認（dist/）
+  - S3デプロイスクリプトの作成（AWS CLI使用）
+  - Makefileにweb-build、web-deployタスクを追加
+  - ローカルでのWeb版ビルドテスト
+  - S3へのデプロイテスト
+  - CloudFront経由でのアクセス確認
+  - 認証フロー動作確認（Cognito連携）
+  - API Gateway連携動作確認
+  - _要件: Web版アプリのビルドとデプロイ自動化_
 
 ## フェーズ7: 最適化とテスト
 

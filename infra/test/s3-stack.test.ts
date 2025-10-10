@@ -17,13 +17,13 @@ describe('S3Stack', () => {
         template = Template.fromStack(stack);
     });
 
-    test('S3バケットが作成される', () => {
+    test('フロントエンド配信用S3バケットが作成される', () => {
         // S3バケットが1つ作成されることを確認
         template.resourceCountIs('AWS::S3::Bucket', 1);
     });
 
     test('S3バケットに正しい設定が適用される', () => {
-        // S3バケットの設定を確認
+        // S3バケットの設定を確認（CloudFront経由のみアクセス可能）
         template.hasResourceProperties('AWS::S3::Bucket', {
             PublicAccessBlockConfiguration: {
                 BlockPublicAcls: true,
@@ -34,73 +34,55 @@ describe('S3Stack', () => {
         });
     });
 
-    test('開発環境では自動削除が有効になる', () => {
-        // 自動削除用のタグが設定されることを確認
+    test('CORS設定が適用される', () => {
+        // CORS設定が適用されることを確認
         template.hasResourceProperties('AWS::S3::Bucket', {
-            Tags: [
-                {
-                    Key: 'aws-cdk:auto-delete-objects',
-                    Value: 'true',
-                },
-            ],
-        });
-
-        // 削除ポリシーが Delete に設定されることを確認
-        template.hasResource('AWS::S3::Bucket', {
-            UpdateReplacePolicy: 'Delete',
-            DeletionPolicy: 'Delete',
-        });
-    });
-
-    test('自動削除用のLambda関数が作成される', () => {
-        // 自動削除用のLambda関数が作成されることを確認
-        template.resourceCountIs('AWS::Lambda::Function', 1);
-
-        template.hasResourceProperties('AWS::Lambda::Function', {
-            Runtime: 'nodejs22.x',
-            Handler: 'index.handler',
-            Timeout: 900,
-            MemorySize: 128,
-        });
-    });
-
-    test('バケットポリシーが作成される', () => {
-        // S3バケットポリシーが作成されることを確認
-        template.resourceCountIs('AWS::S3::BucketPolicy', 1);
-    });
-
-    test('IAMロールが作成される', () => {
-        // 自動削除用のIAMロールが作成されることを確認
-        template.resourceCountIs('AWS::IAM::Role', 1);
-
-        template.hasResourceProperties('AWS::IAM::Role', {
-            AssumeRolePolicyDocument: {
-                Version: '2012-10-17',
-                Statement: [
+            CorsConfiguration: {
+                CorsRules: [
                     {
-                        Action: 'sts:AssumeRole',
-                        Effect: 'Allow',
-                        Principal: {
-                            Service: 'lambda.amazonaws.com',
-                        },
+                        AllowedMethods: ['GET', 'HEAD'],
+                        AllowedOrigins: ['*'],
+                        AllowedHeaders: ['*'],
+                        MaxAge: 3000,
                     },
                 ],
             },
         });
     });
 
-    test('CloudFormation出力が設定される', () => {
-        // CloudFormation出力が設定されることを確認
-        template.hasOutput('TestBucketName', {
-            Description: 'Test S3 Bucket Name',
-        });
-
-        template.hasOutput('TestBucketArn', {
-            Description: 'Test S3 Bucket ARN',
+    test('バケットは常にRETAINポリシーが設定される', () => {
+        // 全環境でRETAINポリシーが設定されることを確認
+        template.hasResource('AWS::S3::Bucket', {
+            UpdateReplacePolicy: 'Retain',
+            DeletionPolicy: 'Retain',
         });
     });
 
-    test('本番環境では自動削除が無効になる', () => {
+    test('CloudFormation出力が設定される', () => {
+        // CloudFormation出力が設定されることを確認
+        template.hasOutput('FrontendBucketName', {
+            Description: 'Frontend S3 Bucket Name',
+            Export: {
+                Name: 'janlog-frontend-bucket-name-test',
+            },
+        });
+
+        template.hasOutput('FrontendBucketArn', {
+            Description: 'Frontend S3 Bucket ARN',
+            Export: {
+                Name: 'janlog-frontend-bucket-arn-test',
+            },
+        });
+
+        template.hasOutput('FrontendBucketDomainName', {
+            Description: 'Frontend S3 Bucket Regional Domain Name',
+            Export: {
+                Name: 'janlog-frontend-bucket-domain-test',
+            },
+        });
+    });
+
+    test('本番環境でもRETAINポリシーが設定される', () => {
         // 本番環境用のスタックを作成
         const prodApp = new cdk.App();
         const prodStack = new S3Stack(prodApp, 'ProdS3Stack', {
@@ -109,37 +91,17 @@ describe('S3Stack', () => {
         });
         const prodTemplate = Template.fromStack(prodStack);
 
-        // 本番環境では RETAIN ポリシーが設定される
+        // 本番環境でもRETAINポリシーが設定される
         prodTemplate.hasResource('AWS::S3::Bucket', {
             UpdateReplacePolicy: 'Retain',
             DeletionPolicy: 'Retain',
         });
     });
 
-    test('カスタムリソースが正しく設定される', () => {
-        // 自動削除用のカスタムリソースが作成されることを確認
-        template.resourceCountIs('Custom::S3AutoDeleteObjects', 1);
-
-        // カスタムリソースがS3バケットを参照していることを確認
-        const bucketResources = template.findResources('AWS::S3::Bucket');
-        const bucketLogicalId = Object.keys(bucketResources)[0];
-
-        template.hasResourceProperties('Custom::S3AutoDeleteObjects', {
-            BucketName: {
-                Ref: bucketLogicalId,
-            },
-        });
-    });
-
-    test('適切なタグが設定される', () => {
-        // 自動削除タグが設定されることを確認
+    test('バケット名が環境に応じて設定される', () => {
+        // バケット名が環境に応じて設定されることを確認
         template.hasResourceProperties('AWS::S3::Bucket', {
-            Tags: [
-                {
-                    Key: 'aws-cdk:auto-delete-objects',
-                    Value: 'true',
-                },
-            ],
+            BucketName: 'janlog-frontend-test',
         });
     });
 
@@ -147,5 +109,12 @@ describe('S3Stack', () => {
         // スタックが正しい環境設定で作成されることを確認
         expect(stack.stackName).toBe('TestS3Stack');
         expect(stack.region).toBe('ap-northeast-1');
+    });
+
+    test('frontendBucketプロパティが公開される', () => {
+        // frontendBucketプロパティが公開されることを確認
+        expect(stack.frontendBucket).toBeDefined();
+        // バケット名はCDKトークンとして扱われるため、存在確認のみ
+        expect(stack.frontendBucket.bucketName).toBeDefined();
     });
 });
