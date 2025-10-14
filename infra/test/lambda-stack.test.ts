@@ -121,16 +121,26 @@ describe('LambdaStack (ECR image based)', () => {
 
         // より柔軟なテスト：必要なアクションが含まれていることを個別に確認
         const policyTemplate = template.findResources('AWS::IAM::Policy');
-        const policyResource = Object.values(policyTemplate)[0] as any;
+        const policyResource = Object.values(policyTemplate)[0] as {
+            Properties: {
+                PolicyDocument: {
+                    Statement: Array<{
+                        Action: string[];
+                        Effect: string;
+                        Resource?: string | string[];
+                    }>;
+                };
+            };
+        };
         const statements = policyResource.Properties.PolicyDocument.Statement;
 
         // DynamoDBアクションを含むステートメントが存在することを確認
-        const dynamoStatement = statements.find((stmt: any) =>
+        const dynamoStatement = statements.find((stmt) =>
             stmt.Action.some((action: string) => action.startsWith('dynamodb:'))
         );
         expect(dynamoStatement).toBeDefined();
-        expect(dynamoStatement.Effect).toBe('Allow');
-        expect(dynamoStatement.Action).toEqual(expect.arrayContaining([
+        expect(dynamoStatement?.Effect).toBe('Allow');
+        expect(dynamoStatement?.Action).toEqual(expect.arrayContaining([
             'dynamodb:GetItem',
             'dynamodb:PutItem',
             'dynamodb:UpdateItem',
@@ -138,12 +148,12 @@ describe('LambdaStack (ECR image based)', () => {
         ]));
 
         // ECRアクションを含むステートメントが存在することを確認
-        const ecrStatement = statements.find((stmt: any) =>
+        const ecrStatement = statements.find((stmt) =>
             stmt.Action.some((action: string) => action.startsWith('ecr:'))
         );
         expect(ecrStatement).toBeDefined();
-        expect(ecrStatement.Effect).toBe('Allow');
-        expect(ecrStatement.Action).toEqual(expect.arrayContaining([
+        expect(ecrStatement?.Effect).toBe('Allow');
+        expect(ecrStatement?.Action).toEqual(expect.arrayContaining([
             'ecr:BatchGetImage',
             'ecr:GetDownloadUrlForLayer',
             'ecr:BatchCheckLayerAvailability',

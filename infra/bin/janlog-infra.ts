@@ -29,7 +29,7 @@ cdk.Tags.of(app).add('Developer', defaultStackProps.developer!);
 cdk.Tags.of(app).add('ManagedBy', defaultStackProps.ManagedBy!);
 
 // S3スタック
-const s3Stack = new S3Stack(app, `JanlogS3Stack-${environment}`, {
+new S3Stack(app, `JanlogS3Stack-${environment}`, {
   ...defaultStackProps,
   environment,
 });

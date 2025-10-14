@@ -1,6 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
 import { Template } from 'aws-cdk-lib/assertions';
-import * as s3 from 'aws-cdk-lib/aws-s3';
 import { CloudFrontStack } from '../lib/stacks/cloudfront-stack';
 import { defaultStackProps } from '../lib/common/stack-props';
 
