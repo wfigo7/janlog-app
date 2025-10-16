@@ -40,25 +40,33 @@
   - _Requirements: 4.1, 7.5_
 
 - [ ] 3. Backend Deployment Jobの実装
+
+
+
   - バックエンドデプロイジョブを作成
   - Makefileコマンドを使用してDocker → ECR → Lambdaのデプロイを実行
   - エラーハンドリングを実装
   - _Requirements: 1.2, 3.1, 5.1, 5.2_
 
-- [ ] 3.1 Backend Deployment Jobの基本構造作成
+- [x] 3.1 Backend Deployment Jobの基本構造作成
+
+
   - `deploy-backend`ジョブを作成
   - 条件付き実行を設定（inputs.deploy_backend == true）
   - 必要な環境変数を設定（ECR_URI、LAMBDA_FUNCTION_NAME）
   - _Requirements: 1.2, 3.1_
 
-- [ ] 3.2 Dockerビルドとプッシュステップの実装
+- [x] 3.2 Dockerビルドとプッシュステップの実装
+
+
   - ECRログインステップを追加
   - `make docker-build`ステップを追加
   - `make docker-push`ステップを追加
   - 各ステップのエラーハンドリングを実装
   - _Requirements: 3.1, 5.2_
 
-- [ ] 3.3 Lambda関数更新ステップの実装
+- [x] 3.3 Lambda関数更新ステップの実装
+
   - `make lambda-update`ステップを追加
   - Lambda関数の状態確認ステップを追加
   - デプロイ結果のログ出力を実装
