@@ -202,34 +202,25 @@
 ## Phase 2: セキュリティ強化とモバイル対応（将来実装）
 
 - [x] 9. OIDC認証への移行
-
-
-
   - IAMロールを作成
   - GitHub OIDCプロバイダーを設定
   - ワークフローをOIDC方式に更新
   - _Requirements: 4.3, 4.4_
 
-
 - [x] 9.1 IAMロールとOIDCプロバイダーの設定
-
   - IAMロール（GitHubActionsRole）を作成
   - GitHub OIDCプロバイダーをAWSに登録
   - トラストポリシーを設定（リポジトリとブランチを制限）
   - 必要な権限ポリシーをアタッチ
   - _Requirements: 4.3, 4.4_
 
-
-
-- [ ] 9.2 ワークフローのOIDC方式への更新
+- [x] 9.2 ワークフローのOIDC方式への更新
   - AWS認証ステップをOIDC方式に変更
   - role-to-assumeパラメータを設定
   - GitHub Secretsから不要なアクセスキーを削除
-
-
   - _Requirements: 4.3_
 
-- [ ] 9.3 OIDC認証のテスト
+- [x] 9.3 OIDC認証のテスト
   - 各デプロイジョブでOIDC認証が成功することを確認
   - IAMユーザーのアクセスキーを無効化
   - セキュリティが向上したことを確認
