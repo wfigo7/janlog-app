@@ -61,9 +61,15 @@ jobs:
           aws sts get-caller-identity
           echo "✅ AWS authentication successful"
 
+      - name: Login to AWS Public ECR
+        run: |
+          echo "Logging in to AWS Public ECR to avoid rate limits..."
+          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+          echo "✅ AWS Public ECR login successful"
+
       - name: Deploy Backend
         run: |
-          echo "� LDeploying Backend (Docker -> ECR -> Lambda)..."
+          echo "🚀 Deploying Backend (Docker -> ECR -> Lambda)..."
           make deploy-backend
           echo "✅ Backend deployment completed"
 
