@@ -198,6 +198,41 @@ export class GitHubOidcStack extends cdk.Stack {
       })
     );
 
+    // Add permissions for CDK Bootstrap resources
+    this.role.addToPolicy(
+      new iam.PolicyStatement({
+        sid: 'CDKBootstrapPermissions',
+        effect: iam.Effect.ALLOW,
+        actions: [
+          's3:GetObject',
+          's3:PutObject',
+          's3:ListBucket',
+          's3:GetBucketLocation',
+          's3:GetBucketPolicy',
+        ],
+        resources: [
+          `arn:aws:s3:::cdk-*-assets-${this.account}-${this.region}`,
+          `arn:aws:s3:::cdk-*-assets-${this.account}-${this.region}/*`,
+        ],
+      })
+    );
+
+    // Add permissions to assume CDK execution roles
+    this.role.addToPolicy(
+      new iam.PolicyStatement({
+        sid: 'CDKAssumeRolePermissions',
+        effect: iam.Effect.ALLOW,
+        actions: [
+          'sts:AssumeRole',
+        ],
+        resources: [
+          `arn:aws:iam::${this.account}:role/cdk-*-deploy-role-${this.account}-${this.region}`,
+          `arn:aws:iam::${this.account}:role/cdk-*-file-publishing-role-${this.account}-${this.region}`,
+          `arn:aws:iam::${this.account}:role/cdk-*-lookup-role-${this.account}-${this.region}`,
+        ],
+      })
+    );
+
     // Add permissions for IAM (Infrastructure deployment - CDK needs this)
     this.role.addToPolicy(
       new iam.PolicyStatement({
@@ -218,6 +253,7 @@ export class GitHubOidcStack extends cdk.Stack {
         ],
         resources: [
           `arn:aws:iam::${this.account}:role/janlog-*`,
+          `arn:aws:iam::${this.account}:role/cdk-*`,
         ],
       })
     );
