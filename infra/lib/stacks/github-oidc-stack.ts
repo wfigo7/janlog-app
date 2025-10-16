@@ -47,10 +47,11 @@ export class GitHubOidcStack extends cdk.Stack {
         url: 'https://token.actions.githubusercontent.com',
         clientIds: ['sts.amazonaws.com'],
         thumbprints: [
-          // GitHub Actions OIDC thumbprint (as of 2024)
-          // This is the SHA-1 fingerprint of the top intermediate CA that signed the GitHub OIDC certificate
+          // GitHub Actions OIDC thumbprint (current as of 2024)
+          // AWS recommends using a single thumbprint for GitHub Actions
+          // This thumbprint is for the root CA certificate
           '6938fd4d98bab03faadb97b34396831e3780aea1',
-          // Backup thumbprint (GitHub may rotate certificates)
+          // Additional thumbprints for certificate rotation
           '1c58a3a8518e8759bf075b76b750d4f2df264fcd',
         ],
       });
@@ -75,7 +76,8 @@ export class GitHubOidcStack extends cdk.Stack {
             'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
           },
           StringLike: {
-            // Restrict to specific repository and branch
+            // Allow all refs from the repository (branches, tags, etc.)
+            // Format: repo:OWNER/REPO:ref:refs/heads/BRANCH or repo:OWNER/REPO:environment:ENV
             'token.actions.githubusercontent.com:sub': `repo:${githubOrg}/${githubRepo}:*`,
           },
         },

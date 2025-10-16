@@ -85,7 +85,7 @@ if (environment !== 'local') {
   new GitHubOidcStack(app, `JanlogGitHubOidcStack-${environment}`, {
     ...defaultStackProps,
     environment,
-    githubOrg: 'notubo',  // TODO: 実際のGitHub organizationまたはユーザー名に変更
-    githubRepo: 'janlog-app',  // TODO: 実際のリポジトリ名に変更
+    githubOrg: 'wfigo7',  // GitHub organizationまたはユーザー名
+    githubRepo: 'janlog-app',  // リポジトリ名
   });
 }
