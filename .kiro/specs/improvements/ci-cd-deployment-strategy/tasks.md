@@ -39,7 +39,7 @@
   - AWS接続テストステップを追加（aws sts get-caller-identity）
   - _Requirements: 4.1, 7.5_
 
-- [ ] 3. Backend Deployment Jobの実装
+- [x] 3. Backend Deployment Jobの実装
 
 
 
@@ -72,26 +72,34 @@
   - デプロイ結果のログ出力を実装
   - _Requirements: 3.1, 5.4_
 
-- [ ] 4. Infrastructure Deployment Jobの実装
+- [x] 4. Infrastructure Deployment Jobの実装
+
+
+
+
   - インフラデプロイジョブを作成
   - CDKコマンドを使用してインフラをデプロイ
   - エラーハンドリングを実装
   - _Requirements: 1.3, 3.2, 5.1, 5.2_
 
-- [ ] 4.1 Infrastructure Deployment Jobの基本構造作成
+- [x] 4.1 Infrastructure Deployment Jobの基本構造作成
+
+
   - `deploy-infrastructure`ジョブを作成
   - 条件付き実行を設定（inputs.deploy_infrastructure == true）
   - Node.js環境セットアップステップを追加（infra/.nvmrc参照）
   - _Requirements: 1.3, 3.2_
 
-- [ ] 4.2 CDKデプロイステップの実装
+- [x] 4.2 CDKデプロイステップの実装
+
   - インフラ依存関係インストールステップを追加（npm ci）
   - CDKビルドステップを追加（npm run build）
   - CDK synthステップを追加（構文チェック）
   - CDKデプロイステップを追加（cdk deploy --context environment=development --require-approval never）
   - _Requirements: 3.2, 5.2_
 
-- [ ] 4.3 デプロイ結果の確認とログ出力
+- [x] 4.3 デプロイ結果の確認とログ出力
+
   - CloudFormationスタックの状態確認ステップを追加
   - デプロイ結果のログ出力を実装
   - エラー時のトラブルシューティング情報を出力

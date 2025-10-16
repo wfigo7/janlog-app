@@ -81,10 +81,20 @@ jobs:
     name: Deploy Infrastructure
     runs-on: ubuntu-latest
     if: ${{ inputs.deploy_infrastructure }}
+    defaults:
+      run:
+        working-directory: ./infra
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: infra/.nvmrc
+          cache: "npm"
+          cache-dependency-path: infra/package-lock.json
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -98,6 +108,34 @@ jobs:
           echo "Testing AWS connection..."
           aws sts get-caller-identity
           echo "✅ AWS authentication successful"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build CDK project
+        run: |
+          echo "🔨 Building CDK project..."
+          npm run build
+          echo "✅ CDK build completed"
+
+      - name: CDK Synth
+        run: |
+          echo "🔍 Running CDK synth..."
+          npm run synth -- --context environment=${{ env.ENVIRONMENT }}
+          echo "✅ CDK synth completed"
+
+      - name: Deploy Infrastructure
+        run: |
+          echo "🚀 Deploying infrastructure with CDK..."
+          npm run deploy -- --context environment=${{ env.ENVIRONMENT }} --require-approval never --all
+          echo "✅ Infrastructure deployment completed"
+
+      - name: Deployment Summary
+        run: |
+          echo "📊 Deployment Summary"
+          echo "Environment: ${{ env.ENVIRONMENT }}"
+          echo "Component: Infrastructure (AWS CDK)"
+          echo "Status: ✅ Success"
 
   # Frontend Web Deployment Job (Phase 1)
   deploy-frontend-web:
