@@ -39,7 +39,7 @@ export class GitHubOidcStack extends cdk.Stack {
     // We use a conditional approach: only create it for the first environment (development)
     // For other environments, we import the existing provider
     let oidcProvider: iam.IOpenIdConnectProvider;
-    
+
     if (environment === 'development') {
       // Create OIDC Provider for the first environment
       // If it already exists, CDK will import it automatically
@@ -107,6 +107,19 @@ export class GitHubOidcStack extends cdk.Stack {
       })
     );
 
+    // Add permissions for ECR Public (Backend deployment - for pulling base images)
+    this.role.addToPolicy(
+      new iam.PolicyStatement({
+        sid: 'ECRPublicPermissions',
+        effect: iam.Effect.ALLOW,
+        actions: [
+          'ecr-public:GetAuthorizationToken',
+          'sts:GetServiceBearerToken',
+        ],
+        resources: ['*'],
+      })
+    );
+
     // Add permissions for Lambda (Backend deployment)
     this.role.addToPolicy(
       new iam.PolicyStatement({
@@ -136,8 +149,8 @@ export class GitHubOidcStack extends cdk.Stack {
           's3:DeleteObject',
         ],
         resources: [
-          `arn:aws:s3:::janlog-web-${environment}`,
-          `arn:aws:s3:::janlog-web-${environment}/*`,
+          `arn:aws:s3:::janlog-frontend-${environment}`,
+          `arn:aws:s3:::janlog-frontend-${environment}/*`,
         ],
       })
     );
