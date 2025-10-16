@@ -33,13 +33,18 @@ on:
 env:
   AWS_REGION: ap-northeast-1
   ENVIRONMENT: ${{ inputs.environment }}
+  AWS_ROLE_ARN: arn:aws:iam::713209208161:role/janlog-github-actions-${{ inputs.environment }}
 
 jobs:
-  # Backend Deployment Job (Phase 1)
+  # Backend Deployment Job (OIDC)
   deploy-backend:
     name: Deploy Backend
     runs-on: ubuntu-latest
     if: ${{ inputs.deploy_backend }}
+    # OIDC認証に必要な権限
+    permissions:
+      id-token: write
+      contents: read
     env:
       ECR_URI: 713209208161.dkr.ecr.ap-northeast-1.amazonaws.com/janlog-api-development
       LAMBDA_FUNCTION_NAME: janlog-api-development
@@ -48,18 +53,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions-Backend-${{ github.run_id }}
 
       - name: Verify AWS connection
         run: |
           echo "Testing AWS connection..."
           aws sts get-caller-identity
-          echo "✅ AWS authentication successful"
+          echo "✅ AWS authentication successful (OIDC)"
 
       - name: Login to AWS Public ECR
         run: |
@@ -81,12 +86,17 @@ jobs:
           echo "ECR URI: ${{ env.ECR_URI }}:latest"
           echo "Lambda Function: ${{ env.LAMBDA_FUNCTION_NAME }}"
           echo "Status: ✅ Success"
+          echo "Authentication: OIDC"
 
-  # Infrastructure Deployment Job (Phase 1)
+  # Infrastructure Deployment Job (OIDC)
   deploy-infrastructure:
     name: Deploy Infrastructure
     runs-on: ubuntu-latest
     if: ${{ inputs.deploy_infrastructure }}
+    # OIDC認証に必要な権限
+    permissions:
+      id-token: write
+      contents: read
     defaults:
       run:
         working-directory: ./infra
@@ -102,18 +112,18 @@ jobs:
           cache: "npm"
           cache-dependency-path: infra/package-lock.json
 
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions-Infrastructure-${{ github.run_id }}
 
       - name: Verify AWS connection
         run: |
           echo "Testing AWS connection..."
           aws sts get-caller-identity
-          echo "✅ AWS authentication successful"
+          echo "✅ AWS authentication successful (OIDC)"
 
       - name: Install dependencies
         run: npm ci
@@ -142,12 +152,17 @@ jobs:
           echo "Environment: ${{ env.ENVIRONMENT }}"
           echo "Component: Infrastructure (AWS CDK)"
           echo "Status: ✅ Success"
+          echo "Authentication: OIDC"
 
-  # Frontend Web Deployment Job (Phase 1)
+  # Frontend Web Deployment Job (OIDC)
   deploy-frontend-web:
     name: Deploy Frontend Web
     runs-on: ubuntu-latest
     if: ${{ inputs.deploy_frontend_web }}
+    # OIDC認証に必要な権限
+    permissions:
+      id-token: write
+      contents: read
     defaults:
       run:
         working-directory: ./frontend
@@ -163,18 +178,18 @@ jobs:
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions-FrontendWeb-${{ github.run_id }}
 
       - name: Verify AWS connection
         run: |
           echo "Testing AWS connection..."
           aws sts get-caller-identity
-          echo "✅ AWS authentication successful"
+          echo "✅ AWS authentication successful (OIDC)"
 
       - name: Install dependencies
         run: npm ci
@@ -192,3 +207,4 @@ jobs:
           echo "Environment: ${{ env.ENVIRONMENT }}"
           echo "Component: Frontend Web (Expo Web -> S3 + CloudFront)"
           echo "Status: ✅ Success"
+          echo "Authentication: OIDC"

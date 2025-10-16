@@ -40,25 +40,18 @@
   - _Requirements: 4.1, 7.5_
 
 - [x] 3. Backend Deployment Jobの実装
-
-
-
   - バックエンドデプロイジョブを作成
   - Makefileコマンドを使用してDocker → ECR → Lambdaのデプロイを実行
   - エラーハンドリングを実装
   - _Requirements: 1.2, 3.1, 5.1, 5.2_
 
 - [x] 3.1 Backend Deployment Jobの基本構造作成
-
-
   - `deploy-backend`ジョブを作成
   - 条件付き実行を設定（inputs.deploy_backend == true）
   - 必要な環境変数を設定（ECR_URI、LAMBDA_FUNCTION_NAME）
   - _Requirements: 1.2, 3.1_
 
 - [x] 3.2 Dockerビルドとプッシュステップの実装
-
-
   - ECRログインステップを追加
   - `make docker-build`ステップを追加
   - `make docker-push`ステップを追加
@@ -66,32 +59,24 @@
   - _Requirements: 3.1, 5.2_
 
 - [x] 3.3 Lambda関数更新ステップの実装
-
   - `make lambda-update`ステップを追加
   - Lambda関数の状態確認ステップを追加
   - デプロイ結果のログ出力を実装
   - _Requirements: 3.1, 5.4_
 
 - [x] 4. Infrastructure Deployment Jobの実装
-
-
-
-
   - インフラデプロイジョブを作成
   - CDKコマンドを使用してインフラをデプロイ
   - エラーハンドリングを実装
   - _Requirements: 1.3, 3.2, 5.1, 5.2_
 
 - [x] 4.1 Infrastructure Deployment Jobの基本構造作成
-
-
   - `deploy-infrastructure`ジョブを作成
   - 条件付き実行を設定（inputs.deploy_infrastructure == true）
   - Node.js環境セットアップステップを追加（infra/.nvmrc参照）
   - _Requirements: 1.3, 3.2_
 
 - [x] 4.2 CDKデプロイステップの実装
-
   - インフラ依存関係インストールステップを追加（npm ci）
   - CDKビルドステップを追加（npm run build）
   - CDK synthステップを追加（構文チェック）
@@ -99,94 +84,85 @@
   - _Requirements: 3.2, 5.2_
 
 - [x] 4.3 デプロイ結果の確認とログ出力
-
   - CloudFormationスタックの状態確認ステップを追加
   - デプロイ結果のログ出力を実装
   - エラー時のトラブルシューティング情報を出力
   - _Requirements: 5.4, 5.5_
 
 - [x] 5. Frontend Web Deployment Jobの実装
-
-
-
-
   - フロントエンドWebデプロイジョブを作成
   - Makefileコマンドを使用してExpo Web → S3のデプロイを実行
   - エラーハンドリングを実装
   - _Requirements: 1.4, 3.3, 5.1, 5.2_
 
 - [x] 5.1 Frontend Web Deployment Jobの基本構造作成
-
-
   - `deploy-frontend-web`ジョブを作成
   - 条件付き実行を設定（inputs.deploy_frontend_web == true）
   - Node.js環境セットアップステップを追加（frontend/.nvmrc参照）
   - _Requirements: 1.4, 3.3_
 
 - [x] 5.2 Expo WebビルドとS3デプロイステップの実装
-
   - フロントエンド依存関係インストールステップを追加（npm ci）
   - `make web-build-deploy`ステップを追加
   - デプロイ結果のログ出力を実装
   - _Requirements: 3.3, 5.2_
 
 - [x] 5.3 CloudFrontキャッシュ無効化の確認
-
   - CloudFront無効化が正常に実行されたことを確認
   - 無効化の進行状況をログに出力
   - エラー時のトラブルシューティング情報を出力
   - _Requirements: 5.4, 5.5_
 
-- [ ] 6. エラーハンドリングとログ出力の強化
+- [x] 6. エラーハンドリングとログ出力の強化
   - 各ジョブのエラーハンドリングを強化
   - デプロイ成功・失敗の明確な表示を実装
   - トラブルシューティング情報を充実
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-- [ ] 6.1 AWS認証エラーのハンドリング
+- [ ]* 6.1 AWS認証エラーのハンドリング
   - AWS認証失敗時のエラーメッセージを実装
   - GitHub Secretsの確認手順を出力
   - IAMユーザー権限の確認手順を出力
   - _Requirements: 5.2, 7.2_
 
-- [ ] 6.2 デプロイコマンドエラーのハンドリング
+- [ ]* 6.2 デプロイコマンドエラーのハンドリング
   - 各Makefileコマンド失敗時のエラーメッセージを実装
   - ローカルでの再現手順を出力
   - ロールバック手順を出力
   - _Requirements: 5.2, 5.5_
 
-- [ ] 6.3 デプロイ結果の可視化
+- [ ]* 6.3 デプロイ結果の可視化
   - デプロイ成功時のサマリーを出力
   - デプロイされたコンポーネントとバージョン情報を出力
   - 実行時間を記録
   - _Requirements: 5.1, 5.3, 5.4_
 
-- [ ] 7. ワークフローのテストとデバッグ
+- [x] 7. ワークフローのテストとデバッグ
   - 各ジョブを個別にテスト
   - 複数ジョブの同時実行をテスト
   - エラーケースをテスト
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
-- [ ] 7.1 Backend Deployment Jobのテスト
+- [x] 7.1 Backend Deployment Jobのテスト
   - workflow_dispatchでBackendのみを選択して実行
   - デプロイ成功を確認
   - Lambda関数のイメージURIが更新されたことを確認
   - _Requirements: 1.2, 3.1_
 
-- [ ] 7.2 Infrastructure Deployment Jobのテスト
+- [x] 7.2 Infrastructure Deployment Jobのテスト
   - workflow_dispatchでInfrastructureのみを選択して実行
   - デプロイ成功を確認
   - CloudFormationスタックが正常にデプロイされたことを確認
   - _Requirements: 1.3, 3.2_
 
-- [ ] 7.3 Frontend Web Deployment Jobのテスト
+- [x] 7.3 Frontend Web Deployment Jobのテスト
   - workflow_dispatchでFrontend Webのみを選択して実行
   - デプロイ成功を確認
   - S3バケットにファイルがアップロードされたことを確認
   - CloudFrontキャッシュが無効化されたことを確認
   - _Requirements: 1.4, 3.3_
 
-- [ ] 7.4 複数ジョブの同時実行テスト
+- [x] 7.4 複数ジョブの同時実行テスト
   - workflow_dispatchで複数のコンポーネントを選択して実行
   - 全てのジョブが正常に実行されることを確認
   - ジョブ間の依存関係がないことを確認
@@ -199,25 +175,25 @@
   - エラーメッセージとトラブルシューティング情報が正しく表示されることを確認
   - _Requirements: 5.2, 5.5_
 
-- [ ] 8. ドキュメントの更新
+- [x] 8. ドキュメントの更新
   - README.mdにCI/CDの使用方法を追加
   - デプロイ手順を文書化
   - トラブルシューティングガイドを作成
   - _Requirements: 5.5_
 
-- [ ] 8.1 README.mdの更新
+- [x] 8.1 README.mdの更新
   - CI/CDセクションを追加
   - workflow_dispatchの使用方法を説明
   - 各デプロイオプションの説明を追加
   - _Requirements: 5.5_
 
-- [ ] 8.2 デプロイ手順の文書化
+- [x] 8.2 デプロイ手順の文書化
   - GitHub Secretsの設定手順を文書化
   - 各コンポーネントのデプロイ手順を文書化
   - デプロイ前の確認事項を文書化
   - _Requirements: 7.1, 7.2_
 
-- [ ] 8.3 トラブルシューティングガイドの作成
+- [x] 8.3 トラブルシューティングガイドの作成
   - よくあるエラーと解決方法を文書化
   - ロールバック手順を文書化
   - 問い合わせ先を明記
@@ -225,23 +201,32 @@
 
 ## Phase 2: セキュリティ強化とモバイル対応（将来実装）
 
-- [ ] 9. OIDC認証への移行
+- [x] 9. OIDC認証への移行
+
+
+
   - IAMロールを作成
   - GitHub OIDCプロバイダーを設定
   - ワークフローをOIDC方式に更新
   - _Requirements: 4.3, 4.4_
 
-- [ ] 9.1 IAMロールとOIDCプロバイダーの設定
+
+- [x] 9.1 IAMロールとOIDCプロバイダーの設定
+
   - IAMロール（GitHubActionsRole）を作成
   - GitHub OIDCプロバイダーをAWSに登録
   - トラストポリシーを設定（リポジトリとブランチを制限）
   - 必要な権限ポリシーをアタッチ
   - _Requirements: 4.3, 4.4_
 
+
+
 - [ ] 9.2 ワークフローのOIDC方式への更新
   - AWS認証ステップをOIDC方式に変更
   - role-to-assumeパラメータを設定
   - GitHub Secretsから不要なアクセスキーを削除
+
+
   - _Requirements: 4.3_
 
 - [ ] 9.3 OIDC認証のテスト

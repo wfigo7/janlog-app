@@ -56,6 +56,64 @@ Janlogは、フリー雀荘やセット麻雀の成績を個人用に記録・�
 - **Cognito認証ログ**: ログイン成功/失敗、認証エラー
 - **詳細**: [docs/monitoring-logs.md](docs/monitoring-logs.md) を参照
 
+## CI/CD
+
+このプロジェクトでは、GitHub Actionsを使用した継続的デプロイメント（CD）パイプラインを提供しています。
+
+### GitHub Actionsによる自動デプロイ
+
+GitHub Actionsのworkflow_dispatchを使用して、手動でデプロイを実行できます。
+
+#### デプロイ方法
+
+1. GitHubリポジトリの **Actions** タブに移動
+2. **CD Pipeline** ワークフローを選択
+3. **Run workflow** ボタンをクリック
+4. デプロイオプションを選択：
+   - **Deploy Backend**: バックエンド（Docker → ECR → Lambda）
+   - **Deploy Infrastructure**: インフラストラクチャ（AWS CDK）
+   - **Deploy Frontend Web**: フロントエンドWeb版（Expo Web → S3）
+   - **Environment**: デプロイ環境（development）
+5. **Run workflow** をクリックして実行
+
+#### デプロイオプション
+
+各コンポーネントは独立してデプロイ可能です：
+
+- **Backend**: FastAPIアプリケーションをDockerイメージとしてビルドし、ECRにプッシュ、Lambda関数を更新
+- **Infrastructure**: AWS CDKでインフラストラクチャをデプロイ（S3、Cognito、API Gateway、Lambda、ECR等）
+- **Frontend Web**: Expo WebアプリをビルドしてS3にデプロイ、CloudFrontキャッシュを無効化
+
+複数のコンポーネントを同時に選択して一括デプロイすることも可能です。
+
+#### AWS認証の設定（OIDC）
+
+CI/CDパイプラインは**OIDC（OpenID Connect）認証**を使用しています。これにより、長期的なアクセスキーを保存する必要がなく、セキュリティが向上します。
+
+**初回セットアップ**:
+
+1. CDKでOIDCスタックをデプロイ：
+   ```bash
+   cd infra
+   npm run deploy -- --context environment=development JanlogGitHubOidcStack-development
+   ```
+
+2. デプロイ完了後、出力される`GitHubActionsRoleArn`を確認
+
+3. GitHub Actionsワークフローは自動的にこのロールを使用します
+
+**メリット**:
+- アクセスキーの管理不要
+- 一時的な認証情報のみ使用
+- セキュリティリスクの低減
+- CloudTrailでの追跡が容易
+
+**詳細なガイド**: [CI/CDデプロイメントガイド](docs/ci-cd-guide.md)を参照してください。
+
+### ローカルデプロイ
+
+GitHub Actionsを使用せず、ローカルからデプロイすることも可能です。
+
 ## デプロイ
 
 ### Web版デプロイ

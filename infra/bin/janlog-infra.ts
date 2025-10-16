@@ -8,6 +8,7 @@ import { CognitoStack } from '../lib/stacks/cognito-stack';
 import { ECRStack } from '../lib/stacks/ecr-stack';
 import { LambdaStack } from '../lib/stacks/lambda-stack';
 import { ApiGatewayStack } from '../lib/stacks/api-gateway-stack';
+import { GitHubOidcStack } from '../lib/stacks/github-oidc-stack';
 import { defaultStackProps } from '../lib/common/stack-props';
 
 // CDKアプリケーションの作成
@@ -78,5 +79,13 @@ if (environment !== 'local') {
     userPool: cognitoStack.userPool,
     userPoolClient: cognitoStack.userPoolClient,
     lambdaFunction: lambdaStack.lambdaFunction,
+  });
+
+  // GitHub OIDC スタック（CI/CD用）
+  new GitHubOidcStack(app, `JanlogGitHubOidcStack-${environment}`, {
+    ...defaultStackProps,
+    environment,
+    githubOrg: 'notubo',  // TODO: 実際のGitHub organizationまたはユーザー名に変更
+    githubRepo: 'janlog-app',  // TODO: 実際のリポジトリ名に変更
   });
 }
