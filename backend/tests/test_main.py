@@ -15,6 +15,7 @@ os.environ["AWS_ACCESS_KEY_ID"] = "testing"
 os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
 
 from app.main import app
+from app.version import VERSION
 
 @pytest.fixture(scope="function")
 def dynamodb_mock():
@@ -50,7 +51,7 @@ def test_root_endpoint(client):
     assert response.status_code == 200
     data = response.json()
     assert data["message"] == "Janlog API"
-    assert data["version"] == "1.0.0"
+    assert data["version"] == VERSION
 
 def test_health_endpoint(client):
     """ヘルスチェックエンドポイントのテスト"""
@@ -58,7 +59,7 @@ def test_health_endpoint(client):
     assert response.status_code == 200
     data = response.json()
     assert data["status"] in ["healthy", "unhealthy"]
-    assert data["version"] == "1.0.0"
+    assert data["version"] == VERSION
     # 環境変数の設定タイミングの問題で、developmentになることがある
     assert data["environment"] in ["test", "development"]
     assert "services" in data

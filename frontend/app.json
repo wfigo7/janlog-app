@@ -2,7 +2,7 @@
   "expo": {
     "name": "Janlog",
     "slug": "janlog",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "janlog",
@@ -10,7 +10,8 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.janlog.app"
+      "bundleIdentifier": "com.janlog.app",
+      "buildNumber": "1"
     },
     "android": {
       "package": "com.janlog.app",

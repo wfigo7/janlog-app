@@ -39,6 +39,25 @@ Janlogは、フリー雀荘やセット麻雀の成績を個人用に記録・�
 - **[shared/](shared/README.md)** - 共通型定義とユーティリティライブラリ
 - **[spec/](spec/)** - OpenAPI仕様書とアーキテクチャドキュメント
 
+## バージョン管理
+
+Janlogは[Semantic Versioning 2.0.0](https://semver.org/)に準拠したバージョン管理を採用しています。
+
+- **現在のバージョン**: 0.1.0（初期MVPリリース）
+- **バージョンフォーマット**: `MAJOR.MINOR.PATCH`
+- **詳細なガイド**: [VERSIONING.md](VERSIONING.md)を参照
+
+### サブシステムバージョン
+
+- **フロントエンド**: 0.1.0（`frontend/package.json`）
+- **バックエンド**: 0.1.0（`backend/pyproject.toml`）
+- **インフラ**: 0.1.0（`infra/package.json`）
+
+### バージョン確認方法
+
+- **アプリ内**: プロフィール画面の「バージョン情報」セクション
+- **API**: `GET /health`エンドポイントの`version`フィールド
+
 ## 開発ガイドライン
 
 ### UI/UX規約

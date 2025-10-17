@@ -14,6 +14,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { authService } from '../../services/authService';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
+import { VersionInfo } from '../../../components/VersionInfo';
 
 export function ProfileScreen() {
     const { user, logout, isLoading, checkAuthState } = useAuth();
@@ -168,12 +169,10 @@ export function ProfileScreen() {
                             <Text style={styles.infoLabel}>アプリ名</Text>
                             <Text style={styles.infoValue}>Janlog</Text>
                         </View>
-
-                        <View style={styles.infoItem}>
-                            <Text style={styles.infoLabel}>バージョン</Text>
-                            <Text style={styles.infoValue}>1.0.0</Text>
-                        </View>
                     </View>
+
+                    {/* バージョン情報 */}
+                    <VersionInfo />
                 </View>
             </ScrollView>
             <AlertComponent />

@@ -28,16 +28,18 @@ from app.models.match import MatchRequest, MatchListResponse
 from app.models.stats import StatsSummary
 from app.models.user import UserResponse
 from app.models.venue import VenueResponse
+
 from app.services.match_service import get_match_service
 from app.services.stats_service import get_stats_service
 from app.services.cognito_service import get_cognito_service
 from app.services.venue_service import venue_service
+from app.version import VERSION
 
 # FastAPIアプリケーションの初期化
 app = FastAPI(
     title="Janlog API",
     description="麻雀成績記録アプリのバックエンドAPI",
-    version="1.0.0",
+    version=VERSION,
     docs_url="/docs" if not settings.is_production else None,
     redoc_url="/redoc" if not settings.is_production else None,
 )
@@ -69,6 +71,9 @@ async def health_check() -> HealthResponse:
     """
     ヘルスチェックエンドポイント
     アプリケーションとDynamoDBの稼働状況を確認する
+
+    バージョン情報も含まれるため、フロントエンドはこのエンドポイントから
+    バックエンドのバージョンを取得できます。
     """
     # DynamoDBの接続確認
     dynamodb_client = get_dynamodb_client()
@@ -83,7 +88,7 @@ async def health_check() -> HealthResponse:
     return HealthResponse(
         status=overall_status,
         timestamp=datetime.now(timezone.utc).isoformat(),
-        version="1.0.0",
+        version=VERSION,
         environment=settings.ENVIRONMENT,
         services={"dynamodb": dynamodb_status, "api": "healthy"},
     )
@@ -97,7 +102,7 @@ async def root() -> Dict[str, Any]:
     """
     return {
         "message": "Janlog API",
-        "version": "1.0.0",
+        "version": VERSION,
         "docs_url": "/docs",
         "health_url": "/health",
     }

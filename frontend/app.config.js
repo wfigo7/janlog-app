@@ -3,6 +3,10 @@
  * 環境変数を動的に読み込む
  */
 
+// package.jsonからバージョンを読み込む
+const packageJson = require('./package.json');
+const APP_VERSION = packageJson.version;
+
 // EASビルド時の環境変数を取得
 const APP_ENV = process.env.APP_ENV || process.env.EXPO_PUBLIC_ENV || 'local';
 const AUTH_MODE = process.env.EXPO_PUBLIC_AUTH_MODE || 'mock';
@@ -27,7 +31,7 @@ export default {
   expo: {
     name: 'Janlog',
     slug: 'janlog',
-    version: '1.0.0',
+    version: APP_VERSION,
     orientation: 'portrait',
     icon: './assets/images/icon.png',
     scheme: 'janlog',
@@ -36,6 +40,7 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.janlog.app',
+      buildNumber: '1',
     },
     android: {
       package: 'com.janlog.app',
