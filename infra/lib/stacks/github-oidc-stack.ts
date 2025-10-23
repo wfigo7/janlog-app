@@ -193,6 +193,7 @@ export class GitHubOidcStack extends cdk.Stack {
         ],
         resources: [
           `arn:aws:cloudformation:${this.region}:${this.account}:stack/janlog-*`,
+          `arn:aws:cloudformation:${this.region}:${this.account}:stack/Janlog*`,
           `arn:aws:cloudformation:${this.region}:${this.account}:stack/CDKToolkit/*`,
         ],
       })
