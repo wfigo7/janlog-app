@@ -14,14 +14,17 @@ NC='\033[0m' # No Color
 ENVIRONMENT=${1:-development}
 BUCKET_NAME="janlog-frontend-${ENVIRONMENT}"
 DISTRIBUTION_ID=""
+AWS_REGION=${AWS_REGION:-ap-northeast-1}
 
 echo -e "${GREEN}=== Expo Web版デプロイスクリプト ===${NC}"
 echo -e "環境: ${YELLOW}${ENVIRONMENT}${NC}"
 echo -e "バケット: ${YELLOW}${BUCKET_NAME}${NC}"
+echo -e "リージョン: ${YELLOW}${AWS_REGION}${NC}"
 
 # CloudFront Distribution IDを取得
 echo -e "\n${GREEN}CloudFront Distribution IDを取得中...${NC}"
 DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
+  --region "${AWS_REGION}" \
   --stack-name "JanlogCloudFrontStack-${ENVIRONMENT}" \
   --query "Stacks[0].Outputs[?OutputKey=='DistributionId'].OutputValue" \
   --output text 2>/dev/null || echo "")
@@ -43,6 +46,7 @@ fi
 # S3にアップロード
 echo -e "\n${GREEN}S3にアップロード中...${NC}"
 aws s3 sync dist/ "s3://${BUCKET_NAME}/" \
+  --region "${AWS_REGION}" \
   --delete \
   --cache-control "public, max-age=31536000, immutable" \
   --exclude "*.html" \
@@ -51,6 +55,7 @@ aws s3 sync dist/ "s3://${BUCKET_NAME}/" \
 # HTMLとJSONファイルは短いキャッシュ時間で
 echo -e "${GREEN}HTMLとJSONファイルをアップロード中...${NC}"
 aws s3 sync dist/ "s3://${BUCKET_NAME}/" \
+  --region "${AWS_REGION}" \
   --cache-control "public, max-age=0, must-revalidate" \
   --exclude "*" \
   --include "*.html" \
@@ -74,6 +79,7 @@ fi
 
 # CloudFront URLを表示
 CLOUDFRONT_URL=$(aws cloudformation describe-stacks \
+  --region "${AWS_REGION}" \
   --stack-name "JanlogCloudFrontStack-${ENVIRONMENT}" \
   --query "Stacks[0].Outputs[?OutputKey=='DistributionUrl'].OutputValue" \
   --output text 2>/dev/null || echo "")
