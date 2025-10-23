@@ -226,32 +226,25 @@
   - セキュリティが向上したことを確認
   - _Requirements: 4.3, 4.4_
 
-- [ ] 10. EAS Build対応（モバイルアプリビルド）
+- [x] 10. EAS Build対応（モバイルアプリビルド）
   - EXPO_TOKENをGitHub Secretsに登録
   - Frontend Mobile Build Jobを追加
   - EAS Build実行ステップを実装
   - _Requirements: 6.2, 6.3, 6.4_
 
 - [x] 10.1 EXPO_TOKENの取得と登録
-
-
-
   - EAS CLIでログイン（eas login）
   - EXPO_TOKENを生成（eas whoami --json）
   - GitHub Secretsに登録
   - _Requirements: 6.4_
 
-
 - [x] 10.2 Frontend Mobile Build Jobの実装
-
   - `build-frontend-mobile`ジョブを作成
   - 条件付き実行を設定（inputs.build_frontend_mobile == true）
   - Node.js環境セットアップステップを追加
   - _Requirements: 6.2, 6.3_
 
-
 - [x] 10.3 EAS Buildステップの実装
-
   - フロントエンド依存関係インストールステップを追加
   - EAS Build実行ステップを追加（eas build --platform android --non-interactive）
   - ビルド結果のログ出力を実装（artifact URL、ビルドID等）
