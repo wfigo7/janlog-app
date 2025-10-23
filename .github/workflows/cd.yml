@@ -21,6 +21,12 @@ on:
         default: false
         type: boolean
 
+      build_frontend_mobile:
+        description: "Build Frontend Mobile (EAS Build)"
+        required: false
+        default: false
+        type: boolean
+
       environment:
         description: "Deployment Environment"
         required: true
@@ -208,3 +214,76 @@ jobs:
           echo "Component: Frontend Web (Expo Web -> S3 + CloudFront)"
           echo "Status: ✅ Success"
           echo "Authentication: OIDC"
+
+  # Frontend Mobile Build Job
+  build-frontend-mobile:
+    name: Build Frontend Mobile
+    runs-on: ubuntu-latest
+    if: ${{ inputs.build_frontend_mobile }}
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup EAS CLI
+        run: npm install -g eas-cli
+
+      - name: EAS Build (Android)
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          echo "🚀 Starting EAS Build for Android..."
+          echo "Platform: android"
+          echo "Profile: preview"
+          echo "Project: janlog (wfigo7)"
+          echo ""
+
+          # EAS Buildを実行してJSON出力を取得
+          BUILD_OUTPUT=$(eas build --platform android --profile preview --non-interactive --json 2>&1 || true)
+
+          echo "$BUILD_OUTPUT"
+
+          # ビルドIDを抽出（JSON形式の場合）
+          BUILD_ID=$(echo "$BUILD_OUTPUT" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4 || echo "")
+
+          if [ -n "$BUILD_ID" ]; then
+            echo ""
+            echo "✅ EAS Build submitted successfully"
+            echo "Build ID: $BUILD_ID"
+            echo "BUILD_ID=$BUILD_ID" >> $GITHUB_ENV
+          else
+            echo ""
+            echo "⚠️ Could not extract Build ID from output"
+          fi
+
+      - name: Build Summary
+        run: |
+          echo "📊 Build Summary"
+          echo "Environment: ${{ env.ENVIRONMENT }}"
+          echo "Component: Frontend Mobile (EAS Build)"
+          echo "Platform: Android"
+          echo "Profile: preview"
+          echo "Status: ✅ Build submitted"
+          echo ""
+          if [ -n "$BUILD_ID" ]; then
+            echo "Build ID: $BUILD_ID"
+            echo "Build URL: https://expo.dev/accounts/wfigo7/projects/janlog/builds/$BUILD_ID"
+          fi
+          echo ""
+          echo "Check all builds at: https://expo.dev/accounts/wfigo7/projects/janlog/builds"
+          echo ""
+          echo "Note: Build may take 10-20 minutes to complete."
+          echo "You will receive an email notification when the build is ready."

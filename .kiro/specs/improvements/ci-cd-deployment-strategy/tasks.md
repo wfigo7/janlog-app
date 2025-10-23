@@ -226,34 +226,41 @@
   - セキュリティが向上したことを確認
   - _Requirements: 4.3, 4.4_
 
-- [ ] 10. EAS Update対応（モバイルアプリOTA更新）
+- [ ] 10. EAS Build対応（モバイルアプリビルド）
   - EXPO_TOKENをGitHub Secretsに登録
-  - Frontend Mobile Deployment Jobを追加
-  - EAS Update実行ステップを実装
+  - Frontend Mobile Build Jobを追加
+  - EAS Build実行ステップを実装
   - _Requirements: 6.2, 6.3, 6.4_
 
-- [ ] 10.1 EXPO_TOKENの取得と登録
+- [x] 10.1 EXPO_TOKENの取得と登録
+
+
+
   - EAS CLIでログイン（eas login）
   - EXPO_TOKENを生成（eas whoami --json）
   - GitHub Secretsに登録
   - _Requirements: 6.4_
 
-- [ ] 10.2 Frontend Mobile Deployment Jobの実装
-  - `deploy-frontend-mobile`ジョブを作成
-  - 条件付き実行を設定（inputs.deploy_frontend_mobile == true）
+
+- [x] 10.2 Frontend Mobile Build Jobの実装
+
+  - `build-frontend-mobile`ジョブを作成
+  - 条件付き実行を設定（inputs.build_frontend_mobile == true）
   - Node.js環境セットアップステップを追加
   - _Requirements: 6.2, 6.3_
 
-- [ ] 10.3 EAS Updateステップの実装
+
+- [x] 10.3 EAS Buildステップの実装
+
   - フロントエンド依存関係インストールステップを追加
-  - EAS Update実行ステップを追加（eas update --branch development --message "..."）
-  - 更新結果のログ出力を実装
+  - EAS Build実行ステップを追加（eas build --platform android --non-interactive）
+  - ビルド結果のログ出力を実装（artifact URL、ビルドID等）
   - _Requirements: 6.3_
 
-- [ ]* 10.4 EAS Updateのテスト
+- [ ]* 10.4 EAS Buildのテスト
   - workflow_dispatchでFrontend Mobileを選択して実行
-  - EAS Updateが成功することを確認
-  - モバイルアプリで更新が反映されることを確認
+  - EAS Buildが成功することを確認
+  - Expoアカウントにartifactが追加されたことを確認
   - _Requirements: 6.3_
 
 - [ ] 11. Production環境対応
@@ -309,6 +316,29 @@
   - コミットメッセージからリリースノートを生成
   - GitHub Releaseに自動投稿
   - _Requirements: 8.5_
+
+- [ ] 13. EAS Update対応（モバイルアプリOTA更新）
+  - Frontend Mobile Update Jobを追加
+  - EAS Update実行ステップを実装
+  - _Requirements: 6.2, 6.3_
+
+- [ ] 13.1 Frontend Mobile Update Jobの実装
+  - `update-frontend-mobile`ジョブを作成
+  - 条件付き実行を設定（inputs.update_frontend_mobile == true）
+  - Node.js環境セットアップステップを追加
+  - _Requirements: 6.2, 6.3_
+
+- [ ] 13.2 EAS Updateステップの実装
+  - フロントエンド依存関係インストールステップを追加
+  - EAS Update実行ステップを追加（eas update --branch development --message "..."）
+  - 更新結果のログ出力を実装
+  - _Requirements: 6.3_
+
+- [ ]* 13.3 EAS Updateのテスト
+  - workflow_dispatchでFrontend Mobile Updateを選択して実行
+  - EAS Updateが成功することを確認
+  - モバイルアプリで更新が反映されることを確認
+  - _Requirements: 6.3_
 
 ## 注意事項
 
