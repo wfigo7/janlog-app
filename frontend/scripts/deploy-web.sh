@@ -25,34 +25,42 @@ echo -e "リージョン: ${YELLOW}${AWS_REGION}${NC}"
 echo -e "\n${GREEN}CloudFront Distribution IDを取得中...${NC}"
 echo -e "スタック名: ${YELLOW}JanlogCloudFrontStack-${ENVIRONMENT}${NC}"
 
-# Distribution IDを取得（エラーメッセージを表示）
-echo -e "${YELLOW}AWS CLIコマンド実行中...${NC}"
+# set -eを一時的に無効化してエラーハンドリング
+set +e
 STACK_DESCRIBE_OUTPUT=$(aws cloudformation describe-stacks \
   --region "${AWS_REGION}" \
   --stack-name "JanlogCloudFrontStack-${ENVIRONMENT}" 2>&1)
 STACK_DESCRIBE_EXIT_CODE=$?
+set -e
 
 if [ $STACK_DESCRIBE_EXIT_CODE -ne 0 ]; then
-  echo -e "${RED}エラー: CloudFormationスタックの取得に失敗しました${NC}"
-  echo -e "${RED}エラー詳細:${NC}"
-  echo "$STACK_DESCRIBE_OUTPUT"
+  echo -e "${YELLOW}警告: CloudFormationスタックの取得に失敗しました${NC}"
+  echo -e "${YELLOW}エラー詳細:${NC}"
+  echo "$STACK_DESCRIBE_OUTPUT" | head -5
+  echo -e "${YELLOW}キャッシュの無効化はスキップされます${NC}"
   DISTRIBUTION_ID=""
 else
-  DISTRIBUTION_ID=$(echo "$STACK_DESCRIBE_OUTPUT" | \
-    jq -r '.Stacks[0].Outputs[] | select(.OutputKey=="DistributionId") | .OutputValue' 2>/dev/null || echo "")
+  # pythonを使ってJSONをパース（jqが不要）
+  DISTRIBUTION_ID=$(echo "$STACK_DESCRIBE_OUTPUT" | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    outputs = data['Stacks'][0]['Outputs']
+    for output in outputs:
+        if output['OutputKey'] == 'DistributionId':
+            print(output['OutputValue'])
+            break
+except:
+    pass
+" 2>/dev/null || echo "")
   
   if [ -n "$DISTRIBUTION_ID" ] && [ "$DISTRIBUTION_ID" != "null" ]; then
     echo -e "Distribution ID: ${YELLOW}${DISTRIBUTION_ID}${NC}"
   else
     echo -e "${YELLOW}警告: CloudFront Distribution IDが見つかりませんでした${NC}"
-    echo -e "${YELLOW}スタック情報:${NC}"
-    echo "$STACK_DESCRIBE_OUTPUT" | jq '.Stacks[0].Outputs' 2>/dev/null || echo "$STACK_DESCRIBE_OUTPUT"
+    echo -e "${YELLOW}キャッシュの無効化はスキップされます${NC}"
     DISTRIBUTION_ID=""
   fi
-fi
-
-if [ -z "$DISTRIBUTION_ID" ]; then
-  echo -e "${YELLOW}キャッシュの無効化はスキップされます${NC}"
 fi
 
 
@@ -99,11 +107,22 @@ if [ -n "$DISTRIBUTION_ID" ]; then
 fi
 
 # CloudFront URLを表示
-CLOUDFRONT_URL=$(aws cloudformation describe-stacks \
-  --region "${AWS_REGION}" \
-  --stack-name "JanlogCloudFrontStack-${ENVIRONMENT}" \
-  --query "Stacks[0].Outputs[?OutputKey=='DistributionUrl'].OutputValue | [0]" \
-  --output text 2>/dev/null || echo "")
+if [ -n "$STACK_DESCRIBE_OUTPUT" ] && [ $STACK_DESCRIBE_EXIT_CODE -eq 0 ]; then
+  CLOUDFRONT_URL=$(echo "$STACK_DESCRIBE_OUTPUT" | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    outputs = data['Stacks'][0]['Outputs']
+    for output in outputs:
+        if output['OutputKey'] == 'DistributionUrl':
+            print(output['OutputValue'])
+            break
+except:
+    pass
+" 2>/dev/null || echo "")
+else
+  CLOUDFRONT_URL=""
+fi
 
 echo -e "\n${GREEN}=== デプロイ完了 ===${NC}"
 if [ -n "$CLOUDFRONT_URL" ]; then
