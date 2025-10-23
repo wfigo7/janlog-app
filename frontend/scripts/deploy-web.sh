@@ -23,18 +23,27 @@ echo -e "リージョン: ${YELLOW}${AWS_REGION}${NC}"
 
 # CloudFront Distribution IDを取得
 echo -e "\n${GREEN}CloudFront Distribution IDを取得中...${NC}"
+echo -e "スタック名: ${YELLOW}JanlogCloudFrontStack-${ENVIRONMENT}${NC}"
+
+# Distribution IDを取得（エラーハンドリング付き）
 DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
   --region "${AWS_REGION}" \
   --stack-name "JanlogCloudFrontStack-${ENVIRONMENT}" \
-  --query "Stacks[0].Outputs[?OutputKey=='DistributionId'].OutputValue" \
+  --query "Stacks[0].Outputs[?OutputKey=='DistributionId'].OutputValue | [0]" \
   --output text 2>/dev/null || echo "")
 
-if [ -z "$DISTRIBUTION_ID" ]; then
-  echo -e "${YELLOW}警告: CloudFront Distribution IDが見つかりません${NC}"
-  echo -e "${YELLOW}キャッシュの無効化はスキップされます${NC}"
-else
+if [ -n "$DISTRIBUTION_ID" ] && [ "$DISTRIBUTION_ID" != "None" ]; then
   echo -e "Distribution ID: ${YELLOW}${DISTRIBUTION_ID}${NC}"
+else
+  echo -e "${YELLOW}警告: CloudFront Distribution IDが取得できませんでした${NC}"
+  echo -e "${YELLOW}原因の可能性:${NC}"
+  echo -e "${YELLOW}  1. CloudFormationスタックが存在しない${NC}"
+  echo -e "${YELLOW}  2. IAMロールに cloudformation:DescribeStacks 権限がない${NC}"
+  echo -e "${YELLOW}  3. スタック名が異なる${NC}"
+  echo -e "${YELLOW}キャッシュの無効化はスキップされます${NC}"
 fi
+
+
 
 # ビルドディレクトリの確認
 if [ ! -d "dist" ]; then
@@ -81,7 +90,7 @@ fi
 CLOUDFRONT_URL=$(aws cloudformation describe-stacks \
   --region "${AWS_REGION}" \
   --stack-name "JanlogCloudFrontStack-${ENVIRONMENT}" \
-  --query "Stacks[0].Outputs[?OutputKey=='DistributionUrl'].OutputValue" \
+  --query "Stacks[0].Outputs[?OutputKey=='DistributionUrl'].OutputValue | [0]" \
   --output text 2>/dev/null || echo "")
 
 echo -e "\n${GREEN}=== デプロイ完了 ===${NC}"
