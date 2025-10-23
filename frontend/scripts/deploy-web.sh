@@ -25,21 +25,33 @@ echo -e "リージョン: ${YELLOW}${AWS_REGION}${NC}"
 echo -e "\n${GREEN}CloudFront Distribution IDを取得中...${NC}"
 echo -e "スタック名: ${YELLOW}JanlogCloudFrontStack-${ENVIRONMENT}${NC}"
 
-# Distribution IDを取得（エラーハンドリング付き）
-DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
+# Distribution IDを取得（エラーメッセージを表示）
+echo -e "${YELLOW}AWS CLIコマンド実行中...${NC}"
+STACK_DESCRIBE_OUTPUT=$(aws cloudformation describe-stacks \
   --region "${AWS_REGION}" \
-  --stack-name "JanlogCloudFrontStack-${ENVIRONMENT}" \
-  --query "Stacks[0].Outputs[?OutputKey=='DistributionId'].OutputValue | [0]" \
-  --output text 2>/dev/null || echo "")
+  --stack-name "JanlogCloudFrontStack-${ENVIRONMENT}" 2>&1)
+STACK_DESCRIBE_EXIT_CODE=$?
 
-if [ -n "$DISTRIBUTION_ID" ] && [ "$DISTRIBUTION_ID" != "None" ]; then
-  echo -e "Distribution ID: ${YELLOW}${DISTRIBUTION_ID}${NC}"
+if [ $STACK_DESCRIBE_EXIT_CODE -ne 0 ]; then
+  echo -e "${RED}エラー: CloudFormationスタックの取得に失敗しました${NC}"
+  echo -e "${RED}エラー詳細:${NC}"
+  echo "$STACK_DESCRIBE_OUTPUT"
+  DISTRIBUTION_ID=""
 else
-  echo -e "${YELLOW}警告: CloudFront Distribution IDが取得できませんでした${NC}"
-  echo -e "${YELLOW}原因の可能性:${NC}"
-  echo -e "${YELLOW}  1. CloudFormationスタックが存在しない${NC}"
-  echo -e "${YELLOW}  2. IAMロールに cloudformation:DescribeStacks 権限がない${NC}"
-  echo -e "${YELLOW}  3. スタック名が異なる${NC}"
+  DISTRIBUTION_ID=$(echo "$STACK_DESCRIBE_OUTPUT" | \
+    jq -r '.Stacks[0].Outputs[] | select(.OutputKey=="DistributionId") | .OutputValue' 2>/dev/null || echo "")
+  
+  if [ -n "$DISTRIBUTION_ID" ] && [ "$DISTRIBUTION_ID" != "null" ]; then
+    echo -e "Distribution ID: ${YELLOW}${DISTRIBUTION_ID}${NC}"
+  else
+    echo -e "${YELLOW}警告: CloudFront Distribution IDが見つかりませんでした${NC}"
+    echo -e "${YELLOW}スタック情報:${NC}"
+    echo "$STACK_DESCRIBE_OUTPUT" | jq '.Stacks[0].Outputs' 2>/dev/null || echo "$STACK_DESCRIBE_OUTPUT"
+    DISTRIBUTION_ID=""
+  fi
+fi
+
+if [ -z "$DISTRIBUTION_ID" ]; then
   echo -e "${YELLOW}キャッシュの無効化はスキップされます${NC}"
 fi
 
