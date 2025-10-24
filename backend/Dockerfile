@@ -21,6 +21,7 @@ ENV REQUESTS_CA_BUNDLE= \
 
 # アプリ本体
 COPY app ./app
+COPY pyproject.toml .
 
 # LWA用環境変数
 ENV PORT=8000 \
