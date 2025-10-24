@@ -53,21 +53,21 @@
   - 各READMEファイルの内容が適切か確認
   - _要件: 全要件の統合確認_
 
-- [ ] 8. Archive階層構造の導入
+- [x] 8. Archive階層構造の導入
   - archive/features/ディレクトリを作成
   - archive/improvements/ディレクトリを作成
   - archive/bugfix/ディレクトリを作成
   - archive/README.mdを更新（階層構造の説明、完了判定基準、移動手順を追加）
   - _要件: 8.1, 8.2, 8.3, 8.4, 8.5_
 
-- [ ] 9. 完了したspecのarchive移動
+- [x] 9. 完了したspecのarchive移動
   - mahjong-score-managementをarchive/features/に移動（git mv使用）
   - makefile-improvementsをarchive/improvements/に移動（git mv使用）
   - backend-test-data-managementをarchive/improvements/に移動（git mv使用）
   - react-native-buffer-polyfilをarchive/bugfix/に移動（git mv使用）
   - _要件: 9.1, 9.2, 9.3, 9.4, 9.5_
 
-- [ ] 10. ドキュメントの更新
+- [x] 10. ドキュメントの更新
   - .kiro/specs/README.mdのディレクトリ構造図を更新
   - .kiro/steering/spec-management.mdのディレクトリ構造図を更新
   - 完了判定基準とarchive移動手順を各READMEに追加
