@@ -13,19 +13,28 @@
 │   ├── requirements.md                # 全体要件の統合版
 │   ├── design.md                      # 全体設計の統合版
 │   └── architecture.md                # システム全体のアーキテクチャ
-├── features/                          # 新機能追加spec
+├── features/                          # 新機能追加spec（開発中）
 │   └── {feature-name}/                # 個別機能spec
 │       ├── requirements.md
 │       ├── design.md
 │       └── tasks.md
-├── improvements/                      # 開発改善spec
-│   ├── makefile-improvements/         # Makefile改善
-│   ├── backend-test-data-management/  # テストデータ管理
-│   └── spec-management/               # Spec管理体系整理
-├── bugfix/                            # バグ修正spec
-│   └── react-native-buffer-polyfill/  # Buffer polyfill修正
+├── improvements/                      # 開発改善spec（開発中）
+│   ├── ci-cd-deployment-strategy/     # CI/CDデプロイ戦略
+│   ├── commit-message-convention/     # コミットメッセージ規約
+│   ├── spec-management/               # Spec管理体系整理
+│   └── version-management/            # バージョン管理
+├── bugfix/                            # バグ修正spec（開発中）
+│   └── {bug-name}/                    # 個別バグ修正spec
 └── archive/                           # 完了したspec
-    └── mahjong-score-management/      # 初期MVP（参照用）
+    ├── README.md                      # archive/の参照方法
+    ├── features/                      # 完了した新機能spec
+    │   └── mahjong-score-management/  # 初期MVP
+    ├── improvements/                  # 完了した開発改善spec
+    │   ├── makefile-improvements/
+    │   ├── backend-test-data-management/
+    │   └── spec-management/           # 本spec（完了後に移動）
+    └── bugfix/                        # 完了したバグ修正spec
+        └── react-native-buffer-polyfill/
 ```
 
 ## 各カテゴリの役割

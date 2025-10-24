@@ -17,22 +17,28 @@ Kiroのspec管理体系を、カテゴリ別ディレクトリ構造と統合仕
 │   │   ├── requirements.md                # 全体要件の統合版
 │   │   ├── design.md                      # 全体設計の統合版
 │   │   └── architecture.md                # システム全体のアーキテクチャ
-│   ├── features/                          # 新機能追加spec
+│   ├── features/                          # 新機能追加spec（開発中）
 │   │   ├── README.md                      # features/の使い方
 │   │   ├── venue-management/              # 例: 会場管理機能
 │   │   ├── image-ocr/                     # 例: 画像OCR機能
 │   │   └── shared-room/                   # 例: 共有ルーム機能
-│   ├── improvements/                      # 開発改善spec
+│   ├── improvements/                      # 開発改善spec（開発中）
 │   │   ├── README.md                      # improvements/の使い方
-│   │   ├── makefile-improvements/         # 既存: Makefile改善
-│   │   ├── backend-test-data-management/  # 既存: テストデータ管理
-│   │   └── spec-management/               # 本spec（自己参照）
-│   ├── bugfix/                            # バグ修正spec
-│   │   ├── README.md                      # bugfix/の使い方
-│   │   └── react-native-buffer-polyfill/  # 既存: Buffer polyfill修正
+│   │   ├── ci-cd-deployment-strategy/     # 開発中: CI/CDデプロイ戦略
+│   │   ├── commit-message-convention/     # 開発中: コミットメッセージ規約
+│   │   └── version-management/            # 開発中: バージョン管理
+│   ├── bugfix/                            # バグ修正spec（開発中）
+│   │   └── README.md                      # bugfix/の使い方
 │   └── archive/                           # 完了したspec
 │       ├── README.md                      # archive/の参照方法
-│       └── mahjong-score-management/      # 初期MVP（参照用）
+│       ├── features/                      # 完了した新機能spec
+│       │   └── mahjong-score-management/  # 初期MVP
+│       ├── improvements/                  # 完了した開発改善spec
+│       │   ├── makefile-improvements/     # 完了: Makefile改善
+│       │   ├── backend-test-data-management/ # 完了: テストデータ管理
+│       │   └── spec-management/           # 完了: 本spec（完了後に移動）
+│       └── bugfix/                        # 完了したバグ修正spec
+│           └── react-native-buffer-polyfill/ # 完了: Buffer polyfill修正
 └── steering/
     └── spec-management.md                 # spec運用ルール（自動参照設定）
 ```
@@ -153,20 +159,62 @@ bugfix/
 #### ディレクトリ構成
 ```
 archive/
-├── README.md
-└── mahjong-score-management/  # 初期MVP
+├── README.md                      # archive全体の説明
+├── features/                      # 完了した新機能spec
+│   └── mahjong-score-management/  # 初期MVP
+├── improvements/                  # 完了した開発改善spec
+│   ├── makefile-improvements/
+│   ├── backend-test-data-management/
+│   └── spec-management/           # 本spec（完了後に移動）
+└── bugfix/                        # 完了したバグ修正spec
+    └── react-native-buffer-polyfill/
 ```
 
-#### 役割
-- 完了したspecの履歴保持
-- 過去の意思決定の参照
-- 将来の類似機能開発時の参考
+#### 設計原則
+- **カテゴリ別分類**: 元のカテゴリ（features/improvements/bugfix）を維持
+- **検索性の向上**: 目的別に整理されているため効率的に参照可能
+- **履歴の保持**: git mvで移動し、Git履歴を保持
+
+#### 完了判定基準
+
+**features/の場合:**
+1. tasks.mdの全タスクが完了（[x]マーク）
+2. core/requirements.mdとcore/design.mdに統合済み
+3. 統合内容のレビュー完了
+
+**improvements/の場合:**
+1. tasks.mdの全タスクが完了（[x]マーク）
+2. core統合が必要な場合は統合済み
+3. 関連ドキュメント（README.md、steering等）の更新完了
+
+**bugfix/の場合:**
+1. tasks.mdの全タスクが完了（[x]マーク）
+2. 必要に応じてcore/の該当箇所を更新済み
+3. 修正内容のテスト完了
+
+#### archive移動手順
+
+```bash
+# 1. 完了確認
+# - tasks.mdの全タスクが[x]になっているか確認
+# - core統合が必要な場合は完了しているか確認
+
+# 2. Git履歴を保持して移動
+git mv .kiro/specs/features/{spec-name} .kiro/specs/archive/features/
+git mv .kiro/specs/improvements/{spec-name} .kiro/specs/archive/improvements/
+git mv .kiro/specs/bugfix/{spec-name} .kiro/specs/archive/bugfix/
+
+# 3. コミット
+git commit -m "archive: {spec-name}を完了としてarchiveに移動"
+```
 
 #### archive/README.md
 - **内容**:
-  - archiveの目的
-  - 参照方法
-  - 検索のヒント
+  - archiveの目的と階層構造の説明
+  - カテゴリ別の完了spec一覧
+  - 参照方法とKiroへの指示例
+  - 検索のヒント（カテゴリ、機能名、日付等）
+  - archive移動の判定基準と手順
 
 ### 6. steering/spec-management.md
 

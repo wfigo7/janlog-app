@@ -89,3 +89,27 @@ Kiroのspec管理体系を整理し、機能追加・バグ修正・開発改善
 3. WHEN README.mdが更新された時 THEN spec作成から完了までのライフサイクルが説明される
 4. WHEN README.mdが更新された時 THEN Kiroへの指示方法の例が記載される
 5. WHEN README.mdが更新された時 THEN steering経由での自動参照設定が説明される
+
+### 要件 8
+
+**ユーザーストーリー:** 開発者として、完了したspecをarchive内でも目的別に分類したいので、過去のspecを効率的に検索・参照できる
+
+#### 受入基準
+
+1. WHEN `archive/features/`ディレクトリが作成された時 THEN システムは完了した新機能specの保管場所として機能する
+2. WHEN `archive/improvements/`ディレクトリが作成された時 THEN システムは完了した開発改善specの保管場所として機能する
+3. WHEN `archive/bugfix/`ディレクトリが作成された時 THEN システムは完了したバグ修正specの保管場所として機能する
+4. WHEN 完了したspecをarchiveに移動する時 THEN 元のカテゴリに対応するarchiveサブディレクトリに配置される
+5. WHEN archive内のspecを検索する時 THEN カテゴリ別に整理されているため効率的に参照できる
+
+### 要件 9
+
+**ユーザーストーリー:** 開発者として、specの完了判定基準を明確にしたいので、いつarchiveに移動すべきか判断できる
+
+#### 受入基準
+
+1. WHEN specのtasks.mdの全タスクが完了した時 THEN システムはそのspecを完了状態と判定する
+2. WHEN 完了したspecがcore/に統合された時（features/の場合） THEN システムはarchive移動の準備が整ったと判定する
+3. WHEN 完了したspecのcore統合が不要な時（improvements/bugfix/の場合） THEN システムはタスク完了時点でarchive移動可能と判定する
+4. WHEN archive移動の判定基準がドキュメント化された時 THEN 開発者は一貫した基準でarchive移動を実施できる
+5. WHEN archive移動時にgit mvコマンドを使用した時 THEN システムはGit履歴を保持する

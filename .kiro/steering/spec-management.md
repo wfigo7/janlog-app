@@ -16,20 +16,28 @@ inclusion: always
 │   ├── requirements.md                # 全体要件の統合版
 │   ├── design.md                      # 全体設計の統合版
 │   └── architecture.md                # システム全体のアーキテクチャ
-├── features/                          # 新機能追加spec
+├── features/                          # 新機能追加spec（開発中）
 │   ├── README.md                      # features/の使い方
 │   └── {feature-name}/                # 個別機能spec
-├── improvements/                      # 開発改善spec
+├── improvements/                      # 開発改善spec（開発中）
 │   ├── README.md                      # improvements/の使い方
-│   ├── makefile-improvements/         # Makefile改善
-│   ├── backend-test-data-management/  # テストデータ管理
-│   └── spec-management/               # 本spec（自己参照）
-├── bugfix/                            # バグ修正spec
+│   ├── ci-cd-deployment-strategy/     # CI/CDデプロイ戦略
+│   ├── commit-message-convention/     # コミットメッセージ規約
+│   ├── spec-management/               # Spec管理体系整理
+│   └── version-management/            # バージョン管理
+├── bugfix/                            # バグ修正spec（開発中）
 │   ├── README.md                      # bugfix/の使い方
-│   └── react-native-buffer-polyfill/  # Buffer polyfill修正
+│   └── {bug-name}/                    # 個別バグ修正spec
 └── archive/                           # 完了したspec
     ├── README.md                      # archive/の参照方法
-    └── mahjong-score-management/      # 初期MVP（参照用）
+    ├── features/                      # 完了した新機能spec
+    │   └── mahjong-score-management/  # 初期MVP
+    ├── improvements/                  # 完了した開発改善spec
+    │   ├── makefile-improvements/
+    │   ├── backend-test-data-management/
+    │   └── spec-management/           # 本spec（完了後に移動）
+    └── bugfix/                        # 完了したバグ修正spec
+        └── react-native-buffer-polyfill/
 ```
 
 ## 運用フロー
@@ -52,7 +60,7 @@ inclusion: always
 
 4. **アーカイブ**
    ```bash
-   git mv .kiro/specs/features/{feature-name} .kiro/specs/archive/
+   git mv .kiro/specs/features/{feature-name} .kiro/specs/archive/features/
    ```
 
 ### 開発改善（improvements/）
@@ -73,7 +81,7 @@ inclusion: always
 
 4. **アーカイブ**
    ```bash
-   git mv .kiro/specs/improvements/{improvement-name} .kiro/specs/archive/
+   git mv .kiro/specs/improvements/{improvement-name} .kiro/specs/archive/improvements/
    ```
 
 ### バグ修正（bugfix/）
@@ -90,6 +98,28 @@ inclusion: always
 
 3. **Core更新（必要に応じて）**
    - 設計の根本的な問題による修正の場合はcore/を更新
+
+4. **アーカイブ**
+   ```bash
+   git mv .kiro/specs/bugfix/{bug-name} .kiro/specs/archive/bugfix/
+   ```
+
+## 完了判定基準
+
+### features/の場合
+1. tasks.mdの全タスクが完了（[x]マーク）
+2. core/requirements.mdとcore/design.mdに統合済み
+3. 統合内容のレビュー完了
+
+### improvements/の場合
+1. tasks.mdの全タスクが完了（[x]マーク）
+2. core統合が必要な場合は統合済み
+3. 関連ドキュメント（README.md、steering等）の更新完了
+
+### bugfix/の場合
+1. tasks.mdの全タスクが完了（[x]マーク）
+2. 必要に応じてcore/の該当箇所を更新済み
+3. 修正内容のテスト完了
    - 単純なバグ修正は統合不要
 
 4. **アーカイブ**
