@@ -37,6 +37,7 @@ class RulesetRequest(BaseModel):
     umaMatrix: Optional[Dict[str, List[int]]] = Field(None, description="浮き人数別ウマ表")
     oka: int = Field(..., description="オカポイント")
     useChips: bool = Field(False, description="チップを使用するかどうか")
+    isGlobal: bool = Field(False, description="グローバルルールかどうか")
     memo: Optional[str] = Field(None, description="メモ")
     basicRules: Optional[Dict[str, Any]] = Field(None, description="基本ルール")
     gameplayRules: Optional[Dict[str, Any]] = Field(None, description="進行ルール")

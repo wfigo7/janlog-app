@@ -210,14 +210,6 @@ class RulesetService:
         if not existing_ruleset:
             return False
         
-        # グローバルルールは作成者以外は削除不可
-        if existing_ruleset.isGlobal and existing_ruleset.createdBy != user_id:
-            raise ValueError("グローバルルールは作成者のみが削除できます")
-        
-        # 個人ルールは所有者のみ削除可能
-        if not existing_ruleset.isGlobal and existing_ruleset.createdBy != user_id:
-            raise ValueError("他のユーザーのルールは削除できません")
-        
         # DynamoDBから削除
         pk = existing_ruleset.get_pk()
         sk = existing_ruleset.get_sk()

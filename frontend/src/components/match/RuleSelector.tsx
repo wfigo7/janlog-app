@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ruleset } from '../../types/ruleset';
 import { GameMode } from '../../types/common';
 import { rulesetService } from '../../services/rulesetService';
@@ -33,15 +34,21 @@ const RuleSelector: React.FC<RuleSelectorProps> = ({
   const [selectedRuleset, setSelectedRuleset] = useState<Ruleset | null>(null);
 
   // ルールセット一覧を取得
-  const fetchRulesets = async () => {
+  const fetchRulesets = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await rulesetService.getRulesets();
-      if (response.success) {
-        setRulesets(response.data);
-      } else {
-        throw new Error('ルールセットの取得に失敗しました');
-      }
+      const rulesets = await rulesetService.getRulesets();
+      // 個人ルール→グローバルルールの順番でソート
+      // 同じタイプ内ではルール名の昇順
+      const sortedRulesets = rulesets.sort((a, b) => {
+        // 個人ルール（isGlobal=false）を先に表示
+        if (a.isGlobal !== b.isGlobal) {
+          return a.isGlobal ? 1 : -1;
+        }
+        // 同じタイプ内ではルール名の昇順
+        return a.ruleName.localeCompare(b.ruleName, 'ja');
+      });
+      setRulesets(sortedRulesets);
     } catch (error) {
       showAlert({
         title: 'エラー',
@@ -50,7 +57,7 @@ const RuleSelector: React.FC<RuleSelectorProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [showAlert]);
 
   // ゲームモードでフィルタリング
   useEffect(() => {
@@ -75,10 +82,12 @@ const RuleSelector: React.FC<RuleSelectorProps> = ({
     }
   }, [selectedRulesetId, rulesets]);
 
-  // 初回読み込み
-  useEffect(() => {
-    fetchRulesets();
-  }, []);
+  // 画面フォーカス時にルール一覧を再取得
+  useFocusEffect(
+    useCallback(() => {
+      fetchRulesets();
+    }, [fetchRulesets])
+  );
 
   const handleRulesetSelect = (ruleset: Ruleset) => {
     setSelectedRuleset(ruleset);

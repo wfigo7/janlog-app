@@ -99,7 +99,9 @@ def validate_ruleset_data(ruleset: Dict, index: int):
 
     # umaの検証
     if not isinstance(ruleset["uma"], list):
-        raise ValueError(f"ルールセット[{index}]: 'uma'はリスト形式である必要があります")
+        raise ValueError(
+            f"ルールセット[{index}]: 'uma'はリスト形式である必要があります"
+        )
 
     expected_uma_length = 3 if ruleset["gameMode"] == "three" else 4
     if len(ruleset["uma"]) != expected_uma_length:
@@ -143,7 +145,9 @@ def create_ruleset_item(ruleset_data: Dict) -> Dict:
         "basicRules": None,  # 将来実装予定
         "gameplayRules": None,  # 将来実装予定
         "additionalRules": None,  # 将来実装予定
-        "isGlobal": True,
+        "isGlobal": ruleset_data.get(
+            "isGlobal", True
+        ),  # YAMLから読み込み、デフォルトはTrue
         "createdBy": "system",
         "createdAt": now,
         "updatedAt": now,

@@ -8,13 +8,6 @@ export default function MatchEditPage() {
       <Stack.Screen
         options={{
           title: '対局編集',
-          headerStyle: {
-            backgroundColor: '#007AFF',
-          },
-          headerTintColor: '#FFFFFF',
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
         }}
       />
       <MatchEditScreen />

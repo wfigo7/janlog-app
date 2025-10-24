@@ -153,9 +153,15 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Ruleset"
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Ruleset"
 
     post:
       summary: ルールセットを作成
@@ -171,9 +177,39 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Ruleset"
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "ルールセットを作成しました"
+                  data:
+                    $ref: "#/components/schemas/Ruleset"
 
   /rulesets/{rulesetId}:
+    get:
+      summary: 特定のルールセットを取得
+      parameters:
+        - in: path
+          name: rulesetId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: "#/components/schemas/Ruleset"
+
     put:
       summary: ルールセットを更新
       parameters:
@@ -193,7 +229,16 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Ruleset"
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "ルールセットを更新しました"
+                  data:
+                    $ref: "#/components/schemas/Ruleset"
 
     delete:
       summary: ルールセットを削除
@@ -203,8 +248,19 @@ paths:
           required: true
           schema: { type: string }
       responses:
-        "204":
-          description: No Content
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "ルールセットを削除しました"
 
   /rulesets/calculate:
     post:
@@ -355,16 +411,23 @@ components:
         topRate: { type: number }
         lastRate: { type: number }
         totalPoints: { type: number }
-        chipTotal: { type: integer, nullable: true, description: "チップありルールでの対局がある場合のみ表示" }
+        chipTotal:
+          {
+            type: integer,
+            nullable: true,
+            description: "チップありルールでの対局がある場合のみ表示",
+          }
 
     Venue:
       type: object
-      required: [venueId, venueName, usageCount, lastUsedAt, createdAt, updatedAt]
+      required:
+        [venueId, venueName, usageCount, lastUsedAt, createdAt, updatedAt]
       properties:
         venueId: { type: string, description: "会場ID（UUID）" }
         venueName: { type: string, description: "会場名（例：雀荘A、友人宅）" }
         usageCount: { type: integer, description: "使用回数（ソート用）" }
-        lastUsedAt: { type: string, format: date-time, description: "最終使用日時" }
+        lastUsedAt:
+          { type: string, format: date-time, description: "最終使用日時" }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
 
@@ -456,7 +519,8 @@ components:
 
     RulesetInput:
       type: object
-      required: [ruleName, gameMode, startingPoints, basePoints, uma, oka, useChips]
+      required:
+        [ruleName, gameMode, startingPoints, basePoints, uma, oka, useChips]
       properties:
         ruleName: { type: string }
         gameMode: { type: string, enum: [three, four] }

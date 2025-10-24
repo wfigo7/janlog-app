@@ -106,7 +106,9 @@ class AuthService:
 
                 # デバッグ: トークンの内容を確認
                 unverified_payload = jwt.get_unverified_claims(token)
-                logger.debug(f"トークン検証開始 - aud: {unverified_payload.get('aud')}, expected: {self.client_id}")
+                logger.debug(
+                    f"トークン検証開始 - aud: {unverified_payload.get('aud')}, expected: {self.client_id}"
+                )
 
                 # トークンを検証
                 payload = jwt.decode(
@@ -169,6 +171,9 @@ class AuthService:
                 "auth_time": payload.get("auth_time"),
                 "exp": payload.get("exp"),
                 "iat": payload.get("iat"),
+                "role": payload.get(
+                    "custom:role", "user"
+                ),  # ロールを追加（デフォルトはuser）
             }
 
             # カスタム属性があれば追加
@@ -177,7 +182,10 @@ class AuthService:
                     user_info[key] = value
 
             user_id = user_info.get("user_id", "unknown")
-            logger.debug(f"トークンからユーザー情報取得成功 - sub: {user_id}")
+            role = user_info.get("role", "user")
+            logger.debug(
+                f"トークンからユーザー情報取得成功 - sub: {user_id}, role: {role}"
+            )
             return user_info
         except HTTPException:
             raise

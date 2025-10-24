@@ -97,10 +97,10 @@ export const FilterBar: React.FC<FilterBarProps> = ({
       }
 
       if (showRulesetFilter) {
-        const rulesetResponse = results[resultIndex++] as RulesetListResponse;
-        if (rulesetResponse.success) {
-          setRulesets(rulesetResponse.data);
-        }
+        const rulesets = results[resultIndex++] as Ruleset[];
+        // ルール名の昇順でソート
+        const sortedRulesets = rulesets.sort((a, b) => a.ruleName.localeCompare(b.ruleName, 'ja'));
+        setRulesets(sortedRulesets);
       }
     } catch (error) {
       console.error('フィルターデータ取得エラー:', error);

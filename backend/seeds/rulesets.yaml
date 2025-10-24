@@ -45,13 +45,14 @@
 rulesets:
   # 4人麻雀ルール
   
-  - name: Mリーグルール（4人麻雀）
+  - name: Mリーグルール
     gameMode: four
     startingPoints: 25000
     basePoints: 30000
     uma: [30, 10, -10, -30]
     oka: 20
     useChips: false
+    isGlobal: true
     description: プロリーグで使用される標準ルール
     # 計算例: 1位 35000点の場合
     # (35000 - 30000) / 1000 + 30 + 20 = 55.0pt
@@ -63,6 +64,7 @@ rulesets:
     uma: [20, 10, -10, -20]
     oka: 20
     useChips: true
+    isGlobal: true
     description: 一般的なフリー雀荘ルール
     # チップあり（役満、ドラ等でチップ加算）
     
@@ -73,6 +75,7 @@ rulesets:
     uma: [15, 5, -5, -15]
     oka: 20
     useChips: false
+    isGlobal: true
     description: 競技麻雀でよく使われるルール
     # ウマが小さく、実力差が出やすい
     
@@ -85,6 +88,7 @@ rulesets:
     uma: [20, 0, -20]
     oka: 15
     useChips: false
+    isGlobal: true
     description: 3人麻雀の一般的なルール
     # 35000点持ち40000点返し
     # 2位はウマ±0
@@ -96,6 +100,7 @@ rulesets:
     uma: [30, 0, -30]
     oka: 30
     useChips: true
+    isGlobal: true
     description: 一般的なフリー雀荘ルール
     # 25000点持ち35000点返し
     # チップあり

@@ -219,3 +219,100 @@ class TestPointCalculator:
 
 if __name__ == "__main__":
     pytest.main([__file__])
+
+
+
+class TestRulesetPermissions:
+    """ルールセット権限チェックのテスト"""
+    
+    def test_create_global_ruleset_requires_admin(self):
+        """グローバルルール作成は管理者のみ可能"""
+        # 管理者の場合
+        request = RulesetRequest(
+            ruleName="グローバルルール",
+            gameMode="four",
+            startingPoints=25000,
+            basePoints=30000,
+            useFloatingUma=False,
+            uma=[30, 10, -10, -30],
+            oka=20,
+            useChips=False,
+            isGlobal=True
+        )
+        
+        # 管理者はグローバルルールを作成できる
+        ruleset = Ruleset.from_request(request, "admin-user", True)
+        assert ruleset.isGlobal == True
+        assert ruleset.createdBy == "admin-user"
+    
+    def test_create_personal_ruleset_as_user(self):
+        """一般ユーザーは個人ルールを作成できる"""
+        request = RulesetRequest(
+            ruleName="個人ルール",
+            gameMode="four",
+            startingPoints=25000,
+            basePoints=30000,
+            useFloatingUma=False,
+            uma=[30, 10, -10, -30],
+            oka=20,
+            useChips=False,
+            isGlobal=False
+        )
+        
+        # 一般ユーザーは個人ルールを作成できる
+        ruleset = Ruleset.from_request(request, "test-user", False)
+        assert ruleset.isGlobal == False
+        assert ruleset.createdBy == "test-user"
+    
+    def test_global_ruleset_has_correct_pk(self):
+        """グローバルルールは正しいPKを持つ"""
+        request = RulesetRequest(
+            ruleName="グローバルルール",
+            gameMode="four",
+            startingPoints=25000,
+            basePoints=30000,
+            useFloatingUma=False,
+            uma=[30, 10, -10, -30],
+            oka=20,
+            useChips=False,
+            isGlobal=True
+        )
+        
+        ruleset = Ruleset.from_request(request, "admin-user", True)
+        assert ruleset.get_pk() == "GLOBAL"
+    
+    def test_personal_ruleset_has_user_pk(self):
+        """個人ルールはユーザーIDをPKに持つ"""
+        request = RulesetRequest(
+            ruleName="個人ルール",
+            gameMode="four",
+            startingPoints=25000,
+            basePoints=30000,
+            useFloatingUma=False,
+            uma=[30, 10, -10, -30],
+            oka=20,
+            useChips=False,
+            isGlobal=False
+        )
+        
+        ruleset = Ruleset.from_request(request, "test-user-001", False)
+        assert ruleset.get_pk() == "USER#test-user-001"
+    
+    def test_ruleset_sk_format(self):
+        """ルールセットのSKフォーマットが正しい"""
+        request = RulesetRequest(
+            ruleName="テストルール",
+            gameMode="four",
+            startingPoints=25000,
+            basePoints=30000,
+            useFloatingUma=False,
+            uma=[30, 10, -10, -30],
+            oka=20,
+            useChips=False,
+            isGlobal=False
+        )
+        
+        ruleset = Ruleset.from_request(request, "test-user", False)
+        sk = ruleset.get_sk()
+        assert sk.startswith("RULESET#")
+        assert len(sk) > len("RULESET#")

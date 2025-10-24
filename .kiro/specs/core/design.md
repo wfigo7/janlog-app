@@ -763,3 +763,161 @@ interface ErrorResponse {
 - **OpenAPI仕様**: `/spec/openapi.yaml` - API詳細仕様
 - **環境分離戦略**: `/spec/adr/ADR-0005-environment-strategy.md`
 - **環境マトリクス**: `/spec/env-matrix.md`
+
+
+## ルール管理機能
+
+### 画面構成
+
+ルール管理画面は、タブナビゲーションの4番目のタブとして追加されます。
+
+```
+タブナビゲーション
+├── 統計タブ
+├── 履歴タブ
+├── 対局登録タブ
+└── ルールタブ ★新規
+    └── ルール管理画面
+        ├── グローバルルールセクション（管理者のみ）
+        └── 個人ルールセクション
+```
+
+### コンポーネント構成
+
+```
+frontend/
+├── app/
+│   ├── (tabs)/
+│   │   └── rules.tsx                  # ルール管理画面（タブ）
+│   └── rules/
+│       ├── create.tsx                 # ルール作成画面
+│       └── [rulesetId].tsx            # ルール編集画面
+├── src/
+│   ├── components/
+│   │   └── rules/
+│   │       ├── RuleList.tsx           # ルール一覧コンポーネント
+│   │       ├── RuleCard.tsx           # ルールカード（1件表示）
+│   │       ├── RuleFormComponent.tsx  # ルールフォーム共通コンポーネント
+│   │       └── RuleFormScreen.tsx     # ルールフォーム画面
+│   ├── hooks/
+│   │   └── useRuleForm.ts             # ルールフォーム用カスタムフック
+│   └── services/
+│       └── rulesetService.ts          # ルールAPI呼び出しサービス
+```
+
+### データモデル
+
+#### Ruleset（ルールセット）
+
+```typescript
+interface Ruleset {
+  rulesetId: string;           // ルールセットID（UUID）
+  ruleName: string;            // ルール名
+  gameMode: 'three' | 'four';  // ゲームモード
+  startingPoints: number;      // 開始点
+  basePoints: number;          // 基準点
+  useFloatingUma: boolean;     // 浮きウマ使用フラグ
+  uma: number[];               // ウマ配列
+  umaMatrix?: Record<string, number[]>; // 浮き人数別ウマ表（オプション）
+  oka: number;                 // オカポイント
+  useChips: boolean;           // チップ使用フラグ
+  memo?: string;               // メモ
+  isGlobal: boolean;           // グローバルルールフラグ
+  createdBy: string;           // 作成者ID
+  createdAt: string;           // 作成日時（ISO 8601）
+  updatedAt: string;           // 更新日時（ISO 8601）
+}
+```
+
+#### DynamoDBデータ構造
+
+**グローバルルール:**
+```
+PK: GLOBAL
+SK: RULESET#{rulesetId}
+entityType: RULESET
+```
+
+**個人ルール:**
+```
+PK: USER#{userId}
+SK: RULESET#{rulesetId}
+entityType: RULESET
+```
+
+### API設計
+
+#### エンドポイント
+
+- `GET /rulesets` - ルール一覧取得（グローバル+個人）
+- `GET /rulesets/{rulesetId}` - 特定ルール取得
+- `POST /rulesets` - ルール作成
+- `PUT /rulesets/{rulesetId}` - ルール更新
+- `DELETE /rulesets/{rulesetId}` - ルール削除
+
+#### 権限チェック
+
+**POST /rulesets:**
+- グローバルルール（isGlobal=true）の作成は管理者のみ
+- 個人ルール（isGlobal=false）は全ユーザーが作成可能
+
+**PUT /rulesets/{rulesetId}:**
+- グローバルルールの更新は管理者のみ
+- 個人ルールは所有者のみ更新可能
+
+**DELETE /rulesets/{rulesetId}:**
+- グローバルルールの削除は管理者のみ
+- 個人ルールは所有者のみ削除可能
+
+### UI/UX設計
+
+#### ルール一覧画面
+
+- カード形式で1件ずつ表示
+- グローバルルールには「公式」バッジを表示
+- 個人ルール→グローバルルールの順番で表示
+- 同じタイプ内ではルール名の昇順でソート
+
+#### ルール作成・編集フォーム
+
+- ゲームモード選択時に適切な入力欄を表示
+- 開始点・基準点入力時にウマを自動提案
+  - 3人麻雀: [+20, 0, -20]
+  - 4人麻雀（25000点持ち30000点返し）: [+30, +10, -10, -30]
+  - 4人麻雀（その他）: [+20, +10, -10, -20]
+- オカは自動計算: (基準点 - 開始点) × 人数 / 1000
+
+#### 削除確認ダイアログ
+
+- 削除前に確認ダイアログを表示
+- 「既存の対局データには影響しません」と明記
+- CustomAlertコンポーネントを使用
+
+### 対局登録画面との連携
+
+#### ルール選択UI
+
+- 個人ルール→グローバルルールの順番で表示
+- グローバルルールには「公式」バッジを表示
+- ルール作成後、画面にフォーカスが戻った時に自動的にルール一覧を更新（useFocusEffect使用）
+
+### セキュリティ考慮事項
+
+#### フロントエンド
+
+- ユーザーロールに応じた表示制御
+- グローバルルールの編集・削除ボタンは管理者のみ表示
+
+#### バックエンド
+
+- 全てのAPIエンドポイントで権限チェックを実施
+- グローバルルールの操作は管理者のみ許可
+- 個人ルールは所有者のみ編集・削除可能
+- 権限エラーは403 Forbiddenで返す
+
+### ルール変更の影響範囲
+
+- ルール変更・削除は既存の対局データに影響を与えない
+- 対局データはrulesetIdのみを保持し、ルール内容は保持しない
+- ルールが削除された場合、対局詳細画面では「削除されたルール」と表示
+- ユーザーは柔軟にルール設定を変更できる

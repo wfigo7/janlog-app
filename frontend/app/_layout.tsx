@@ -31,6 +31,8 @@ export default function RootLayout() {
         <AuthGuard>
           <Stack>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="rules/create" options={{ title: 'ルール作成' }} />
+            <Stack.Screen name="rules/[rulesetId]" options={{ title: 'ルール編集' }} />
             <Stack.Screen name="+not-found" />
           </Stack>
         </AuthGuard>

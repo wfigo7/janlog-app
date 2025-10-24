@@ -509,20 +509,35 @@ async def get_rulesets(
 
 @api_router.post("/rulesets", response_model=dict, status_code=201)
 async def create_ruleset(
-    request: RulesetRequest, user_id: str = Depends(get_current_user_id)
+    request: RulesetRequest,
+    current_user: Dict[str, Any] = Depends(get_current_user)
 ) -> dict:
     """
     ルールセットを作成する（認証付き）
     """
+    user_id = current_user.get("user_id")
+    user_role = current_user.get("role", "user")
+    
     try:
         logger.info(
-            f"ルールセット作成開始 - user_id: {user_id}, ruleName: {request.ruleName}"
+            f"ルールセット作成開始 - user_id: {user_id}, role: {user_role}, ruleName: {request.ruleName}, isGlobal: {request.isGlobal}"
         )
+        
+        # グローバルルールの作成は管理者のみ
+        if request.isGlobal and user_role != "admin":
+            logger.warning(
+                f"グローバルルール作成権限エラー - user_id: {user_id}, role: {user_role}"
+            )
+            raise HTTPException(
+                status_code=403,
+                detail="グローバルルールの作成は管理者のみ可能です"
+            )
+        
         ruleset_service = get_ruleset_service()
         ruleset = await ruleset_service.create_ruleset(
             request=request,
             created_by=user_id,
-            is_global=False,  # 個人ルールとして作成
+            is_global=request.isGlobal,
         )
 
         logger.debug(
@@ -533,6 +548,8 @@ async def create_ruleset(
             "message": "ルールセットを作成しました",
             "data": ruleset.to_api_response(),
         }
+    except HTTPException:
+        raise
     except ValueError as e:
         logger.warning(
             f"ルールセット作成バリデーションエラー - user_id: {user_id}, error: {str(e)}"
@@ -582,23 +599,56 @@ async def get_ruleset(
 async def update_ruleset(
     ruleset_id: str,
     request: RulesetRequest,
-    user_id: str = Depends(get_current_user_id),
+    current_user: Dict[str, Any] = Depends(get_current_user),
 ) -> dict:
     """
     ルールセットを更新する（認証付き）
     """
+    user_id = current_user.get("user_id")
+    user_role = current_user.get("role", "user")
+    
     try:
         logger.info(
-            f"ルールセット更新開始 - user_id: {user_id}, ruleset_id: {ruleset_id}"
+            f"ルールセット更新開始 - user_id: {user_id}, role: {user_role}, ruleset_id: {ruleset_id}"
         )
         ruleset_service = get_ruleset_service()
+        
+        # 既存のルールセットを取得して権限チェック
+        existing_ruleset = await ruleset_service.get_ruleset(ruleset_id, user_id)
+        
+        if not existing_ruleset:
+            logger.warning(
+                f"ルールセットが見つかりません - user_id: {user_id}, ruleset_id: {ruleset_id}"
+            )
+            raise HTTPException(status_code=404, detail="ルールセットが見つかりません")
+        
+        # グローバルルールの更新は管理者のみ
+        if existing_ruleset.isGlobal and user_role != "admin":
+            logger.warning(
+                f"グローバルルール更新権限エラー - user_id: {user_id}, role: {user_role}, ruleset_id: {ruleset_id}"
+            )
+            raise HTTPException(
+                status_code=403,
+                detail="グローバルルールの更新は管理者のみ可能です"
+            )
+        
+        # 個人ルールは所有者のみ更新可能
+        if not existing_ruleset.isGlobal and existing_ruleset.createdBy != user_id:
+            logger.warning(
+                f"個人ルール更新権限エラー - user_id: {user_id}, owner: {existing_ruleset.createdBy}, ruleset_id: {ruleset_id}"
+            )
+            raise HTTPException(
+                status_code=403,
+                detail="他のユーザーのルールは更新できません"
+            )
+        
         ruleset = await ruleset_service.update_ruleset(
             ruleset_id=ruleset_id, request=request, user_id=user_id
         )
 
         if not ruleset:
             logger.warning(
-                f"ルールセットが見つかりません - user_id: {user_id}, ruleset_id: {ruleset_id}"
+                f"ルールセット更新失敗 - user_id: {user_id}, ruleset_id: {ruleset_id}"
             )
             raise HTTPException(status_code=404, detail="ルールセットが見つかりません")
 
@@ -626,23 +676,57 @@ async def update_ruleset(
 
 @api_router.delete("/rulesets/{ruleset_id}")
 async def delete_ruleset(
-    ruleset_id: str, user_id: str = Depends(get_current_user_id)
+    ruleset_id: str,
+    current_user: Dict[str, Any] = Depends(get_current_user)
 ) -> dict:
     """
     ルールセットを削除する（認証付き）
     """
+    user_id = current_user.get("user_id")
+    user_role = current_user.get("role", "user")
+    
     try:
         logger.info(
-            f"ルールセット削除開始 - user_id: {user_id}, ruleset_id: {ruleset_id}"
+            f"ルールセット削除開始 - user_id: {user_id}, role: {user_role}, ruleset_id: {ruleset_id}"
         )
         ruleset_service = get_ruleset_service()
+        
+        # 既存のルールセットを取得して権限チェック
+        existing_ruleset = await ruleset_service.get_ruleset(ruleset_id, user_id)
+        
+        if not existing_ruleset:
+            logger.warning(
+                f"ルールセットが見つかりません - user_id: {user_id}, ruleset_id: {ruleset_id}"
+            )
+            raise HTTPException(status_code=404, detail="ルールセットが見つかりません")
+        
+        # グローバルルールの削除は管理者のみ
+        if existing_ruleset.isGlobal and user_role != "admin":
+            logger.warning(
+                f"グローバルルール削除権限エラー - user_id: {user_id}, role: {user_role}, ruleset_id: {ruleset_id}"
+            )
+            raise HTTPException(
+                status_code=403,
+                detail="グローバルルールの削除は管理者のみ可能です"
+            )
+        
+        # 個人ルールは所有者のみ削除可能
+        if not existing_ruleset.isGlobal and existing_ruleset.createdBy != user_id:
+            logger.warning(
+                f"個人ルール削除権限エラー - user_id: {user_id}, owner: {existing_ruleset.createdBy}, ruleset_id: {ruleset_id}"
+            )
+            raise HTTPException(
+                status_code=403,
+                detail="他のユーザーのルールは削除できません"
+            )
+        
         success = await ruleset_service.delete_ruleset(
             ruleset_id=ruleset_id, user_id=user_id
         )
 
         if not success:
             logger.warning(
-                f"ルールセットが見つかりません - user_id: {user_id}, ruleset_id: {ruleset_id}"
+                f"ルールセット削除失敗 - user_id: {user_id}, ruleset_id: {ruleset_id}"
             )
             raise HTTPException(status_code=404, detail="ルールセットが見つかりません")
 

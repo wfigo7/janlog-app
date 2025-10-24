@@ -1,0 +1,200 @@
+/**
+ * ルールフォーム用カスタムフック
+ */
+
+import { useState, useEffect } from 'react';
+import { Ruleset } from '../types/ruleset';
+
+interface UseRuleFormProps {
+    initialRule?: Ruleset | null;
+    onSubmit: (formData: RuleFormData) => Promise<void>;
+}
+
+export interface RuleFormData {
+    ruleName: string;
+    gameMode: 'three' | 'four';
+    startingPoints: string;
+    basePoints: string;
+    uma: string[];
+    oka: string;
+    useChips: boolean;
+    memo: string;
+}
+
+export function useRuleForm({ initialRule, onSubmit }: UseRuleFormProps) {
+    const [formData, setFormData] = useState<RuleFormData>({
+        ruleName: '',
+        gameMode: 'four',
+        startingPoints: '25000',
+        basePoints: '30000',
+        uma: ['30', '10', '-10', '-30'],
+        oka: '20',
+        useChips: false,
+        memo: '',
+    });
+
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // 初期データの読み込み
+    useEffect(() => {
+        if (initialRule) {
+            setFormData({
+                ruleName: initialRule.ruleName,
+                gameMode: initialRule.gameMode,
+                startingPoints: initialRule.startingPoints.toString(),
+                basePoints: initialRule.basePoints.toString(),
+                uma: initialRule.uma.map(u => u.toString()),
+                oka: initialRule.oka.toString(),
+                useChips: initialRule.useChips,
+                memo: initialRule.memo || '',
+            });
+        }
+    }, [initialRule]);
+
+    /**
+     * ゲームモード変更時の処理
+     */
+    const handleGameModeChange = (mode: 'three' | 'four') => {
+        if (mode === 'three') {
+            setFormData({
+                ...formData,
+                gameMode: mode,
+                startingPoints: '35000',
+                basePoints: '40000',
+                uma: ['20', '0', '-20'],
+                oka: '15',
+            });
+        } else {
+            setFormData({
+                ...formData,
+                gameMode: mode,
+                startingPoints: '25000',
+                basePoints: '30000',
+                uma: ['30', '10', '-10', '-30'],
+                oka: '20',
+            });
+        }
+    };
+
+    /**
+     * 開始点・基準点変更時のオカ自動計算
+     */
+    const calculateOka = (start: string, base: string, gameMode: 'three' | 'four') => {
+        const startNum = parseInt(start, 10);
+        const baseNum = parseInt(base, 10);
+
+        if (isNaN(startNum) || isNaN(baseNum)) return;
+
+        const diff = baseNum - startNum;
+        const calculatedOka = (diff * (gameMode === 'three' ? 3 : 4)) / 1000;
+        return calculatedOka.toString();
+    };
+
+    /**
+     * フィールド更新
+     */
+    const updateField = (field: keyof RuleFormData, value: any) => {
+        setFormData(prev => {
+            const newData = { ...prev, [field]: value };
+
+            // 開始点または基準点が変更された場合、オカを再計算
+            if (field === 'startingPoints' || field === 'basePoints') {
+                const newOka = calculateOka(
+                    field === 'startingPoints' ? value : prev.startingPoints,
+                    field === 'basePoints' ? value : prev.basePoints,
+                    prev.gameMode
+                );
+                if (newOka) {
+                    newData.oka = newOka;
+                }
+            }
+
+            return newData;
+        });
+    };
+
+    /**
+     * ウマ配列の更新
+     */
+    const updateUma = (index: number, value: string) => {
+        setFormData(prev => {
+            const newUma = [...prev.uma];
+            newUma[index] = value;
+            return { ...prev, uma: newUma };
+        });
+    };
+
+    /**
+     * バリデーション
+     */
+    const validateForm = (): boolean => {
+        const newErrors: Record<string, string> = {};
+
+        if (!formData.ruleName.trim()) {
+            newErrors.ruleName = 'ルール名を入力してください';
+        }
+
+        const startNum = parseInt(formData.startingPoints, 10);
+        if (isNaN(startNum) || startNum <= 0) {
+            newErrors.startingPoints = '開始点は正の数値を入力してください';
+        }
+
+        const baseNum = parseInt(formData.basePoints, 10);
+        if (isNaN(baseNum) || baseNum <= 0) {
+            newErrors.basePoints = '基準点は正の数値を入力してください';
+        }
+
+        const expectedLength = formData.gameMode === 'three' ? 3 : 4;
+        if (formData.uma.length !== expectedLength) {
+            newErrors.uma = `${formData.gameMode === 'three' ? '3' : '4'}人麻雀のウマは${expectedLength}つ必要です`;
+        }
+
+        const umaNumbers = formData.uma.map(u => parseInt(u, 10));
+        if (umaNumbers.some(isNaN)) {
+            newErrors.uma = 'ウマは数値で入力してください';
+        } else {
+            const umaSum = umaNumbers.reduce((sum, num) => sum + num, 0);
+            if (umaSum !== 0) {
+                newErrors.uma = `ウマの合計は0である必要があります（現在: ${umaSum > 0 ? '+' : ''}${umaSum}）`;
+            }
+        }
+
+        const okaNum = parseInt(formData.oka, 10);
+        if (isNaN(okaNum)) {
+            newErrors.oka = 'オカは数値で入力してください';
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    /**
+     * フォーム送信
+     */
+    const handleSubmit = async () => {
+        if (!validateForm()) {
+            return false;
+        }
+
+        setIsSubmitting(true);
+        try {
+            await onSubmit(formData);
+            return true;
+        } catch (error) {
+            throw error;
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return {
+        formData,
+        errors,
+        isSubmitting,
+        handleGameModeChange,
+        updateField,
+        updateUma,
+        handleSubmit,
+    };
+}

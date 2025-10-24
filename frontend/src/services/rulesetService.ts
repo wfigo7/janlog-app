@@ -3,27 +3,25 @@
  */
 
 import { apiClient } from '../utils/apiClient';
-import { 
-  Ruleset, 
-  RulesetListResponse, 
-  PointCalculationRequest, 
+import {
+  Ruleset,
+  RulesetListResponse,
+  PointCalculationRequest,
   PointCalculationResponse,
-  RuleTemplateResponse 
+  RuleTemplateResponse
 } from '../types/ruleset';
 
 class RulesetService {
   /**
    * ルールセット一覧を取得
    */
-  async getRulesets(): Promise<RulesetListResponse> {
+  async getRulesets(): Promise<Ruleset[]> {
     try {
-      return await apiClient.get<RulesetListResponse>('/rulesets');
+      const response = await apiClient.get<{ success: boolean; data: Ruleset[] }>('/rulesets');
+      return response.data;
     } catch (error) {
       console.error('ルールセット一覧取得エラー:', error);
-      return {
-        success: false,
-        data: []
-      };
+      throw new Error('ルールセット一覧の取得に失敗しました');
     }
   }
 
@@ -32,11 +30,49 @@ class RulesetService {
    */
   async getRuleset(rulesetId: string): Promise<Ruleset> {
     try {
-      const result = await apiClient.get<{data: Ruleset}>(`/rulesets/${rulesetId}`);
+      const result = await apiClient.get<{ success: boolean; data: Ruleset }>(`/rulesets/${rulesetId}`);
       return result.data;
     } catch (error) {
       console.error('ルールセット取得エラー:', error);
       throw new Error('ルールセットの取得に失敗しました');
+    }
+  }
+
+  /**
+   * ルールセットを作成
+   */
+  async createRuleset(ruleset: Omit<Ruleset, 'rulesetId' | 'createdBy' | 'createdAt' | 'updatedAt'>): Promise<Ruleset> {
+    try {
+      const result = await apiClient.post<{ success: boolean; message: string; data: Ruleset }>('/rulesets', ruleset);
+      return result.data;
+    } catch (error) {
+      console.error('ルールセット作成エラー:', error);
+      throw new Error('ルールセットの作成に失敗しました');
+    }
+  }
+
+  /**
+   * ルールセットを更新
+   */
+  async updateRuleset(rulesetId: string, ruleset: Omit<Ruleset, 'rulesetId' | 'createdBy' | 'createdAt' | 'updatedAt'>): Promise<Ruleset> {
+    try {
+      const result = await apiClient.put<{ success: boolean; message: string; data: Ruleset }>(`/rulesets/${rulesetId}`, ruleset);
+      return result.data;
+    } catch (error) {
+      console.error('ルールセット更新エラー:', error);
+      throw new Error('ルールセットの更新に失敗しました');
+    }
+  }
+
+  /**
+   * ルールセットを削除
+   */
+  async deleteRuleset(rulesetId: string): Promise<void> {
+    try {
+      await apiClient.delete<{ success: boolean; message: string }>(`/rulesets/${rulesetId}`);
+    } catch (error) {
+      console.error('ルールセット削除エラー:', error);
+      throw new Error('ルールセットの削除に失敗しました');
     }
   }
 
