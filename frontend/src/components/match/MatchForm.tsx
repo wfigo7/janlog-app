@@ -13,7 +13,6 @@ import {
 import { EntryMethod } from '../../types/match';
 import { GameMode } from '../../types/common';
 import { Ruleset } from '../../types/ruleset';
-import { GameModeTab } from '../common/GameModeTab';
 import RuleSelector from './RuleSelector';
 import EntryMethodSelector from './EntryMethodSelector';
 import { MatchDatePicker } from './MatchDatePicker';
@@ -60,7 +59,6 @@ export interface MatchFormProps {
   notificationType: 'success' | 'error';
   
   // イベントハンドラー
-  onGameModeChange: (mode: GameMode) => void;
   onRulesetSelect: (ruleset: Ruleset) => void;
   onEntryMethodChange: (method: EntryMethod) => void;
   onMatchDateChange: (date: string) => void;
@@ -75,6 +73,7 @@ export interface MatchFormProps {
   // 設定
   submitButtonText: string;
   title?: string;
+  showGameModeSelector?: boolean; // ゲームモード選択UIを表示するか（編集画面では非表示）
 }
 
 const MatchForm: React.FC<MatchFormProps> = ({
@@ -91,7 +90,6 @@ const MatchForm: React.FC<MatchFormProps> = ({
   showNotification,
   notificationMessage,
   notificationType,
-  onGameModeChange,
   onRulesetSelect,
   onEntryMethodChange,
   onMatchDateChange,
@@ -104,6 +102,7 @@ const MatchForm: React.FC<MatchFormProps> = ({
   onSubmit,
   submitButtonText,
   title,
+  showGameModeSelector = true,
 }) => {
   const scrollViewRef = useRef<ScrollView>(null);
   const maxRank = formData.gameMode === 'four' ? 4 : 3;
@@ -137,11 +136,17 @@ const MatchForm: React.FC<MatchFormProps> = ({
           </View>
         )}
 
-        {/* ゲームモード選択 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>ゲームモード</Text>
-          <GameModeTab selectedMode={formData.gameMode} onModeChange={onGameModeChange} />
-        </View>
+        {/* ゲームモード表示（読み取り専用） */}
+        {!showGameModeSelector && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>ゲームモード</Text>
+            <View style={styles.readOnlyContainer}>
+              <Text style={styles.readOnlyText}>
+                {formData.gameMode === 'three' ? '3人麻雀' : '4人麻雀'}
+              </Text>
+            </View>
+          </View>
+        )}
 
         {/* 対局日選択 */}
         <View style={styles.section}>
@@ -458,6 +463,18 @@ const styles = StyleSheet.create({
   inputError: {
     borderColor: '#FF9800',
     borderWidth: 2,
+  },
+  readOnlyContainer: {
+    backgroundColor: '#F5F5F5',
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+    borderRadius: 8,
+    padding: 12,
+  },
+  readOnlyText: {
+    fontSize: 16,
+    color: '#666666',
+    fontWeight: '500',
   },
   errorText: {
     color: '#FF9800',

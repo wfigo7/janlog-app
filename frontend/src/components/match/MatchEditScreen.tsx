@@ -127,7 +127,6 @@ const MatchEditScreen: React.FC = () => {
     showNotification,
     notificationMessage,
     notificationType,
-    handleGameModeChange,
     handleRulesetSelect,
     handleEntryMethodChange,
     handleMatchDateChange,
@@ -143,6 +142,7 @@ const MatchEditScreen: React.FC = () => {
   } = useMatchForm({
     initialData: initialData || undefined,
     onSubmit: handleSubmit,
+    isEditMode: true,
   });
 
   // 初期データが設定された後に、フォームデータを強制的に更新
@@ -177,7 +177,6 @@ const MatchEditScreen: React.FC = () => {
         showNotification={showNotification}
         notificationMessage={notificationMessage}
         notificationType={notificationType}
-        onGameModeChange={handleGameModeChange}
         onRulesetSelect={handleRulesetSelect}
         onEntryMethodChange={handleEntryMethodChange}
         onMatchDateChange={handleMatchDateChange}
@@ -189,6 +188,7 @@ const MatchEditScreen: React.FC = () => {
         onMemoChange={handleMemoChange}
         onSubmit={submitForm}
         submitButtonText="更新"
+        showGameModeSelector={false}
       />
       <AlertComponent />
     </>

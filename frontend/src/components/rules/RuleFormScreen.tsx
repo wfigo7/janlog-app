@@ -19,6 +19,7 @@ import { rulesetService } from '@/src/services/rulesetService';
 import { Ruleset } from '@/src/types/ruleset';
 import { useCustomAlert } from '@/src/hooks/useCustomAlert';
 import { useAuth } from '@/src/contexts/AuthContext';
+import { useGameMode } from '@/src/contexts/GameModeContext';
 
 interface RuleFormScreenProps {
     mode: 'create' | 'edit';
@@ -29,22 +30,83 @@ export default function RuleFormScreen({ mode, rulesetId }: RuleFormScreenProps)
     const router = useRouter();
     const { user } = useAuth();
     const { showAlert, AlertComponent } = useCustomAlert();
+    const { gameMode: globalGameMode } = useGameMode();
 
     const [isLoading, setIsLoading] = useState(mode === 'edit');
     const [originalRule, setOriginalRule] = useState<Ruleset | null>(null);
 
-    // フォーム状態
+    // フォーム状態（新規作成時はグローバルなgameModeに基づいて初期化）
+    const getInitialValues = () => {
+        if (mode === 'create') {
+            if (globalGameMode === 'three') {
+                return {
+                    gameMode: 'three' as const,
+                    startingPoints: '35000',
+                    basePoints: '40000',
+                    uma: ['20', '0', '-20'],
+                    oka: '15',
+                };
+            } else {
+                return {
+                    gameMode: 'four' as const,
+                    startingPoints: '25000',
+                    basePoints: '30000',
+                    uma: ['30', '10', '-10', '-30'],
+                    oka: '20',
+                };
+            }
+        }
+        return {
+            gameMode: 'four' as const,
+            startingPoints: '25000',
+            basePoints: '30000',
+            uma: ['30', '10', '-10', '-30'],
+            oka: '20',
+        };
+    };
+
+    const initialValues = getInitialValues();
+
     const [ruleName, setRuleName] = useState('');
-    const [gameMode, setGameMode] = useState<'three' | 'four'>('four');
-    const [startingPoints, setStartingPoints] = useState('25000');
-    const [basePoints, setBasePoints] = useState('30000');
-    const [uma, setUma] = useState<string[]>(['30', '10', '-10', '-30']);
-    const [oka, setOka] = useState('20');
+    const [gameMode, setGameMode] = useState<'three' | 'four'>(initialValues.gameMode);
+    const [startingPoints, setStartingPoints] = useState(initialValues.startingPoints);
+    const [basePoints, setBasePoints] = useState(initialValues.basePoints);
+    const [uma, setUma] = useState<string[]>(initialValues.uma);
+    const [oka, setOka] = useState(initialValues.oka);
     const [useChips, setUseChips] = useState(false);
     const [memo, setMemo] = useState('');
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showGameModeModal, setShowGameModeModal] = useState(false);
+
+    /**
+     * ゲームモード変更時の処理（useEffectより前に定義）
+     */
+    const handleGameModeChange = (newMode: 'three' | 'four') => {
+        setGameMode(newMode);
+
+        // ゲームモードに応じたデフォルト値で全て上書き
+        if (newMode === 'three') {
+            setStartingPoints('35000');
+            setBasePoints('40000');
+            setUma(['20', '0', '-20']);
+            setOka('15');
+        } else {
+            setStartingPoints('25000');
+            setBasePoints('30000');
+            setUma(['30', '10', '-10', '-30']);
+            setOka('20');
+        }
+    };
+
+    /**
+     * 新規作成時のグローバルなgameMode変更対応
+     */
+    useEffect(() => {
+        if (mode === 'create') {
+            handleGameModeChange(globalGameMode);
+        }
+    }, [globalGameMode]);
 
     /**
      * 編集モード時のルールデータ読み込み
@@ -97,26 +159,6 @@ export default function RuleFormScreen({ mode, rulesetId }: RuleFormScreenProps)
             });
         } finally {
             setIsLoading(false);
-        }
-    };
-
-    /**
-     * ゲームモード変更時の処理
-     */
-    const handleGameModeChange = (newMode: 'three' | 'four') => {
-        setGameMode(newMode);
-        
-        // ゲームモードに応じたデフォルト値で全て上書き
-        if (newMode === 'three') {
-            setStartingPoints('35000');
-            setBasePoints('40000');
-            setUma(['20', '0', '-20']);
-            setOka('15');
-        } else {
-            setStartingPoints('25000');
-            setBasePoints('30000');
-            setUma(['30', '10', '-10', '-30']);
-            setOka('20');
         }
     };
 
@@ -267,14 +309,22 @@ export default function RuleFormScreen({ mode, rulesetId }: RuleFormScreenProps)
                     {/* ゲームモード */}
                     <View style={styles.formGroup}>
                         <Text style={styles.label}>ゲームモード *</Text>
-                        <TouchableOpacity
-                            style={styles.selectButton}
-                            onPress={() => setShowGameModeModal(true)}
-                        >
-                            <Text style={styles.selectButtonText}>
-                                {gameMode === 'three' ? '3人麻雀' : '4人麻雀'}
-                            </Text>
-                        </TouchableOpacity>
+                        {mode === 'edit' ? (
+                            <View style={[styles.input, styles.readOnlyInput]}>
+                                <Text style={styles.readOnlyText}>
+                                    {gameMode === 'three' ? '3人麻雀' : '4人麻雀'}
+                                </Text>
+                            </View>
+                        ) : (
+                            <TouchableOpacity
+                                style={styles.selectButton}
+                                onPress={() => setShowGameModeModal(true)}
+                            >
+                                <Text style={styles.selectButtonText}>
+                                    {gameMode === 'three' ? '3人麻雀' : '4人麻雀'}
+                                </Text>
+                            </TouchableOpacity>
+                        )}
                     </View>
 
                     {/* 開始点 */}
@@ -382,8 +432,8 @@ export default function RuleFormScreen({ mode, rulesetId }: RuleFormScreenProps)
                         disabled={isSubmitting}
                     >
                         <Text style={styles.submitButtonText}>
-                            {isSubmitting 
-                                ? (mode === 'create' ? '作成中...' : '更新中...') 
+                            {isSubmitting
+                                ? (mode === 'create' ? '作成中...' : '更新中...')
                                 : (mode === 'create' ? '作成' : '更新')
                             }
                         </Text>

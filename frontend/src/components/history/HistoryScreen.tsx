@@ -13,15 +13,15 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Match } from '../../types/match';
 import { GameMode } from '../../types/common';
-import { GameModeTab } from '../common/GameModeTab';
 import { FilterBar, FilterOptions } from '../common/FilterBar';
 import { MatchService, PaginationInfo } from '../../services/matchService';
+import { useGameMode } from '../../contexts/GameModeContext';
 
 type SortOrder = 'newest' | 'oldest';
 
 const HistoryScreen: React.FC = () => {
   const router = useRouter();
-  const [selectedMode, setSelectedMode] = useState<GameMode>('four');
+  const { gameMode } = useGameMode();
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -42,7 +42,7 @@ const HistoryScreen: React.FC = () => {
       }
 
       const response = await MatchService.getMatches({
-        mode: selectedMode,
+        mode: gameMode,
         limit: 20,
         nextKey: loadMore ? pagination?.nextKey : undefined,
         from: filters.dateRange?.from,
@@ -70,14 +70,22 @@ const HistoryScreen: React.FC = () => {
   };
 
   useEffect(() => {
+    // ゲームモード変更時にフィルターとページネーションをリセット
+    setFilters({});
+    setPagination(null);
     fetchMatches();
-  }, [selectedMode, filters]);
+  }, [gameMode]);
+
+  useEffect(() => {
+    setPagination(null);
+    fetchMatches();
+  }, [filters]);
 
   // 画面がフォーカスされた時にデータを再取得
   useFocusEffect(
     useCallback(() => {
       fetchMatches();
-    }, [selectedMode, filters])
+    }, [gameMode, filters])
   );
 
   useEffect(() => {
@@ -106,14 +114,8 @@ const HistoryScreen: React.FC = () => {
     }
   };
 
-  const onModeChange = (mode: GameMode) => {
-    setSelectedMode(mode);
-    setPagination(null); // ページネーション情報をリセット
-  };
-
   const onFiltersChange = (newFilters: FilterOptions) => {
     setFilters(newFilters);
-    setPagination(null); // ページネーション情報をリセット
   };
 
   const toggleSortOrder = () => {
@@ -199,14 +201,12 @@ const HistoryScreen: React.FC = () => {
     <View style={styles.container}>
       {/* コントロール部分 */}
       <View style={styles.controlsContainer}>
-        <GameModeTab selectedMode={selectedMode} onModeChange={onModeChange} />
-
         {/* フィルターとソート機能 */}
         <View style={styles.optionsContainer}>
           <FilterBar
             value={filters}
             onChange={onFiltersChange}
-            gameMode={selectedMode}
+            gameMode={gameMode}
             showVenueFilter={true}
             showRulesetFilter={true}
           />

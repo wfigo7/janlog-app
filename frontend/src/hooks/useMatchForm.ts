@@ -4,17 +4,21 @@ import { GameMode } from '../types/common';
 import { Ruleset, PointCalculationRequest } from '../types/ruleset';
 import { rulesetService } from '../services/rulesetService';
 import { MatchFormData, MatchFormErrors } from '../components/match/MatchForm';
+import { useGameMode } from '../contexts/GameModeContext';
 
 export interface UseMatchFormProps {
   initialData?: Partial<MatchFormData>;
   onSubmit: (data: MatchFormData) => Promise<void>;
+  isEditMode?: boolean; // 編集モードかどうか（グローバルなgameMode変更の影響を受けない）
 }
 
-export const useMatchForm = ({ initialData, onSubmit }: UseMatchFormProps) => {
+export const useMatchForm = ({ initialData, onSubmit, isEditMode = false }: UseMatchFormProps) => {
+  const { gameMode } = useGameMode();
+  
   // フォームデータ
   const [formData, setFormData] = useState<MatchFormData>(() => {
     const defaultData = {
-      gameMode: 'four' as GameMode,
+      gameMode: gameMode,
       selectedRuleset: null,
       entryMethod: 'rank_plus_points' as EntryMethod,
       matchDate: (() => {
@@ -39,6 +43,21 @@ export const useMatchForm = ({ initialData, onSubmit }: UseMatchFormProps) => {
     
     return defaultData;
   });
+
+  // ゲームモード変更時にフォームを初期化（編集モードでは無効）
+  useEffect(() => {
+    if (!isEditMode) {
+      setFormData(prev => ({
+        ...prev,
+        gameMode: gameMode,
+        selectedRuleset: null,
+        rank: '',
+        finalPoints: '',
+        rawScore: '',
+      }));
+      clearCalculations();
+    }
+  }, [gameMode, isEditMode]);
 
   // 初期データが変更された時にフォームデータを更新
   useEffect(() => {
@@ -261,11 +280,6 @@ export const useMatchForm = ({ initialData, onSubmit }: UseMatchFormProps) => {
   }, [formData.selectedRuleset, formData.rank, formData.entryMethod, maxRank]);
 
   // イベントハンドラー
-  const handleGameModeChange = (mode: GameMode) => {
-    setFormData(prev => ({ ...prev, gameMode: mode, selectedRuleset: null }));
-    clearCalculations();
-  };
-
   const handleRulesetSelect = (ruleset: Ruleset) => {
     setFormData(prev => ({ ...prev, selectedRuleset: ruleset }));
     clearCalculations();
@@ -420,7 +434,6 @@ export const useMatchForm = ({ initialData, onSubmit }: UseMatchFormProps) => {
     showNotification,
     notificationMessage,
     notificationType,
-    handleGameModeChange,
     handleRulesetSelect,
     handleEntryMethodChange,
     handleMatchDateChange,

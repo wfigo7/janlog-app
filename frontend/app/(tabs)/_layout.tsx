@@ -7,9 +7,22 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { HeaderGameModeSelector } from '@/src/components/common/HeaderGameModeSelector';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+
+  // ゲームモード切り替えを表示する画面
+  const screensWithGameMode = ['index', 'history', 'register', 'rules'];
+
+  const getHeaderRight = (routeName: string) => {
+    if (screensWithGameMode.includes(routeName)) {
+      const HeaderRight = () => <HeaderGameModeSelector />;
+      HeaderRight.displayName = 'HeaderRight';
+      return HeaderRight;
+    }
+    return undefined;
+  };
 
   return (
     <Tabs
@@ -33,6 +46,7 @@ export default function TabLayout() {
           title: '成績統計',
           tabBarLabel: '統計',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.bar.fill" color={color} />,
+          headerRight: getHeaderRight('index'),
         }}
       />
       <Tabs.Screen
@@ -41,6 +55,7 @@ export default function TabLayout() {
           title: '対局履歴',
           tabBarLabel: '履歴',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="clock.fill" color={color} />,
+          headerRight: getHeaderRight('history'),
         }}
       />
       <Tabs.Screen
@@ -49,6 +64,7 @@ export default function TabLayout() {
           title: '対局登録',
           tabBarLabel: '登録',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="plus.circle.fill" color={color} />,
+          headerRight: getHeaderRight('register'),
         }}
       />
       <Tabs.Screen
@@ -57,6 +73,7 @@ export default function TabLayout() {
           title: 'ルール管理',
           tabBarLabel: 'ルール',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="gearshape.fill" color={color} />,
+          headerRight: getHeaderRight('rules'),
         }}
       />
       <Tabs.Screen

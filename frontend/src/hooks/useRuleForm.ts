@@ -4,10 +4,12 @@
 
 import { useState, useEffect } from 'react';
 import { Ruleset } from '../types/ruleset';
+import { useGameMode } from '../contexts/GameModeContext';
 
 interface UseRuleFormProps {
     initialRule?: Ruleset | null;
     onSubmit: (formData: RuleFormData) => Promise<void>;
+    isEditMode?: boolean; // 編集モードかどうか
 }
 
 export interface RuleFormData {
@@ -21,10 +23,12 @@ export interface RuleFormData {
     memo: string;
 }
 
-export function useRuleForm({ initialRule, onSubmit }: UseRuleFormProps) {
+export function useRuleForm({ initialRule, onSubmit, isEditMode = false }: UseRuleFormProps) {
+    const { gameMode: globalGameMode } = useGameMode();
+    
     const [formData, setFormData] = useState<RuleFormData>({
         ruleName: '',
-        gameMode: 'four',
+        gameMode: isEditMode ? 'four' : globalGameMode, // 新規作成時はグローバルなgameModeを使用
         startingPoints: '25000',
         basePoints: '30000',
         uma: ['30', '10', '-10', '-30'],
@@ -36,26 +40,11 @@ export function useRuleForm({ initialRule, onSubmit }: UseRuleFormProps) {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // 初期データの読み込み
-    useEffect(() => {
-        if (initialRule) {
-            setFormData({
-                ruleName: initialRule.ruleName,
-                gameMode: initialRule.gameMode,
-                startingPoints: initialRule.startingPoints.toString(),
-                basePoints: initialRule.basePoints.toString(),
-                uma: initialRule.uma.map(u => u.toString()),
-                oka: initialRule.oka.toString(),
-                useChips: initialRule.useChips,
-                memo: initialRule.memo || '',
-            });
-        }
-    }, [initialRule]);
-
     /**
      * ゲームモード変更時の処理
      */
     const handleGameModeChange = (mode: 'three' | 'four') => {
+        console.log('handleGameModeChange called with:', mode);
         if (mode === 'three') {
             setFormData({
                 ...formData,
@@ -76,6 +65,33 @@ export function useRuleForm({ initialRule, onSubmit }: UseRuleFormProps) {
             });
         }
     };
+
+    // グローバルなgameMode変更時の処理（新規作成時のみ）
+    useEffect(() => {
+        console.log('useRuleForm useEffect:', { isEditMode, initialRule, globalGameMode });
+        if (!isEditMode && !initialRule) {
+            console.log('useRuleForm: calling handleGameModeChange with', globalGameMode);
+            handleGameModeChange(globalGameMode);
+        }
+    }, [globalGameMode, isEditMode, initialRule]);
+
+    // 初期データの読み込み
+    useEffect(() => {
+        if (initialRule) {
+            setFormData({
+                ruleName: initialRule.ruleName,
+                gameMode: initialRule.gameMode,
+                startingPoints: initialRule.startingPoints.toString(),
+                basePoints: initialRule.basePoints.toString(),
+                uma: initialRule.uma.map(u => u.toString()),
+                oka: initialRule.oka.toString(),
+                useChips: initialRule.useChips,
+                memo: initialRule.memo || '',
+            });
+        }
+    }, [initialRule]);
+
+
 
     /**
      * 開始点・基準点変更時のオカ自動計算

@@ -122,48 +122,101 @@ export const useGameMode = (): GameModeContextType => {
 
 **ファイル**: `frontend/src/components/common/HeaderGameModeSelector.tsx`
 
-ヘッダー右側に配置されるコンパクトなゲームモード切り替えUI。
+ヘッダー右側に配置される丸みのあるセグメントコントロール形式のゲームモード切り替えUI。
+
+#### 設計方針
+
+- **セグメントコントロール形式**: iOS標準のUISegmentedControlに似た、丸みのあるスライダー形式
+- **アニメーション背景**: 選択されたモードの背景に白い丸みのあるインジケーターをアニメーション表示
+- **タップ可能な各オプション**: 各ゲームモードオプションを個別にタップ可能
+- **スムーズなトランジション**: React Native Animated APIを使用した滑らかなアニメーション
+
+#### UI構造
+
+```
+Container (外側の丸みのあるコンテナ、グレー背景)
+├── Animated Background Indicator (白い丸みのある背景、アニメーション)
+├── TouchableOpacity (4麻)
+│   └── Text (4麻)
+└── TouchableOpacity (3麻)
+    └── Text (3麻)
+```
+
+#### 実装例
 
 ```typescript
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { useGameMode } from '../../contexts/GameModeContext';
 import { GameMode } from '../../types/common';
 
 export const HeaderGameModeSelector: React.FC = () => {
   const { gameMode, setGameMode } = useGameMode();
+  const slideAnim = useRef(new Animated.Value(gameMode === 'four' ? 0 : 1)).current;
 
-  const handleToggle = async () => {
-    const newMode: GameMode = gameMode === 'four' ? 'three' : 'four';
+  useEffect(() => {
+    Animated.timing(slideAnim, {
+      toValue: gameMode === 'four' ? 0 : 1,
+      duration: 250,
+      useNativeDriver: true,
+    }).start();
+  }, [gameMode]);
+
+  const handlePress = async (mode: GameMode) => {
+    if (mode === gameMode) return;
     try {
-      await setGameMode(newMode);
+      await setGameMode(mode);
     } catch (error) {
       console.error('Failed to change game mode:', error);
     }
   };
 
+  const indicatorTranslateX = slideAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [2, 42], // 左端から右端への移動距離
+  });
+
   return (
-    <TouchableOpacity
-      style={styles.container}
-      onPress={handleToggle}
-      activeOpacity={0.7}
-    >
-      <View style={styles.modeContainer}>
-        <Text style={[
-          styles.modeText,
-          gameMode === 'four' && styles.activeMode
-        ]}>
-          4麻
-        </Text>
-        <View style={styles.separator} />
-        <Text style={[
-          styles.modeText,
-          gameMode === 'three' && styles.activeMode
-        ]}>
-          3麻
-        </Text>
+    <View style={styles.container}>
+      <View style={styles.segmentContainer}>
+        <Animated.View
+          style={[
+            styles.activeIndicator,
+            {
+              transform: [{ translateX: indicatorTranslateX }],
+            },
+          ]}
+        />
+        <TouchableOpacity
+          style={styles.segment}
+          onPress={() => handlePress('four')}
+          activeOpacity={0.7}
+        >
+          <Text
+            style={[
+              styles.segmentText,
+              gameMode === 'four' && styles.activeText,
+            ]}
+          >
+            4麻
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.segment}
+          onPress={() => handlePress('three')}
+          activeOpacity={0.7}
+        >
+          <Text
+            style={[
+              styles.segmentText,
+              gameMode === 'three' && styles.activeText,
+            ]}
+          >
+            3麻
+          </Text>
+        </TouchableOpacity>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 };
 
@@ -171,30 +224,67 @@ const styles = StyleSheet.create({
   container: {
     marginRight: 16,
   },
-  modeContainer: {
+  segmentContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F5F5F5',
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    backgroundColor: '#E5E5EA',
+    borderRadius: 8,
+    padding: 2,
+    position: 'relative',
   },
-  modeText: {
+  activeIndicator: {
+    position: 'absolute',
+    top: 2,
+    left: 0,
+    width: 38,
+    height: 24,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  segment: {
+    width: 38,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  segmentText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#999999',
-    paddingHorizontal: 6,
+    color: '#8E8E93',
   },
-  activeMode: {
-    color: '#007AFF',
-  },
-  separator: {
-    width: 1,
-    height: 12,
-    backgroundColor: '#CCCCCC',
+  activeText: {
+    color: '#000000',
   },
 });
 ```
+
+#### アニメーション詳細
+
+- **アニメーション対象**: 背景インジケーター（白い丸みのある背景）
+- **アニメーション方式**: `translateX`を使用した水平移動
+- **アニメーション時間**: 250ms（スムーズで素早い）
+- **イージング**: デフォルトのイージング関数（ease-in-out相当）
+- **ネイティブドライバー**: `useNativeDriver: true`でパフォーマンス最適化
+
+#### 色とスタイリング
+
+- **コンテナ背景**: `#E5E5EA`（iOS標準のグレー）
+- **アクティブインジケーター**: `#FFFFFF`（白）
+- **アクティブテキスト**: `#000000`（黒）
+- **非アクティブテキスト**: `#8E8E93`（グレー）
+- **ボーダーラディウス**: 外側8px、内側6px
+- **シャドウ**: 軽微なドロップシャドウで立体感を演出
+
+#### レスポンシブ対応
+
+- **固定幅**: 各セグメント38px（合計80px）
+- **固定高さ**: 28px（パディング含む）
+- **タッチターゲット**: 最小44x44pxを確保（マージン含む）
 
 ### 3. Tab Layout更新
 

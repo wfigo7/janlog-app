@@ -13,6 +13,7 @@ global.Buffer = Buffer;
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider } from '../src/contexts/AuthContext';
 import { AuthGuard } from '../src/components/auth/AuthGuard';
+import { GameModeProvider } from '../src/contexts/GameModeContext';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -26,18 +27,20 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <AuthGuard>
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="rules/create" options={{ title: 'ルール作成' }} />
-            <Stack.Screen name="rules/[rulesetId]" options={{ title: 'ルール編集' }} />
-            <Stack.Screen name="+not-found" />
-          </Stack>
-        </AuthGuard>
-        <StatusBar style="auto" />
-      </ThemeProvider>
-    </AuthProvider>
+    <GameModeProvider>
+      <AuthProvider>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <AuthGuard>
+            <Stack>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="rules/create" options={{ title: 'ルール作成' }} />
+              <Stack.Screen name="rules/[rulesetId]" options={{ title: 'ルール編集' }} />
+              <Stack.Screen name="+not-found" />
+            </Stack>
+          </AuthGuard>
+          <StatusBar style="auto" />
+        </ThemeProvider>
+      </AuthProvider>
+    </GameModeProvider>
   );
 }

@@ -76,7 +76,6 @@ const MatchRegistrationScreen: React.FC = () => {
     showNotification,
     notificationMessage,
     notificationType,
-    handleGameModeChange,
     handleRulesetSelect,
     handleEntryMethodChange,
     handleMatchDateChange,
@@ -109,7 +108,6 @@ const MatchRegistrationScreen: React.FC = () => {
         showNotification={showNotification}
         notificationMessage={notificationMessage}
         notificationType={notificationType}
-        onGameModeChange={handleGameModeChange}
         onRulesetSelect={handleRulesetSelect}
         onEntryMethodChange={handleEntryMethodChange}
         onMatchDateChange={handleMatchDateChange}

@@ -17,10 +17,12 @@ import { rulesetService } from '@/src/services/rulesetService';
 import { Ruleset } from '@/src/types/ruleset';
 import RuleList from '@/src/components/rules/RuleList';
 import { CustomAlert } from '@/src/components/common/CustomAlert';
+import { useGameMode } from '@/src/contexts/GameModeContext';
 
 export default function RulesScreen() {
     const router = useRouter();
     const { user } = useAuth();
+    const { gameMode } = useGameMode();
     const [globalRules, setGlobalRules] = useState<Ruleset[]>([]);
     const [personalRules, setPersonalRules] = useState<Ruleset[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -42,11 +44,13 @@ export default function RulesScreen() {
             setError(null);
             const rules = await rulesetService.getRulesets();
 
-            // グローバルルールと個人ルールに分類し、ルール名の昇順でソート
-            const global = rules
+            // ゲームモードでフィルタリングし、グローバルルールと個人ルールに分類し、ルール名の昇順でソート
+            const filteredRules = rules.filter(r => r.gameMode === gameMode);
+            
+            const global = filteredRules
                 .filter(r => r.isGlobal)
                 .sort((a, b) => a.ruleName.localeCompare(b.ruleName, 'ja'));
-            const personal = rules
+            const personal = filteredRules
                 .filter(r => !r.isGlobal)
                 .sort((a, b) => a.ruleName.localeCompare(b.ruleName, 'ja'));
 
@@ -58,7 +62,7 @@ export default function RulesScreen() {
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [gameMode]);
 
     useFocusEffect(
         useCallback(() => {

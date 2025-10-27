@@ -85,3 +85,26 @@
 2. THE System SHALL 対局登録画面でグローバルなゲームモード状態を参照する
 3. WHEN ユーザーがグローバルなゲームモードを切り替える, THEN THE System SHALL 対局登録フォームを新しいゲームモードで初期化する
 4. THE System SHALL 対局登録時にグローバルなゲームモード値を使用する
+
+### Requirement 7
+
+**User Story:** ユーザーとして、ヘッダーのゲームモード切り替えUIが視覚的に魅力的で操作しやすいものであってほしい。モバイルアプリでよく見られる洗練されたデザインで、直感的に操作できる。
+
+#### Acceptance Criteria
+
+1. THE Game Mode Selector SHALL 丸みのあるセグメントコントロール形式のUIを表示する
+2. THE Game Mode Selector SHALL 両方のゲームモードオプション（4麻と3麻）を単一の丸みのあるコンテナ内に並べて表示する
+3. THE Game Mode Selector SHALL 現在選択されているゲームモードを強調表示するアニメーション背景インジケーターを表示する
+4. WHEN ユーザーがいずれかのゲームモードオプションをタップする, THEN THE Game Mode Selector SHALL 背景インジケーターを選択されたオプションにアニメーションで移動する
+5. THE Game Mode Selector SHALL アクティブ状態と非アクティブ状態を区別するために適切な色を使用する
+
+### Requirement 8
+
+**User Story:** ユーザーとして、ゲームモード切り替え時にスムーズなアニメーションを見たい。視覚的なフィードバックにより、操作が成功したことが明確に分かる。
+
+#### Acceptance Criteria
+
+1. WHEN ユーザーがゲームモードを切り替える, THEN THE Active Indicator SHALL 現在の位置から新しい位置へスムーズにアニメーションする
+2. THE Active Indicator animation SHALL 200〜300ミリ秒以内に完了する
+3. THE Active Indicator animation SHALL 自然な動きのためのイージング関数を使用する
+4. WHILE THE Active Indicator がアニメーション中である, THEN THE Game Mode Selector SHALL ユーザー入力に対して応答性を維持する

@@ -15,7 +15,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { StatsCard } from './StatsCard';
-import { GameModeTab } from '../common/GameModeTab';
 import { RankDistributionCard } from './RankDistributionCard';
 import { FilterBar, FilterOptions } from '../common/FilterBar';
 import { StatsChart } from './StatsChart';
@@ -23,16 +22,16 @@ import { useCustomAlert } from '../../hooks/useCustomAlert';
 import { DetailedStatsCard } from './DetailedStatsCard';
 import { StatsService } from '../../services/statsService';
 import { StatsSummary, ChartDataResponse } from '../../types/stats';
-import { GameMode } from '../../types/common';
 import { Match } from '../../types/match';
+import { useGameMode } from '../../contexts/GameModeContext';
 
 export default function StatsScreen() {
   const { showAlert, AlertComponent } = useCustomAlert();
+  const { gameMode } = useGameMode();
   const [stats, setStats] = useState<StatsSummary | null>(null);
   const [chartData, setChartData] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedMode, setSelectedMode] = useState<GameMode>('four');
   const [filters, setFilters] = useState<FilterOptions>({});
   const [showCharts, setShowCharts] = useState(false);
   const [showDetailedStats, setShowDetailedStats] = useState(false);
@@ -46,7 +45,7 @@ export default function StatsScreen() {
       }
 
       const apiFilters = {
-        mode: selectedMode,
+        mode: gameMode,
         from: filters.dateRange?.from,
         to: filters.dateRange?.to,
         venueId: filters.venueId,
@@ -81,22 +80,24 @@ export default function StatsScreen() {
   };
 
   useEffect(() => {
+    // ゲームモード変更時にフィルターをリセット
+    setFilters({});
     loadData();
-  }, [selectedMode, filters]);
+  }, [gameMode]);
+
+  useEffect(() => {
+    loadData();
+  }, [filters]);
 
   // 画面がフォーカスされた時にデータを再取得
   useFocusEffect(
     useCallback(() => {
       loadData();
-    }, [selectedMode, filters])
+    }, [gameMode, filters])
   );
 
   const onRefresh = () => {
     loadData(true);
-  };
-
-  const onModeChange = (mode: GameMode) => {
-    setSelectedMode(mode);
   };
 
   const onFiltersChange = (newFilters: FilterOptions) => {
@@ -133,14 +134,12 @@ export default function StatsScreen() {
     <View style={styles.container}>
       {/* コントロール部分 */}
       <View style={styles.controlsContainer}>
-        <GameModeTab selectedMode={selectedMode} onModeChange={onModeChange} />
-
         {/* フィルターと表示オプション */}
         <View style={styles.optionsContainer}>
           <FilterBar
             value={filters}
             onChange={onFiltersChange}
-            gameMode={selectedMode}
+            gameMode={gameMode}
             showVenueFilter={true}
             showRulesetFilter={true}
           />
@@ -224,7 +223,7 @@ export default function StatsScreen() {
             <RankDistributionCard
               distribution={stats.rankDistribution}
               totalCount={stats.count}
-              gameMode={selectedMode}
+              gameMode={gameMode}
             />
           </View>
 
@@ -239,7 +238,7 @@ export default function StatsScreen() {
                 <StatsChart
                   type="rank-distribution"
                   data={stats.rankDistribution}
-                  gameMode={selectedMode}
+                  gameMode={gameMode}
                 />
               </View>
 
@@ -250,7 +249,7 @@ export default function StatsScreen() {
                   <StatsChart
                     type="trend"
                     data={chartData}
-                    gameMode={selectedMode}
+                    gameMode={gameMode}
                   />
                 </View>
               )}
@@ -262,7 +261,7 @@ export default function StatsScreen() {
                   <StatsChart
                     type="performance"
                     data={chartData}
-                    gameMode={selectedMode}
+                    gameMode={gameMode}
                   />
                 </View>
               )}
@@ -272,7 +271,7 @@ export default function StatsScreen() {
           {/* 詳細統計 */}
           {showDetailedStats && (
             <View style={styles.section}>
-              <DetailedStatsCard stats={stats} gameMode={selectedMode} />
+              <DetailedStatsCard stats={stats} gameMode={gameMode} />
             </View>
           )}
 
