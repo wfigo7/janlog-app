@@ -86,7 +86,7 @@
   - 全テストの通過
   - _要件: 全体_
 
-- [ ] 12. ドキュメント：Core統合とREADME更新
+- [x] 12. ドキュメント：Core統合とREADME更新
   - core/requirements.mdに要件を統合
   - core/design.mdに設計を統合
   - _要件: 全体_

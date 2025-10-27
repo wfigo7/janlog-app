@@ -34,8 +34,7 @@ src/
 │   │   └── SignUpScreen.tsx
 │   ├── stats/
 │   │   ├── StatsScreen.tsx
-│   │   ├── StatsCard.tsx
-│   │   └── GameModeTab.tsx
+│   │   └── StatsCard.tsx
 │   ├── history/
 │   │   ├── HistoryScreen.tsx
 │   │   ├── MatchList.tsx
@@ -52,7 +51,10 @@ src/
 │   └── common/
 │       ├── DatePicker.tsx
 │       ├── LoadingSpinner.tsx
-│       └── ErrorMessage.tsx
+│       ├── ErrorMessage.tsx
+│       └── HeaderGameModeSelector.tsx
+├── contexts/
+│   └── GameModeContext.tsx
 ├── services/
 │   ├── api.ts
 │   ├── auth.ts
@@ -764,6 +766,166 @@ interface ErrorResponse {
 - **環境分離戦略**: `/spec/adr/ADR-0005-environment-strategy.md`
 - **環境マトリクス**: `/spec/env-matrix.md`
 
+
+## グローバルゲームモード選択機能
+
+### 概要
+
+アプリ全体で共有されるグローバルなゲームモード選択機能を実装します。現在、各画面で独立して管理されているゲームモード状態を、React Contextを使用したグローバル状態管理に移行し、ヘッダー右側に配置されたセグメントコントロール形式のUIで切り替えられるようにします。
+
+### アーキテクチャ
+
+#### コンポーネント構成
+
+```
+App
+├── GameModeProvider (Context Provider)
+│   └── Tab Navigation
+│       ├── Stats Screen (統計)
+│       │   └── Header with HeaderGameModeSelector
+│       ├── History Screen (履歴)
+│       │   └── Header with HeaderGameModeSelector
+│       ├── Register Screen (登録)
+│       │   └── Header with HeaderGameModeSelector
+│       ├── Rules Screen (ルール管理)
+│       │   └── Header with HeaderGameModeSelector
+│       └── Profile Screen (プロフィール)
+│           └── Header without HeaderGameModeSelector
+```
+
+#### データフロー
+
+```
+User Action (ヘッダーのHeaderGameModeSelector)
+    ↓
+GameModeContext.setGameMode()
+    ↓
+AsyncStorage.setItem() (永続化)
+    ↓
+Context State Update
+    ↓
+各画面のuseGameMode()フックが新しい値を受け取る
+    ↓
+useEffect()でデータ再取得・フォーム初期化
+```
+
+### コンポーネント詳細
+
+#### GameModeContext
+
+**ファイル**: `frontend/src/contexts/GameModeContext.tsx`
+
+グローバルなゲームモード状態を管理するReact Context。AsyncStorageを使用して永続化し、アプリ再起動後も状態を復元します。
+
+```typescript
+interface GameModeContextType {
+  gameMode: GameMode;
+  setGameMode: (mode: GameMode) => Promise<void>;
+  isLoading: boolean;
+}
+
+const GAME_MODE_STORAGE_KEY = '@janlog:gameMode';
+const DEFAULT_GAME_MODE: GameMode = 'four';
+```
+
+#### HeaderGameModeSelector
+
+**ファイル**: `frontend/src/components/common/HeaderGameModeSelector.tsx`
+
+ヘッダー右側に配置される丸みのあるセグメントコントロール形式のゲームモード切り替えUI。
+
+**UI設計:**
+- iOS標準のUISegmentedControlに似た洗練されたデザイン
+- アニメーション背景インジケーター（青い丸みのある背景）
+- React Native Animated APIを使用した250msのスムーズなトランジション
+- 各ゲームモードオプションを個別にタップ可能
+
+**スタイリング:**
+- コンテナ背景: `#E5E5EA`（iOS標準のグレー）
+- アクティブインジケーター: `#007AFF`（アプリ統一の青色）
+- アクティブテキスト: `#FFFFFF`（白）
+- 非アクティブテキスト: `#8E8E93`（グレー）
+- セグメント幅: 64px（各セグメント）
+- セグメント高さ: 32px
+- フォントサイズ: 13px
+- ボーダーラディウス: 外側10px、内側7px
+
+#### Tab Layout統合
+
+**ファイル**: `frontend/app/(tabs)/_layout.tsx`
+
+各タブ画面のヘッダーにHeaderGameModeSelectorを条件付きで表示。
+
+```typescript
+const screensWithGameMode = ['index', 'history', 'register', 'rules'];
+
+const getHeaderRight = (routeName: string) => {
+  if (screensWithGameMode.includes(routeName)) {
+    return () => <HeaderGameModeSelector />;
+  }
+  return undefined;
+};
+```
+
+### 各画面の統合
+
+#### StatsScreen（統計画面）
+
+- ローカルなgameMode状態管理を削除
+- `useGameMode()`フックを使用
+- `useEffect`でgameModeの変更を監視してデータ再取得
+- フィルター状態をリセット
+
+#### HistoryScreen（履歴画面）
+
+- ローカルなgameMode状態管理を削除
+- `useGameMode()`フックを使用
+- `useEffect`でgameModeの変更を監視してデータ再取得
+- ページネーション状態をリセット
+
+#### MatchRegistrationScreen（対局登録画面）
+
+- `useMatchForm`フック内でグローバルなgameModeを参照
+- ゲームモード切り替え時にフォームを初期化
+- ルールセット選択をクリア
+
+#### MatchEditScreen（対局編集画面）
+
+- 編集画面でゲームモードを読み取り専用で表示
+- グローバルなgameMode変更の影響を受けないようにする
+- 既存データのgameModeを維持
+
+#### RulesScreen（ルール管理画面）
+
+- `useGameMode()`フックを使用
+- `useEffect`でgameMode変更時にルール一覧を再取得
+- グローバルルールと個人ルールをgameModeでフィルタリング
+
+#### ルール登録・編集画面
+
+- 新規登録時はヘッダーのグローバルなゲームモードを使用
+- 編集時はフォームの先頭に読み取り専用のゲームモードを表示
+- 編集時はグローバルなgameMode変更の影響を受けないようにする
+
+### 永続化
+
+- AsyncStorageキー: `@janlog:gameMode`
+- デフォルト値: `'four'`（4人麻雀）
+- 初期化時にAsyncStorageから読み込み
+- ゲームモード変更時にAsyncStorageに保存
+
+### エラーハンドリング
+
+- AsyncStorage読み込み失敗: デフォルト値（'four'）を使用し、エラーログを出力
+- AsyncStorage書き込み失敗: エラーをthrowし、呼び出し元でハンドリング
+- Context未初期化エラー: `useGameMode()`をProvider外で使用した場合、明確なエラーメッセージをthrow
+
+### パフォーマンス最適化
+
+- Context更新の最小化: gameModeの変更時のみContextを更新
+- AsyncStorage操作の非同期化: UI操作をブロックしない
+- useEffect依存配列の適切な設定: 不要な再レンダリングを防ぐ
+- Animated APIのネイティブドライバー使用: `useNativeDriver: true`でパフォーマンス最適化
 
 ## ルール管理機能
 
