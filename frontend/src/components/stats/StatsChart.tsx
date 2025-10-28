@@ -6,11 +6,12 @@ import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { LineChart, BarChart, PieChart } from 'react-native-chart-kit';
 import { RankDistribution } from '../../types/stats';
 import { GameMode } from '../../types/common';
+import { getRankColorsForChart } from '../../constants/rankColors';
 
 const screenWidth = Dimensions.get('window').width;
 
 interface StatsChartProps {
-  type: 'rank-distribution' | 'trend' | 'performance';
+  type: 'rank-distribution' | 'trend';
   data: any;
   gameMode?: GameMode;
 }
@@ -38,9 +39,9 @@ export const StatsChart: React.FC<StatsChartProps> = ({ type, data, gameMode }) 
 
     const distribution = data as RankDistribution;
     const ranks = gameMode === 'three' ? [1, 2, 3] : [1, 2, 3, 4];
-    const colors = ['#FFD700', '#C0C0C0', '#CD7F32', '#8B4513'];
+    const colors = getRankColorsForChart(gameMode || 'four');
     const labels = ['1位', '2位', '3位', '4位'];
-    
+
     const chartData = ranks.map((rank, index) => {
       const counts = [distribution.first, distribution.second, distribution.third, distribution.fourth];
       return {
@@ -63,7 +64,7 @@ export const StatsChart: React.FC<StatsChartProps> = ({ type, data, gameMode }) 
     return (
       <PieChart
         data={chartData}
-        width={screenWidth - 60}
+        width={screenWidth - 104}
         height={200}
         chartConfig={chartConfig}
         accessor="count"
@@ -86,14 +87,21 @@ export const StatsChart: React.FC<StatsChartProps> = ({ type, data, gameMode }) 
 
     // 最近の対局の順位推移を表示
     const recentMatches = data.slice(-10); // 最新10局
-    const labels = recentMatches.map((_, index) => `${index + 1}`);
+    const labels = recentMatches.map((_match, index) => `${index + 1}`);
     const rankData = recentMatches.map(match => match.rank);
 
+    // Y軸の範囲を設定（順位が上が上にくるように反転）
+    const maxRank = gameMode === 'three' ? 3 : 4;
+    const minRank = 0;
+
+    // ダミーデータを追加してY軸の範囲を固定
+    const paddedRankData = [minRank, ...rankData, maxRank];
+
     const chartData = {
-      labels,
+      labels: ['', ...labels, ''],
       datasets: [
         {
-          data: rankData,
+          data: paddedRankData,
           color: (opacity = 1) => `rgba(255, 107, 107, ${opacity})`,
           strokeWidth: 2,
         },
@@ -103,56 +111,27 @@ export const StatsChart: React.FC<StatsChartProps> = ({ type, data, gameMode }) 
     return (
       <LineChart
         data={chartData}
-        width={screenWidth - 60}
+        width={screenWidth - 104}
         height={200}
         chartConfig={{
           ...chartConfig,
           color: (opacity = 1) => `rgba(255, 107, 107, ${opacity})`,
+          formatYLabel: (value) => {
+            const numValue = parseFloat(value);
+            // 整数のみ表示
+            if (Number.isInteger(numValue) && numValue >= minRank && numValue <= maxRank) {
+              return numValue.toString();
+            }
+            return '';
+          },
         }}
-        bezier
         style={styles.chart}
         yAxisInterval={1}
-        fromZero
-      />
-    );
-  };
-
-  const renderPerformanceChart = () => {
-    if (!data || !Array.isArray(data) || data.length === 0) {
-      return (
-        <View style={styles.emptyChart}>
-          <Text style={styles.emptyText}>データが不足しています</Text>
-        </View>
-      );
-    }
-
-    // 最近の対局のポイント推移を表示
-    const recentMatches = data.slice(-10); // 最新10局
-    const labels = recentMatches.map((_, index) => `${index + 1}`);
-    const pointData = recentMatches.map(match => match.finalPoints || 0);
-
-    const chartData = {
-      labels,
-      datasets: [
-        {
-          data: pointData,
-          color: (opacity = 1) => `rgba(76, 217, 100, ${opacity})`,
-          strokeWidth: 2,
-        },
-      ],
-    };
-
-    return (
-      <LineChart
-        data={chartData}
-        width={screenWidth - 60}
-        height={200}
-        chartConfig={{
-          ...chartConfig,
-          color: (opacity = 1) => `rgba(76, 217, 100, ${opacity})`,
-        }}
-        bezier
-        style={styles.chart}
+        segments={maxRank - minRank}
+        withInnerLines={true}
+        withOuterLines={true}
+        withVerticalLines={false}
+        withHorizontalLines={true}
       />
     );
   };
@@ -163,8 +142,6 @@ export const StatsChart: React.FC<StatsChartProps> = ({ type, data, gameMode }) 
         return renderRankDistributionChart();
       case 'trend':
         return renderTrendChart();
-      case 'performance':
-        return renderPerformanceChart();
       default:
         return null;
     }
@@ -187,7 +164,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   emptyChart: {
-    width: screenWidth - 60,
+    width: screenWidth - 104,
     height: 200,
     justifyContent: 'center',
     alignItems: 'center',

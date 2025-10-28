@@ -19,11 +19,11 @@ import { RankDistributionCard } from './RankDistributionCard';
 import { FilterBar, FilterOptions } from '../common/FilterBar';
 import { StatsChart } from './StatsChart';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
-import { DetailedStatsCard } from './DetailedStatsCard';
 import { StatsService } from '../../services/statsService';
 import { StatsSummary, ChartDataResponse } from '../../types/stats';
 import { Match } from '../../types/match';
 import { useGameMode } from '../../contexts/GameModeContext';
+import { POSITIVE_COLOR, NEGATIVE_COLOR } from '../../constants/rankColors';
 
 export default function StatsScreen() {
   const { showAlert, AlertComponent } = useCustomAlert();
@@ -34,7 +34,6 @@ export default function StatsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>({});
   const [showCharts, setShowCharts] = useState(false);
-  const [showDetailedStats, setShowDetailedStats] = useState(false);
 
   const loadData = async (showRefresh = false) => {
     try {
@@ -108,10 +107,6 @@ export default function StatsScreen() {
     setShowCharts(!showCharts);
   };
 
-  const toggleDetailedStats = () => {
-    setShowDetailedStats(!showDetailedStats);
-  };
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -129,6 +124,22 @@ export default function StatsScreen() {
       </View>
     );
   }
+
+  // 平均順位の色を期待値基準で判定
+  const expectedRank = gameMode === 'three' ? 2.0 : 2.5;
+  const avgRankColor = stats.avgRank <= expectedRank ? POSITIVE_COLOR : NEGATIVE_COLOR;
+
+  // 率統計の計算と色判定
+  const rentalRate = stats.count > 0 ? (stats.rankDistribution.first + stats.rankDistribution.second) / stats.count * 100 : 0;
+  const lastAvoidRate = 100 - stats.lastRate;
+  const topRateThreshold = gameMode === 'three' ? 33.3 : 25;
+  const lastAvoidRateThreshold = gameMode === 'three' ? 66.7 : 75;
+  const lastRateThreshold = gameMode === 'three' ? 33.3 : 25;
+
+  const rentalRateColor = rentalRate >= 50 ? POSITIVE_COLOR : NEGATIVE_COLOR;
+  const lastAvoidRateColor = lastAvoidRate >= lastAvoidRateThreshold ? POSITIVE_COLOR : NEGATIVE_COLOR;
+  const topRateColor = stats.topRate >= topRateThreshold ? POSITIVE_COLOR : NEGATIVE_COLOR;
+  const lastRateColor = stats.lastRate < lastRateThreshold ? POSITIVE_COLOR : NEGATIVE_COLOR;
 
   return (
     <View style={styles.container}>
@@ -160,23 +171,6 @@ export default function StatsScreen() {
               グラフ表示
             </Text>
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.optionButton, showDetailedStats && styles.optionButtonActive]}
-            onPress={toggleDetailedStats}
-          >
-            <Ionicons
-              name="analytics-outline"
-              size={16}
-              color={showDetailedStats ? "#FFFFFF" : "#666666"}
-            />
-            <Text style={[
-              styles.optionButtonText,
-              showDetailedStats && styles.optionButtonTextActive
-            ]}>
-              詳細分析
-            </Text>
-          </TouchableOpacity>
         </View>
       </View>
 
@@ -194,25 +188,24 @@ export default function StatsScreen() {
               <View style={styles.statsRow}>
                 <StatsCard
                   title="対局数"
-                  value={stats.count}
-                  subtitle="半荘"
+                  value={`${stats.count}局`}
                 />
                 <StatsCard
-                  title="平均順位"
-                  value={stats.avgRank.toFixed(2)}
-                  color="#FF6B6B"
+                  title="トータルポイント"
+                  value={stats.totalPoints > 0 ? `+${stats.totalPoints.toFixed(1)}` : stats.totalPoints.toFixed(1)}
+                  color={stats.totalPoints >= 0 ? POSITIVE_COLOR : NEGATIVE_COLOR}
                 />
               </View>
               <View style={styles.statsRow}>
                 <StatsCard
-                  title="累積ポイント"
-                  value={stats.totalPoints > 0 ? `+${stats.totalPoints.toFixed(1)}` : stats.totalPoints.toFixed(1)}
-                  color={stats.totalPoints >= 0 ? "#4ECDC4" : "#FF6B6B"}
+                  title="平均順位"
+                  value={stats.avgRank.toFixed(2)}
+                  color={avgRankColor}
                 />
                 <StatsCard
                   title="平均スコア"
                   value={stats.avgScore > 0 ? `+${stats.avgScore.toFixed(1)}` : stats.avgScore.toFixed(1)}
-                  color={stats.avgScore >= 0 ? "#4ECDC4" : "#FF6B6B"}
+                  color={stats.avgScore >= 0 ? POSITIVE_COLOR : NEGATIVE_COLOR}
                 />
               </View>
             </View>
@@ -220,6 +213,7 @@ export default function StatsScreen() {
 
           {/* 順位分布 */}
           <View style={styles.section}>
+            <Text style={styles.sectionTitle}>順位分布</Text>
             <RankDistributionCard
               distribution={stats.rankDistribution}
               totalCount={stats.count}
@@ -241,37 +235,6 @@ export default function StatsScreen() {
                   gameMode={gameMode}
                 />
               </View>
-
-              {/* 順位推移チャート */}
-              {chartData.length > 0 && (
-                <View style={styles.chartContainer}>
-                  <Text style={styles.chartTitle}>最近の順位推移</Text>
-                  <StatsChart
-                    type="trend"
-                    data={chartData}
-                    gameMode={gameMode}
-                  />
-                </View>
-              )}
-
-              {/* ポイント推移チャート */}
-              {chartData.length > 0 && (
-                <View style={styles.chartContainer}>
-                  <Text style={styles.chartTitle}>最近のポイント推移</Text>
-                  <StatsChart
-                    type="performance"
-                    data={chartData}
-                    gameMode={gameMode}
-                  />
-                </View>
-              )}
-            </View>
-          )}
-
-          {/* 詳細統計 */}
-          {showDetailedStats && (
-            <View style={styles.section}>
-              <DetailedStatsCard stats={stats} gameMode={gameMode} />
             </View>
           )}
 
@@ -279,28 +242,40 @@ export default function StatsScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>率統計</Text>
             <View style={styles.statsGrid}>
+              {gameMode === 'four' && (
+                <View style={styles.statsRow}>
+                  <StatsCard
+                    title="連帯率"
+                    value={`${rentalRate.toFixed(1)}%`}
+                    color={rentalRateColor}
+                    subtitle="1位+2位"
+                  />
+                  <StatsCard
+                    title="ラス回避率"
+                    value={`${lastAvoidRate.toFixed(1)}%`}
+                    color={lastAvoidRateColor}
+                  />
+                </View>
+              )}
+              {gameMode === 'three' && (
+                <View style={styles.statsRow}>
+                  <StatsCard
+                    title="ラス回避率"
+                    value={`${lastAvoidRate.toFixed(1)}%`}
+                    color={lastAvoidRateColor}
+                  />
+                </View>
+              )}
               <View style={styles.statsRow}>
                 <StatsCard
                   title="トップ率"
                   value={`${stats.topRate.toFixed(1)}%`}
-                  color="#FFD700"
+                  color={topRateColor}
                 />
                 <StatsCard
                   title="ラス率"
                   value={`${stats.lastRate.toFixed(1)}%`}
-                  color="#FF6B6B"
-                />
-              </View>
-              <View style={styles.statsRow}>
-                <StatsCard
-                  title="2位率"
-                  value={`${stats.secondRate.toFixed(1)}%`}
-                  color="#C0C0C0"
-                />
-                <StatsCard
-                  title="3位率"
-                  value={`${stats.thirdRate.toFixed(1)}%`}
-                  color="#CD7F32"
+                  color={lastRateColor}
                 />
               </View>
             </View>
@@ -314,24 +289,22 @@ export default function StatsScreen() {
                 <StatsCard
                   title="連続トップ"
                   value={`${stats.maxConsecutiveFirst}回`}
-                  color="#FFD700"
                 />
                 <StatsCard
                   title="連続ラス"
                   value={`${stats.maxConsecutiveLast}回`}
-                  color="#FF6B6B"
                 />
               </View>
               <View style={styles.statsRow}>
                 <StatsCard
-                  title="最高得点"
+                  title="最高スコア"
                   value={stats.maxScore > -Infinity ? `+${stats.maxScore.toFixed(1)}` : '---'}
-                  color="#4ECDC4"
+                  color={stats.maxScore > -Infinity ? (stats.maxScore >= 0 ? POSITIVE_COLOR : NEGATIVE_COLOR) : undefined}
                 />
                 <StatsCard
-                  title="最低得点"
+                  title="最低スコア"
                   value={stats.minScore < Infinity ? stats.minScore.toFixed(1) : '---'}
-                  color="#FF6B6B"
+                  color={stats.minScore < Infinity ? (stats.minScore >= 0 ? POSITIVE_COLOR : NEGATIVE_COLOR) : undefined}
                 />
               </View>
             </View>
@@ -371,7 +344,6 @@ const styles = StyleSheet.create({
   },
   optionsContainer: {
     flexDirection: 'row',
-    marginTop: 16,
     gap: 12,
     flexWrap: 'wrap',
   },
@@ -430,7 +402,7 @@ const styles = StyleSheet.create({
     color: '#666666',
   },
   content: {
-    padding: 20,
+    padding: 12,
   },
   section: {
     marginBottom: 24,

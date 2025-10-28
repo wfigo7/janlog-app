@@ -11,11 +11,11 @@ interface StatsCardProps {
   color?: string;
 }
 
-export const StatsCard: React.FC<StatsCardProps> = ({ 
-  title, 
-  value, 
-  subtitle, 
-  color = '#007AFF' 
+export const StatsCard: React.FC<StatsCardProps> = ({
+  title,
+  value,
+  subtitle,
+  color = '#333333'
 }) => {
   return (
     <View style={styles.card}>
@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    padding: 16,
+    padding: 12,
     flex: 1,
     shadowColor: '#000',
     shadowOffset: {
