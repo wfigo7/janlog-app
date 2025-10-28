@@ -183,7 +183,7 @@ const MatchForm: React.FC<MatchFormProps> = ({
           <Text style={styles.sectionTitle}>順位</Text>
           {formData.entryMethod === 'provisional_rank_only' && (
             <Text style={styles.provisionalDescription}>
-              順位のみで仮のスコアを計算します。開始点からの増減: {formData.gameMode === 'three' ? '1位(+15000), 2位(+0), 3位(-15000)' : '1位(+15000), 2位(+5000), 3位(-5000), 4位(-15000)'}
+              順位のみで仮のポイントを計算します。開始点からの増減: {formData.gameMode === 'three' ? '1位(+15000), 2位(+0), 3位(-15000)' : '1位(+15000), 2位(+5000), 3位(-5000), 4位(-15000)'}
             </Text>
           )}
           <TextInput
@@ -315,13 +315,13 @@ const MatchForm: React.FC<MatchFormProps> = ({
               <View style={styles.calculationRow}>
                 <Text style={styles.calculationLabel}>ウマ</Text>
                 <Text style={styles.calculationValue}>
-                  {provisionalDetails.uma >= 0 ? '+' : ''}{provisionalDetails.uma}pt
+                  {provisionalDetails.umaPoints >= 0 ? '+' : ''}{provisionalDetails.umaPoints}pt
                 </Text>
               </View>
               <View style={styles.calculationRow}>
                 <Text style={styles.calculationLabel}>オカ</Text>
                 <Text style={styles.calculationValue}>
-                  {provisionalDetails.oka >= 0 ? '+' : ''}{provisionalDetails.oka}pt
+                  {provisionalDetails.okaPoints >= 0 ? '+' : ''}{provisionalDetails.okaPoints}pt
                 </Text>
               </View>
               <View style={[styles.calculationRow, styles.calculationTotal]}>
@@ -430,7 +430,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
+    padding: 12,
     paddingBottom: 40,
   },
   titleSection: {

@@ -15,10 +15,16 @@ import { useAuth } from '../../contexts/AuthContext';
 import { authService } from '../../services/authService';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
 import { VersionInfo } from '../../../components/VersionInfo';
+import Constants from 'expo-constants';
 
 export function ProfileScreen() {
     const { user, logout, isLoading, checkAuthState } = useAuth();
     const { showAlert, AlertComponent } = useCustomAlert();
+
+    // 環境変数を取得
+    const environment = Constants.expoConfig?.extra?.environment || 'local';
+    const isAdmin = user?.role === 'admin';
+    const showDebugInfo = isAdmin || environment === 'local';
 
     /**
      * ログアウト確認
@@ -54,34 +60,7 @@ export function ProfileScreen() {
         });
     };
 
-    /**
-     * 強制ログアウト（デバッグ用）
-     */
-    const handleForceLogout = () => {
-        Alert.alert(
-            '強制ログアウト',
-            'すべてのトークンを削除してログアウトします。',
-            [
-                {
-                    text: 'キャンセル',
-                    style: 'cancel',
-                },
-                {
-                    text: '強制ログアウト',
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            await authService.logout();
-                            // 認証状態を再チェック
-                            await checkAuthState();
-                        } catch (error) {
-                            Alert.alert('エラー', '強制ログアウトに失敗しました');
-                        }
-                    },
-                },
-            ]
-        );
-    };
+
 
     if (!user) {
         return (
@@ -109,36 +88,26 @@ export function ProfileScreen() {
                             <Text style={styles.infoValue}>{user.email}</Text>
                         </View>
 
-                        <View style={styles.infoItem}>
-                            <Text style={styles.infoLabel}>ユーザーID</Text>
-                            <Text style={styles.infoValue}>{user.userId}</Text>
-                        </View>
+                        {showDebugInfo && (
+                            <>
+                                <View style={styles.infoItem}>
+                                    <Text style={styles.infoLabel}>ユーザーID</Text>
+                                    <Text style={styles.infoValue}>{user.userId}</Text>
+                                </View>
 
-                        <View style={styles.infoItem}>
-                            <Text style={styles.infoLabel}>権限</Text>
-                            <Text style={styles.infoValue}>
-                                {user.role === 'admin' ? '管理者' : '一般ユーザー'}
-                            </Text>
-                        </View>
+                                <View style={styles.infoItem}>
+                                    <Text style={styles.infoLabel}>権限</Text>
+                                    <Text style={styles.infoValue}>
+                                        {user.role === 'admin' ? '管理者' : '一般ユーザー'}
+                                    </Text>
+                                </View>
+                            </>
+                        )}
                     </View>
 
                     {/* アクション */}
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>アカウント</Text>
-
-                        {/* Alert テスト用ボタン */}
-                        <TouchableOpacity
-                            style={[styles.logoutButton, { backgroundColor: '#2196f3', marginBottom: 10 }]}
-                            onPress={() => {
-                                console.log('Custom Alert test button pressed');
-                                showAlert({
-                                    title: 'テスト',
-                                    message: 'カスタムアラートは正常に動作しています！',
-                                });
-                            }}
-                        >
-                            <Text style={styles.logoutButtonText}>カスタムAlert テスト</Text>
-                        </TouchableOpacity>
 
                         <TouchableOpacity
                             style={styles.logoutButton}
@@ -147,16 +116,6 @@ export function ProfileScreen() {
                         >
                             <Text style={styles.logoutButtonText}>
                                 {isLoading ? 'ログアウト中...' : 'ログアウト'}
-                            </Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={styles.forceLogoutButton}
-                            onPress={handleForceLogout}
-                            disabled={isLoading}
-                        >
-                            <Text style={styles.forceLogoutButtonText}>
-                                強制ログアウト（デバッグ用）
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -186,7 +145,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#f5f5f5',
     },
     content: {
-        padding: 20,
+        padding: 12,
     },
     section: {
         backgroundColor: '#fff',
@@ -221,26 +180,14 @@ const styles = StyleSheet.create({
         textAlign: 'right',
     },
     logoutButton: {
-        backgroundColor: '#f44336',
+        backgroundColor: '#666666',
         borderRadius: 8,
         padding: 16,
         alignItems: 'center',
-        marginBottom: 12,
     },
     logoutButtonText: {
         color: '#fff',
         fontSize: 16,
-        fontWeight: '600',
-    },
-    forceLogoutButton: {
-        backgroundColor: '#ff9800',
-        borderRadius: 8,
-        padding: 16,
-        alignItems: 'center',
-    },
-    forceLogoutButtonText: {
-        color: '#fff',
-        fontSize: 14,
         fontWeight: '600',
     },
     errorText: {

@@ -13,7 +13,7 @@ export interface StatsSummary {
   // 基本統計
   count: number;          // 対局数（半荘数）
   avgRank: number;        // 平均順位（平均着順）
-  avgScore: number;       // 平均スコア（1対局あたりの平均ポイント）
+  avgScore: number;       // 平均ポイント（1対局あたりの平均ポイント）
   totalPoints: number;    // 累積ポイント（スコア）
   chipTotal?: number;     // チップ合計（チップありルールでの対局がある場合のみ）
   

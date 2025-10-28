@@ -139,11 +139,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#2196F3',
+    backgroundColor: '#2196F3',
   },
   editButtonText: {
-    color: '#2196F3',
+    color: '#fff',
     fontSize: 14,
     fontWeight: '600',
   },

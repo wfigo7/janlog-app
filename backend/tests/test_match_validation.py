@@ -11,7 +11,7 @@ class TestMatchRequestValidation:
     """MatchRequestのバリデーションテスト"""
 
     def test_valid_rank_plus_points_request(self):
-        """有効な順位+最終スコア方式のリクエスト"""
+        """有効な順位+最終ポイント方式のリクエスト"""
         request = MatchRequest(
             date="2024-01-01T10:00:00Z",
             gameMode="four",
@@ -39,7 +39,7 @@ class TestMatchRequestValidation:
         assert request.rawScore == 32400
 
     def test_valid_provisional_rank_only_request(self):
-        """有効な仮スコア方式のリクエスト"""
+        """有効な仮ポイント方式のリクエスト"""
         request = MatchRequest(
             date="2024-01-01T10:00:00Z",
             gameMode="three",
@@ -79,7 +79,7 @@ class TestMatchRequestValidation:
         assert "less than or equal to 4" in error["msg"]
 
     def test_missing_final_points_for_rank_plus_points(self):
-        """順位+最終スコア方式で最終ポイント未入力"""
+        """順位+最終ポイント方式で最終ポイント未入力"""
         with pytest.raises(ValidationError) as exc_info:
             MatchRequest(
                 date="2024-01-01T10:00:00Z",

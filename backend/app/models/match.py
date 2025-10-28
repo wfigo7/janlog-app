@@ -76,7 +76,7 @@ class MatchRequest(BaseModel):
         # 入力方式別バリデーション
         if self.entryMethod == "rank_plus_points":
             if self.finalPoints is None:
-                raise ValueError("順位+最終スコア方式では最終ポイントが必要です")
+                raise ValueError("順位+最終ポイント方式では最終ポイントが必要です")
 
             # 範囲チェック: -999.9〜999.9
             if self.finalPoints < -999.9 or self.finalPoints > 999.9:

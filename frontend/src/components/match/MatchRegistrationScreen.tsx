@@ -17,7 +17,7 @@ const MatchRegistrationScreen: React.FC = () => {
       // 計算されたポイントを使用（useMatchFormで管理）
       finalPointsValue = calculatedPoints ?? undefined;
     } else if (formData.entryMethod === 'provisional_rank_only') {
-      // 仮スコアのポイントを使用
+      // 仮ポイントを使用
       finalPointsValue = provisionalPoints ?? undefined;
     } else {
       finalPointsValue = undefined;
@@ -44,7 +44,7 @@ const MatchRegistrationScreen: React.FC = () => {
       const year = today.getFullYear();
       const month = (today.getMonth() + 1).toString().padStart(2, '0');
       const day = today.getDate().toString().padStart(2, '0');
-      
+
       setFormData(prev => ({
         ...prev,
         matchDate: `${year}-${month}-${day}T00:00:00+09:00`,

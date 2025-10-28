@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#f5f5f5',
     },
     form: {
-        padding: 16,
+        padding: 12,
     },
     formGroup: {
         marginBottom: 20,
@@ -261,15 +261,17 @@ const styles = StyleSheet.create({
     },
     umaContainer: {
         flexDirection: 'row',
-        gap: 8,
+        gap: 6,
+        flexWrap: 'wrap',
     },
     umaInput: {
         flex: 1,
+        minWidth: 70,
         backgroundColor: '#fff',
         borderWidth: 1,
         borderColor: '#ddd',
         borderRadius: 8,
-        padding: 12,
+        padding: 10,
         fontSize: 16,
         color: '#333',
         textAlign: 'center',

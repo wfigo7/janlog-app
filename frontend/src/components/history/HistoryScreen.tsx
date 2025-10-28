@@ -16,6 +16,7 @@ import { GameMode } from '../../types/common';
 import { FilterBar, FilterOptions } from '../common/FilterBar';
 import { MatchService, PaginationInfo } from '../../services/matchService';
 import { useGameMode } from '../../contexts/GameModeContext';
+import { getRankColor } from '../../constants/rankColors';
 
 type SortOrder = 'newest' | 'oldest';
 
@@ -124,7 +125,7 @@ const HistoryScreen: React.FC = () => {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+    return `${date.getMonth() + 1}/${date.getDate()}`;
   };
 
   const getRankText = (rank: number, gameMode: GameMode) => {
@@ -137,14 +138,9 @@ const HistoryScreen: React.FC = () => {
     }
   };
 
-  const getRankColor = (rank: number, gameMode: GameMode) => {
-    if (rank === 1) return '#4CAF50'; // 1位は緑
-
-    if (gameMode === 'three') {
-      return rank === 3 ? '#F44336' : '#666666'; // 3人麻雀では3位がラス
-    } else {
-      return rank === 4 ? '#F44336' : '#666666'; // 4人麻雀では4位がラス
-    }
+  const getPointsColor = (points: number | undefined) => {
+    if (points === undefined) return '#333333';
+    return points >= 0 ? '#4CAF50' : '#FF6B6B';
   };
 
   const handleMatchPress = (matchId: string) => {
@@ -156,30 +152,32 @@ const HistoryScreen: React.FC = () => {
       style={styles.matchItem}
       onPress={() => handleMatchPress(item.matchId)}
     >
-      <View style={styles.matchHeader}>
-        <Text style={styles.matchDate}>{formatDate(item.date)}</Text>
-        <View style={styles.matchRankContainer}>
-          <Text style={styles.matchMode}>
-            {item.gameMode === 'three' ? '3麻' : '4麻'}
-          </Text>
-          <Text style={[styles.matchRank, { color: getRankColor(item.rank, item.gameMode) }]}>
-            {getRankText(item.rank, item.gameMode)}
+      {/* 1行目: 日付・会場 | 順位・ポイント */}
+      <View style={styles.matchMainRow}>
+        <View style={styles.matchLeftInfo}>
+          <Text style={styles.matchDate}>{formatDate(item.date)}</Text>
+          {item.venueName && (
+            <Text style={styles.matchVenue} numberOfLines={1}>
+              {item.venueName}
+            </Text>
+          )}
+        </View>
+        <View style={styles.matchRightInfo}>
+          <View style={[styles.rankBadge, { backgroundColor: getRankColor(item.rank, item.gameMode) }]}>
+            <Text style={styles.rankBadgeText}>{getRankText(item.rank, item.gameMode)}</Text>
+          </View>
+          <Text style={[styles.matchPoints, { color: getPointsColor(item.finalPoints) }]}>
+            {item.finalPoints !== undefined
+              ? `${item.finalPoints > 0 ? '+' : ''}${item.finalPoints.toFixed(1)}pt`
+              : '-'}
           </Text>
         </View>
       </View>
-      <View style={styles.matchDetails}>
-        <Text style={styles.matchPoints}>
-          {item.finalPoints !== undefined ? `${item.finalPoints}pt` : '-'}
-        </Text>
-        {item.chipCount !== undefined && item.chipCount > 0 && (
-          <Text style={styles.matchChips}>チップ: {item.chipCount}枚</Text>
-        )}
-      </View>
-      {item.venueName && (
-        <Text style={styles.matchVenue} numberOfLines={1}>
-          会場: {item.venueName}
-        </Text>
+      {/* 2行目: チップ */}
+      {item.chipCount !== undefined && item.chipCount > 0 && (
+        <Text style={styles.matchChips}>チップ: {item.chipCount}枚</Text>
       )}
+      {/* 3行目: メモ */}
       {item.memo && (
         <Text style={styles.matchMemo} numberOfLines={1}>
           {item.memo}
@@ -211,6 +209,8 @@ const HistoryScreen: React.FC = () => {
             showRulesetFilter={true}
           />
 
+          <View style={styles.spacer} />
+
           <TouchableOpacity style={styles.sortButton} onPress={toggleSortOrder}>
             <Text style={styles.sortButtonText}>
               {sortOrder === 'newest' ? '新しい順 ↓' : '古い順 ↑'}
@@ -225,7 +225,7 @@ const HistoryScreen: React.FC = () => {
         renderItem={renderMatchItem}
         keyExtractor={(item) => item.matchId}
         style={styles.matchList}
-        contentContainerStyle={matches.length === 0 ? styles.emptyContainer : undefined}
+        contentContainerStyle={matches.length === 0 ? styles.emptyContainer : styles.listContent}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
@@ -284,14 +284,17 @@ const styles = StyleSheet.create({
   },
   optionsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 12,
     gap: 12,
+  },
+  spacer: {
+    flex: 1,
   },
   matchList: {
     flex: 1,
-    padding: 20,
+  },
+  listContent: {
+    padding: 12,
   },
   matchItem: {
     backgroundColor: '#FFFFFF',
@@ -307,51 +310,55 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  matchHeader: {
+  matchMainRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
   },
-  matchDate: {
-    fontSize: 14,
-    color: '#666666',
+  matchLeftInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
   },
-  matchRankContainer: {
+  matchRightInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  matchMode: {
-    fontSize: 12,
-    color: '#999999',
-    backgroundColor: '#F0F0F0',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  matchRank: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  matchDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  matchPoints: {
+  matchDate: {
     fontSize: 16,
     fontWeight: '500',
     color: '#333333',
   },
-  matchChips: {
-    fontSize: 14,
-    color: '#666666',
-  },
   matchVenue: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333333',
+    flex: 1,
+  },
+  rankBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    minWidth: 50,
+    alignItems: 'center',
+  },
+  rankBadgeText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  matchPoints: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    minWidth: 80,
+    textAlign: 'right',
+  },
+  matchChips: {
     fontSize: 12,
     color: '#666666',
-    marginTop: 4,
+    marginTop: 6,
   },
   matchMemo: {
     fontSize: 12,

@@ -146,7 +146,7 @@ PK (Partition Key): USER#{userId} | GLOBAL
 SK (Sort Key): MATCH#{matchId} | RULESET#{rulesetId} | VENUE#{venueId} | PROFILE
 
 主要エンティティ:
-- MATCH: 対局データ（日時、モード、順位、スコア等）
+- MATCH: 対局データ（日時、モード、順位、ポイント等）
 - RULESET: ルールセット（ウマ、オカ設定）
 - VENUE: 会場データ
 - PROFILE: ユーザープロフィール
@@ -387,7 +387,7 @@ make web-deploy         # Web版デプロイ
 
 ### Phase 2: 機能拡張
 
-- 画像からスコア表を取り込み（Textract）
+- 画像からポイント表を取り込み（Textract）
 - セット麻雀の共有機能（ルーム/メンバー管理）
 - 外部認証（Google/Apple）
 - Web版（PWA）の本格対応

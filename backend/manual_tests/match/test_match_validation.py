@@ -118,14 +118,14 @@ def test_validation():
     except requests.exceptions.RequestException as e:
         print(f"   ❌ リクエスト失敗: {e}")
     
-    # 5. 仮スコア方式テスト
-    print("\n5. 仮スコア方式テスト")
+    # 5. 仮ポイント方式テスト
+    print("\n5. 仮ポイント方式テスト")
     provisional_match = {
         "date": datetime.now().isoformat(),
         "gameMode": "four",
         "entryMethod": "provisional_rank_only",
         "rank": 3,
-        "memo": "仮スコアテスト"
+        "memo": "仮ポイントテスト"
     }
     
     try:
@@ -140,7 +140,7 @@ def test_validation():
             match_data = response.json()
             print(f"   対局ID: {match_data.get('matchId')}")
             print(f"   入力方式: {match_data.get('entryMethod')}")
-            print("   ✅ 仮スコア方式対局登録成功")
+            print("   ✅ 仮ポイント方式対局登録成功")
         else:
             print(f"   ❌ エラー: {response.text}")
     except requests.exceptions.RequestException as e:

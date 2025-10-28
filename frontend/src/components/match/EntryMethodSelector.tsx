@@ -17,8 +17,8 @@ const EntryMethodSelector: React.FC<EntryMethodSelectorProps> = ({
   const entryMethods = [
     {
       value: 'rank_plus_points' as EntryMethod,
-      title: '順位+最終スコア',
-      description: '順位と最終ポイントを直接入力します。計算済みのスコアがある場合に便利です。',
+      title: '順位+最終ポイント',
+      description: '順位と最終ポイントを直接入力します。計算済みのポイントがある場合に便利です。',
     },
     {
       value: 'rank_plus_raw' as EntryMethod,
@@ -28,7 +28,7 @@ const EntryMethodSelector: React.FC<EntryMethodSelectorProps> = ({
     {
       value: 'provisional_rank_only' as EntryMethod,
       title: '順位のみ',
-      description: `順位のみで仮のスコアを計算します。${
+      description: `順位のみで仮のポイントを計算します。${
         gameMode === 'three'
           ? '1位(+15000), 2位(±0), 3位(-15000)'
           : '1位(+15000), 2位(+5000), 3位(-5000), 4位(-15000)'

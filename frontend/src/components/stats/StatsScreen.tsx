@@ -317,8 +317,7 @@ export default function StatsScreen() {
               <View style={styles.statsGrid}>
                 <StatsCard
                   title="チップ合計"
-                  value={stats.chipTotal}
-                  color="#9B59B6"
+                  value={`${stats.chipTotal}枚`}
                 />
               </View>
             </View>

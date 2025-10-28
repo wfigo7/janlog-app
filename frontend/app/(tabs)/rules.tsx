@@ -278,8 +278,8 @@ const styles = StyleSheet.create({
     },
     section: {
         marginBottom: 24,
-        paddingHorizontal: 16,
-        paddingTop: 16,
+        paddingHorizontal: 12,
+        paddingTop: 12,
     },
     sectionHeader: {
         flexDirection: 'row',

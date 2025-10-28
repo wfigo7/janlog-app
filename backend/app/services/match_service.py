@@ -25,7 +25,7 @@ class MatchService:
         # 会場の自動マスタ化処理
         match_request = await self._process_venue(match_request, user_id)
         
-        # 仮スコア方式の場合は自動計算
+        # 仮ポイント方式の場合は自動計算
         if match_request.entryMethod == "provisional_rank_only":
             match_request = await self._calculate_provisional_score(match_request, user_id)
         
@@ -80,13 +80,13 @@ class MatchService:
         return match_request
 
     async def _calculate_provisional_score(self, match_request: MatchRequest, user_id: str) -> MatchRequest:
-        """仮スコア方式の場合の自動計算"""
+        """仮ポイント方式の場合の自動計算"""
         from app.services.ruleset_service import get_ruleset_service
         from app.utils.point_calculator import PointCalculator
         
         # ルールセットを取得
         if not match_request.rulesetId:
-            raise ValueError("仮スコア方式ではルールセットの選択が必要です")
+            raise ValueError("仮ポイント方式ではルールセットの選択が必要です")
         
         ruleset_service = get_ruleset_service()
         ruleset = await ruleset_service.get_ruleset(match_request.rulesetId, user_id)
@@ -94,7 +94,7 @@ class MatchService:
         if not ruleset:
             raise ValueError("指定されたルールセットが見つかりません")
         
-        # 仮スコア計算
+        # 仮ポイント計算
         result = PointCalculator.calculate_provisional_points(ruleset, match_request.rank)
         
         # リクエストを更新

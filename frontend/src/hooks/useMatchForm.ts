@@ -249,7 +249,7 @@ export const useMatchForm = ({ initialData, onSubmit, isEditMode = false }: UseM
       });
       setShowProvisionalCalculation(true);
     } catch (error) {
-      console.error('仮スコア計算エラー:', error);
+      console.error('仮ポイント計算エラー:', error);
       setProvisionalPoints(null);
       setProvisionalDetails(null);
       setShowProvisionalCalculation(false);

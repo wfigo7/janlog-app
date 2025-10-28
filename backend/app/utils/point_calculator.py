@@ -70,7 +70,7 @@ class PointCalculator:
         rank: int
     ) -> Dict[str, Any]:
         """
-        仮スコア（順位のみ）からポイントを計算する
+        仮ポイント（順位のみ）からポイントを計算する
         開始点からの増減で仮の素点を設定
         
         Args:
@@ -106,7 +106,7 @@ class PointCalculator:
             ruleset, rank, provisional_raw_score
         )
         
-        # 仮スコアであることを明記
+        # 仮ポイントであることを明記
         result["calculation"]["isProvisional"] = True
         result["calculation"]["provisionalRawScore"] = provisional_raw_score
         

@@ -119,7 +119,7 @@ describe('MatchRegistrationScreen', () => {
     expect(getByText('対局日')).toBeTruthy();
     expect(getByTestId('mock-match-date-picker')).toBeTruthy();
     expect(getByText('入力方式')).toBeTruthy(); // セクションタイトルのみ
-    expect(getByText('順位+最終スコア')).toBeTruthy();
+    expect(getByText('順位+最終ポイント')).toBeTruthy();
     expect(getByText('順位+素点')).toBeTruthy();
     expect(getByText('順位のみ')).toBeTruthy();
     expect(getByText('順位')).toBeTruthy();
@@ -132,7 +132,7 @@ describe('MatchRegistrationScreen', () => {
     // 4人麻雀がデフォルト選択
     expect(getByPlaceholderText('1〜4位')).toBeTruthy();
 
-    // 順位+最終スコアがデフォルト選択
+    // 順位+最終ポイントがデフォルト選択
     expect(getByText('最終ポイント')).toBeTruthy();
   });
 
@@ -144,13 +144,13 @@ describe('MatchRegistrationScreen', () => {
     fireEvent.press(provisionalButton);
 
     // 順位のみ入力の説明が表示される
-    expect(getByText(/順位のみで仮のスコアを計算します。開始点からの増減:/)).toBeTruthy();
+    expect(getByText(/順位のみで仮のポイントを計算します。開始点からの増減:/)).toBeTruthy();
     // 複数の場所に同じテキストがあるため、getAllByTextを使用
     const descriptions = screen.getAllByText(/1位\(\+15000\), 2位\(\+5000\), 3位\(-5000\), 4位\(-15000\)/);
     expect(descriptions.length).toBeGreaterThan(0);
   });
 
-  it('順位のみ方式で仮スコア計算が実行される', async () => {
+  it('順位のみ方式で仮ポイント計算が実行される', async () => {
     const { rulesetService } = require('../../../src/services/rulesetService');
     rulesetService.calculatePoints.mockResolvedValue(mockCalculationResponse);
 
@@ -320,7 +320,7 @@ describe('MatchRegistrationScreen', () => {
     });
 
     // 別の入力方式に変更
-    fireEvent.press(getByText('順位+最終スコア'));
+    fireEvent.press(getByText('順位+最終ポイント'));
 
     // 計算結果がクリアされる
     expect(queryByText('計算結果（順位のみ）')).toBeNull();

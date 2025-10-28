@@ -20,7 +20,7 @@ describe('EntryMethodSelector', () => {
             />
         );
 
-        expect(getByText('順位+最終スコア')).toBeTruthy();
+        expect(getByText('順位+最終ポイント')).toBeTruthy();
         expect(getByText('順位+素点')).toBeTruthy();
         expect(getByText('順位のみ')).toBeTruthy();
     });
@@ -85,7 +85,7 @@ describe('EntryMethodSelector', () => {
             />
         );
 
-        expect(getByText('順位と最終ポイントを直接入力します。計算済みのスコアがある場合に便利です。')).toBeTruthy();
+        expect(getByText('順位と最終ポイントを直接入力します。計算済みのポイントがある場合に便利です。')).toBeTruthy();
         expect(getByText('順位と素点を入力し、選択されたルールに基づいて自動でポイント計算を行います。')).toBeTruthy();
     });
 
@@ -99,7 +99,7 @@ describe('EntryMethodSelector', () => {
         );
 
         // 選択された方式のタイトルが表示されることを確認
-        expect(getByText('順位+最終スコア')).toBeTruthy();
-        expect(getByText('順位と最終ポイントを直接入力します。計算済みのスコアがある場合に便利です。')).toBeTruthy();
+        expect(getByText('順位+最終ポイント')).toBeTruthy();
+        expect(getByText('順位と最終ポイントを直接入力します。計算済みのポイントがある場合に便利です。')).toBeTruthy();
     });
 });

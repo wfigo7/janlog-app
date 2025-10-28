@@ -113,7 +113,7 @@ SK: MATCH#{matchId} | RULESET#{rulesetId} | PROFILE
 ```
 
 ### 主要エンティティ
-- **MATCH**: 対局データ（日時、モード、順位、スコア等）
+- **MATCH**: 対局データ（日時、モード、順位、ポイント等）
 - **RULESET**: ルールセット（ウマ、オカ設定）
 - **PROFILE**: ユーザープロフィール
 

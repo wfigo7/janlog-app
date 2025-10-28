@@ -1,5 +1,5 @@
 /**
- * 仮スコア計算ユーティリティのテスト
+ * 仮ポイント計算ユーティリティのテスト
  */
 
 describe('ProvisionalScore Utilities', () => {
@@ -91,7 +91,7 @@ describe('ProvisionalScore Utilities', () => {
     });
   });
 
-  describe('仮スコア計算の一貫性', () => {
+  describe('仮ポイント計算の一貫性', () => {
     it('バックエンドとフロントエンドで同じ計算ロジックを使用する', () => {
       const startingPoints = 25000;
       
@@ -121,7 +121,7 @@ describe('ProvisionalScore Utilities', () => {
   });
 
   describe('UI表示テキスト', () => {
-    it('4人麻雀の仮スコア説明文が正しい増減値を表示する', () => {
+    it('4人麻雀の仮ポイント説明文が正しい増減値を表示する', () => {
       const expectedText = '4人麻雀: 1位(+15000), 2位(+5000), 3位(-5000), 4位(-15000)';
       
       // 実際の表示テキストに含まれる増減値を検証
@@ -131,7 +131,7 @@ describe('ProvisionalScore Utilities', () => {
       expect(expectedText).toContain('4位(-15000)');
     });
 
-    it('3人麻雀の仮スコア説明文が正しい増減値を表示する', () => {
+    it('3人麻雀の仮ポイント説明文が正しい増減値を表示する', () => {
       const expectedText = '3人麻雀: 1位(+15000), 2位(±0), 3位(-15000)';
       
       // 実際の表示テキストに含まれる増減値を検証

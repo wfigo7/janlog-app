@@ -1,5 +1,5 @@
 """
-仮スコア計算のテスト
+仮ポイント計算のテスト
 """
 
 import pytest
@@ -8,7 +8,7 @@ from app.models.ruleset import Ruleset
 
 
 class TestProvisionalScoreCalculation:
-    """仮スコア計算のテストクラス"""
+    """仮ポイント計算のテストクラス"""
 
     def setup_method(self):
         """テスト用のルールセットを準備"""
@@ -39,7 +39,7 @@ class TestProvisionalScoreCalculation:
         )
 
     def test_provisional_score_calculation_four_player_first_place(self):
-        """4人麻雀1位の仮スコア計算"""
+        """4人麻雀1位の仮ポイント計算"""
         result = PointCalculator.calculate_provisional_points(
             self.mleague_ruleset, 1
         )
@@ -57,7 +57,7 @@ class TestProvisionalScoreCalculation:
         assert result["calculation"]["okaPoints"] == 20
 
     def test_provisional_score_calculation_four_player_second_place(self):
-        """4人麻雀2位の仮スコア計算"""
+        """4人麻雀2位の仮ポイント計算"""
         result = PointCalculator.calculate_provisional_points(
             self.mleague_ruleset, 2
         )
@@ -75,7 +75,7 @@ class TestProvisionalScoreCalculation:
         assert result["calculation"]["okaPoints"] == 0
 
     def test_provisional_score_calculation_four_player_third_place(self):
-        """4人麻雀3位の仮スコア計算"""
+        """4人麻雀3位の仮ポイント計算"""
         result = PointCalculator.calculate_provisional_points(
             self.mleague_ruleset, 3
         )
@@ -93,7 +93,7 @@ class TestProvisionalScoreCalculation:
         assert result["calculation"]["okaPoints"] == 0
 
     def test_provisional_score_calculation_four_player_fourth_place(self):
-        """4人麻雀4位の仮スコア計算"""
+        """4人麻雀4位の仮ポイント計算"""
         result = PointCalculator.calculate_provisional_points(
             self.mleague_ruleset, 4
         )
@@ -111,7 +111,7 @@ class TestProvisionalScoreCalculation:
         assert result["calculation"]["okaPoints"] == 0
 
     def test_provisional_score_calculation_three_player_first_place(self):
-        """3人麻雀1位の仮スコア計算"""
+        """3人麻雀1位の仮ポイント計算"""
         result = PointCalculator.calculate_provisional_points(
             self.three_player_ruleset, 1
         )
@@ -129,7 +129,7 @@ class TestProvisionalScoreCalculation:
         assert result["calculation"]["okaPoints"] == 15
 
     def test_provisional_score_calculation_three_player_second_place(self):
-        """3人麻雀2位の仮スコア計算"""
+        """3人麻雀2位の仮ポイント計算"""
         result = PointCalculator.calculate_provisional_points(
             self.three_player_ruleset, 2
         )
@@ -147,7 +147,7 @@ class TestProvisionalScoreCalculation:
         assert result["calculation"]["okaPoints"] == 0
 
     def test_provisional_score_calculation_three_player_third_place(self):
-        """3人麻雀3位の仮スコア計算"""
+        """3人麻雀3位の仮ポイント計算"""
         result = PointCalculator.calculate_provisional_points(
             self.three_player_ruleset, 3
         )
@@ -165,7 +165,7 @@ class TestProvisionalScoreCalculation:
         assert result["calculation"]["okaPoints"] == 0
 
     def test_provisional_score_calculation_based_on_starting_points(self):
-        """仮スコアが開始点ベースで正しく計算されることを確認"""
+        """仮ポイントが開始点ベースで正しく計算されることを確認"""
         # 4人麻雀（25000点スタート）
         # 1位: 25000 + 15000 = 40000点
         result_1st = PointCalculator.calculate_provisional_points(
@@ -211,7 +211,7 @@ class TestProvisionalScoreCalculation:
         assert result_3p_3rd["calculation"]["provisionalRawScore"] == 20000
 
     def test_provisional_score_calculation_formula(self):
-        """仮スコア計算の数式が正しく生成されることを確認"""
+        """仮ポイント計算の数式が正しく生成されることを確認"""
         result = PointCalculator.calculate_provisional_points(
             self.mleague_ruleset, 1
         )
@@ -220,7 +220,7 @@ class TestProvisionalScoreCalculation:
         assert result["calculation"]["formula"] == expected_formula
 
     def test_provisional_score_with_different_starting_points(self):
-        """異なる開始点での仮スコア計算を確認"""
+        """異なる開始点での仮ポイント計算を確認"""
         # 30000点スタートのルールセット
         custom_ruleset = Ruleset(
             rulesetId="test-custom",

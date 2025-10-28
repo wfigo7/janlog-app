@@ -13,6 +13,7 @@ import { Match } from '../../types/match';
 import { GameMode } from '../../types/common';
 import { MatchService } from '../../services/matchService';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
+import { getRankColor } from '../../constants/rankColors';
 
 const MatchDetailScreen: React.FC = () => {
   const { matchId } = useLocalSearchParams();
@@ -137,7 +138,7 @@ const MatchDetailScreen: React.FC = () => {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+    return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
   };
 
   const getRankText = (rank: number, gameMode: GameMode) => {
@@ -150,24 +151,19 @@ const MatchDetailScreen: React.FC = () => {
     }
   };
 
-  const getRankColor = (rank: number, gameMode: GameMode) => {
-    if (rank === 1) return '#4CAF50'; // 1位は緑
-
-    if (gameMode === 'three') {
-      return rank === 3 ? '#F44336' : '#666666'; // 3人麻雀では3位がラス
-    } else {
-      return rank === 4 ? '#F44336' : '#666666'; // 4人麻雀では4位がラス
-    }
+  const getPointsColor = (points: number | undefined) => {
+    if (points === undefined) return '#333333';
+    return points >= 0 ? '#4CAF50' : '#FF6B6B';
   };
 
   const getEntryMethodText = (entryMethod: string) => {
     switch (entryMethod) {
       case 'rank_plus_points':
-        return '順位+最終スコア';
+        return '順位+最終ポイント';
       case 'rank_plus_raw':
         return '順位+素点';
       case 'provisional_rank_only':
-        return '順位のみ（仮スコア）';
+        return '順位のみ（仮ポイント）';
       default:
         return entryMethod;
     }
@@ -225,9 +221,9 @@ const MatchDetailScreen: React.FC = () => {
         <View style={styles.resultCard}>
           <View style={styles.rankContainer}>
             <Text style={styles.rankLabel}>順位</Text>
-            <Text style={[styles.rankValue, { color: getRankColor(match.rank, match.gameMode) }]}>
-              {getRankText(match.rank, match.gameMode)}
-            </Text>
+            <View style={[styles.rankBadge, { backgroundColor: getRankColor(match.rank, match.gameMode) }]}>
+              <Text style={styles.rankBadgeText}>{getRankText(match.rank, match.gameMode)}</Text>
+            </View>
           </View>
 
           {match.finalPoints !== undefined && match.finalPoints !== null && (
@@ -235,9 +231,9 @@ const MatchDetailScreen: React.FC = () => {
               <Text style={styles.pointsLabel}>最終ポイント</Text>
               <Text style={[
                 styles.pointsValue,
-                { color: match.finalPoints >= 0 ? '#4CAF50' : '#F44336' }
+                { color: getPointsColor(match.finalPoints) }
               ]}>
-                {match.finalPoints >= 0 ? '+' : ''}{match.finalPoints}pt
+                {match.finalPoints >= 0 ? '+' : ''}{match.finalPoints.toFixed(1)}pt
               </Text>
             </View>
           )}
@@ -314,11 +310,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   section: {
-    marginHorizontal: 20,
+    marginHorizontal: 12,
     marginVertical: 16,
   },
   firstSection: {
-    marginTop: 20,
+    marginTop: 12,
   },
   sectionTitle: {
     fontSize: 18,
@@ -381,9 +377,17 @@ const styles = StyleSheet.create({
     color: '#666666',
     marginBottom: 8,
   },
-  rankValue: {
-    fontSize: 32,
+  rankBadge: {
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+    borderRadius: 20,
+    minWidth: 80,
+    alignItems: 'center',
+  },
+  rankBadgeText: {
+    fontSize: 24,
     fontWeight: 'bold',
+    color: '#FFFFFF',
   },
   pointsContainer: {
     alignItems: 'center',
@@ -410,7 +414,7 @@ const styles = StyleSheet.create({
   actionSection: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    padding: 20,
+    padding: 12,
     paddingBottom: 40,
   },
   editButton: {
