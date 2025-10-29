@@ -16,13 +16,16 @@ import { authService } from '../../services/authService';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
 import { VersionInfo } from '../../../components/VersionInfo';
 import Constants from 'expo-constants';
+import { useRouter } from 'expo-router';
 
 export function ProfileScreen() {
+    const router = useRouter();
     const { user, logout, isLoading, checkAuthState } = useAuth();
     const { showAlert, AlertComponent } = useCustomAlert();
 
     // 環境変数を取得
     const environment = Constants.expoConfig?.extra?.environment || 'local';
+    const authMode = process.env.EXPO_PUBLIC_AUTH_MODE || 'mock';
     const isAdmin = user?.role === 'admin';
     const showDebugInfo = isAdmin || environment === 'local';
 
@@ -109,6 +112,24 @@ export function ProfileScreen() {
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>アカウント</Text>
 
+                        {/* パスワード変更ボタン（Cognito認証の場合のみ） */}
+                        {authMode !== 'mock' && (
+                            <TouchableOpacity
+                                style={styles.changePasswordButton}
+                                onPress={() =>
+                                    router.push({
+                                        pathname: '/change-password',
+                                        params: {
+                                            isInitialSetup: 'false',
+                                        },
+                                    })
+                                }
+                                disabled={isLoading}
+                            >
+                                <Text style={styles.changePasswordButtonText}>パスワード変更</Text>
+                            </TouchableOpacity>
+                        )}
+
                         <TouchableOpacity
                             style={styles.logoutButton}
                             onPress={handleLogout}
@@ -178,6 +199,18 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         flex: 2,
         textAlign: 'right',
+    },
+    changePasswordButton: {
+        backgroundColor: '#2196f3',
+        borderRadius: 8,
+        padding: 16,
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    changePasswordButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600',
     },
     logoutButton: {
         backgroundColor: '#666666',

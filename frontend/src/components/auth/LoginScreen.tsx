@@ -2,7 +2,8 @@
  * ログイン画面
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'expo-router';
 import {
   View,
   Text,
@@ -22,13 +23,28 @@ const AUTH_MODE = process.env.EXPO_PUBLIC_AUTH_MODE || 'mock';
 
 export function LoginScreen() {
   // React Hooksは常にトップレベルで呼び出す必要がある
-  const { login, isLoading, error, clearError } = useAuth();
+  const router = useRouter();
+  const { login, isLoading, error, clearError, authChallenge } = useAuth();
   const { showAlert, AlertComponent } = useCustomAlert();
   const [credentials, setCredentials] = useState<LoginCredentials>({
     email: '',
     password: '',
   });
   const [showPassword, setShowPassword] = useState(false);
+
+  // authChallengeの変化を監視
+  useEffect(() => {
+    if (authChallenge?.type === 'NEW_PASSWORD_REQUIRED') {
+      router.replace({
+        pathname: '/change-password' as const,
+        params: {
+          isInitialSetup: 'true',
+          session: authChallenge.session,
+          username: authChallenge.username,
+        },
+      });
+    }
+  }, [authChallenge, router]);
 
   // mockモードの場合はMockLoginScreenを表示
   if (AUTH_MODE === 'mock') {
@@ -39,9 +55,6 @@ export function LoginScreen() {
    * ログイン処理
    */
   const handleLogin = async () => {
-    console.log('Login button pressed');
-    console.log('Credentials:', { email: credentials.email, password: '***' });
-    
     // バリデーション
     if (!credentials.email.trim()) {
       showAlert({
@@ -60,13 +73,13 @@ export function LoginScreen() {
     }
 
     try {
-      console.log('Starting login process...');
       clearError();
       await login(credentials);
-      console.log('Login completed successfully');
+
+      // Challengeが発生した場合はuseEffectで処理
+      // 通常ログイン成功時は自動的にStatsScreenへ遷移（AuthGuardで処理）
     } catch (error) {
-      console.error('Login failed:', error);
-      // エラーはコンテキストで処理されるため、ここでは何もしない
+      // エラーはコンテキストで処理
     }
   };
 

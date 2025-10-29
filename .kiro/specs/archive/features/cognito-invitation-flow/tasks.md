@@ -1,0 +1,169 @@
+# Implementation Plan
+
+- [x] 1. 型定義とインターフェースの拡張
+  - AuthChallenge型を追加
+  - InitialPasswordSetupCredentials型を追加
+  - PASSWORD_POLICY定数を追加
+  - PASSWORD_POLICY_MESSAGES定数を追加
+  - AuthError型にdetailsフィールドを追加
+  - _Requirements: 2.1, 2.2, 3.1, 3.2_
+
+- [x] 2. AuthServiceの拡張実装
+
+  - [x] 2.1 NEW_PASSWORD_REQUIRED Challenge対応メソッドの実装
+    - respondToNewPasswordChallenge()メソッドを実装
+    - RespondToAuthChallengeCommandを使用
+    - トークン保存とユーザー情報取得
+    - _Requirements: 2.1, 2.2, 2.7_
+  - [x] 2.2 Challenge検出とハンドリングの実装
+    - handleAuthChallenge()メソッドを実装
+    - InitiateAuthCommandOutputからChallenge情報を抽出
+    - _Requirements: 2.1, 2.2_
+
+  - [x] 2.3 login()メソッドの修正
+    - Challenge検出時にAuthChallengeを返すように変更
+    - 通常ログイン成功時はUserを返す
+    - _Requirements: 2.1, 2.2_
+  - [x] 2.4 エラーハンドリングの強化
+    - extractPasswordPolicyErrors()メソッドを実装
+    - InvalidPasswordExceptionの詳細エラー抽出
+    - _Requirements: 3.1, 3.2, 3.3_
+
+- [x] 3. AuthContextの拡張実装
+  - [x] 3.1 State拡張
+    - authChallengeフィールドを追加
+    - AUTH_CHALLENGEアクションを追加
+    - AUTH_CHALLENGE_COMPLETEアクションを追加
+    - _Requirements: 2.1, 2.2_
+  - [x] 3.2 Reducer拡張
+    - AUTH_CHALLENGEアクションのハンドリング
+    - AUTH_CHALLENGE_COMPLETEアクションのハンドリング
+    - _Requirements: 2.1, 2.2_
+  - [x] 3.3 新規メソッドの実装
+    - respondToChallenge()メソッドを実装
+    - clearChallenge()メソッドを実装
+    - _Requirements: 2.1, 2.2, 2.7_
+  - [x] 3.4 login()メソッドの修正
+    - AuthChallengeを受け取った場合の処理
+    - AUTH_CHALLENGEアクションをディスパッチ
+    - _Requirements: 2.1, 2.2_
+
+- [x] 4. ChangePasswordScreenの実装
+
+
+  - [x] 4.1 コンポーネントの基本構造
+    - ChangePasswordScreenコンポーネントを作成
+    - Props型定義（ナビゲーションパラメータ）
+    - State型定義（入力値、UI状態、バリデーション）
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 6.1, 6.2, 6.3, 6.4, 6.5_
+  - [x] 4.2 UIレイアウトの実装
+    - 初回モード/通常モードの条件分岐
+    - 現在のパスワード入力フィールド（通常モードのみ）
+    - 新しいパスワード入力フィールド
+    - 確認パスワード入力フィールド
+    - パスワード表示/非表示トグルボタン
+    - パスワードポリシー表示
+    - 変更実行ボタン
+    - _Requirements: 2.3, 2.4, 2.5, 6.3, 6.4, 6.5, 7.5, 7.6_
+  - [x] 4.3 バリデーションロジックの実装
+    - validatePasswords()メソッド
+    - checkPasswordPolicy()メソッド
+    - リアルタイムバリデーション
+    - _Requirements: 2.6, 3.2, 7.2, 7.3, 7.4_
+  - [x] 4.4 パスワード変更処理の実装
+    - handleChangePassword()メソッド
+    - 初回モード: respondToChallenge()を呼び出し
+    - 通常モード: changePassword()を呼び出し
+    - 成功時のナビゲーション処理
+    - _Requirements: 2.1, 2.2, 2.7, 6.6, 6.7, 6.8_
+  - [x] 4.5 エラーハンドリングの実装
+    - handleError()メソッド
+    - エラーメッセージの表示
+    - エラー発生時の状態管理
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 7.1, 7.2, 7.3, 7.4_
+  - [x] 4.6 スタイリング
+    - StyleSheetの定義
+    - レスポンシブデザイン
+    - アクセシビリティ対応
+    - _Requirements: 2.3, 2.4, 2.5_
+
+- [x] 5. LoginScreenの修正
+  - [x] 5.1 Challenge検出処理の追加
+    - login()後にauthChallengeをチェック
+    - NEW_PASSWORD_REQUIREDの場合はChangePasswordScreenに遷移
+    - session、usernameをパラメータとして渡す
+    - _Requirements: 2.1, 2.2_
+  - [x] 5.2 エラーハンドリングの更新
+    - NEW_PASSWORD_REQUIRED関連のエラーメッセージ
+    - _Requirements: 2.1, 3.3_
+
+- [x] 6. ProfileScreenの修正
+  - [x] 6.1 パスワード変更ボタンの追加
+    - アカウントセクションにボタンを追加
+    - ChangePasswordScreenへのナビゲーション
+    - isInitialSetup: falseを渡す
+    - _Requirements: 6.1, 6.2_
+  - [x] 6.2 スタイリングの更新
+    - ボタンのスタイル定義
+    - _Requirements: 6.1_
+
+- [x] 7. ナビゲーション設定の更新
+  - ChangePasswordScreenをナビゲーションスタックに追加
+  - パラメータ型定義の追加
+  - _Requirements: 2.1, 6.1_
+
+- [x] 8. Cognito Stackの修正（CDK）
+  - [x] 8.1 カスタムメールテンプレートの実装
+    - getInvitationEmailBody()メソッドを実装
+    - development環境用テンプレート
+    - production環境用テンプレート（将来対応）
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 5.1, 5.2, 5.3, 5.4, 5.5_
+
+  - [x] 8.2 User Pool設定の更新
+    - userInvitationプロパティを更新
+    - カスタムテンプレートを適用
+    - _Requirements: 1.1, 5.5_
+  - [x] 8.3 CDKデプロイ
+    - development環境にデプロイ
+    - メールテンプレートの動作確認
+    - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
+
+- [-] 9. 環境別動作の確認とドキュメント更新
+  - [x] 9.1 local環境の動作確認
+    - モック認証でのパスワード変更画面表示確認
+    - UI/UXの確認
+    - _Requirements: 4.1, 4.2, 4.3_
+  - [x] 9.2 development環境の動作確認
+    - 実際のCognito認証での動作確認
+    - 招待メールの受信確認
+    - 初回ログインフローの確認
+    - 通常パスワード変更フローの確認
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 2.1, 2.2, 2.7, 6.6, 6.7, 6.8_
+  - [x] 9.3 エラーケースの確認
+    - パスワードポリシー違反
+    - パスワード不一致
+    - 間違った現在のパスワード
+    - セッション期限切れ
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 7.1, 7.2, 7.3, 7.4_
+  - [x] 9.4 ドキュメント更新
+    - README.mdに招待フローの説明を追加
+    - 環境別の動作差異をドキュメント化
+    - _Requirements: 4.4_
+
+- [ ]* 10. テストの実装
+  - [ ]* 10.1 AuthServiceの単体テスト
+    - respondToNewPasswordChallenge()のテスト
+    - handleAuthChallenge()のテスト
+    - エラーハンドリングのテスト
+    - _Requirements: 2.1, 2.2, 3.1, 3.2, 3.3_
+  - [ ]* 10.2 ChangePasswordScreenの単体テスト
+    - 初回モードのレンダリングテスト
+    - 通常モードのレンダリングテスト
+    - バリデーションロジックのテスト
+    - パスワード変更処理のテスト
+    - エラーハンドリングのテスト
+    - _Requirements: 2.1, 2.2, 2.6, 3.1, 3.2, 3.3, 6.6, 7.1, 7.2, 7.3, 7.4_
+  - [ ]* 10.3 統合テストの実装
+    - 初回ログインフローの統合テスト
+    - 通常パスワード変更フローの統合テスト
+    - _Requirements: 2.1, 2.2, 2.7, 6.6, 6.7, 6.8_

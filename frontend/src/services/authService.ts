@@ -24,6 +24,9 @@ import {
   ChangePasswordCredentials,
   CognitoTokens,
   AuthError,
+  AuthChallenge,
+  InitialPasswordSetupCredentials,
+  PASSWORD_POLICY_MESSAGES,
 } from '../types/auth';
 import { MOCK_USERS, MockUser } from '../config/mockUsers';
 
@@ -101,6 +104,16 @@ class AuthService {
       const response = await this.cognitoClient.send(command);
       console.log('Cognito response received:', response);
 
+      // Challengeをチェック
+      const challenge = this.handleAuthChallenge(response);
+      if (challenge) {
+        console.log('Challenge detected:', challenge.type);
+        // ChallengeをエラーとしてスローしてAuthContextで処理
+        const challengeError: any = new Error('CHALLENGE_REQUIRED');
+        challengeError.challenge = challenge;
+        throw challengeError;
+      }
+
       if (response.AuthenticationResult) {
         console.log('Authentication successful, storing tokens...');
         const tokens: CognitoTokens = {
@@ -115,16 +128,14 @@ class AuthService {
         return user;
       }
 
-      // 新しいパスワード設定が必要な場合
-      if (response.ChallengeName === ChallengeNameType.NEW_PASSWORD_REQUIRED) {
-        console.log('New password required challenge');
-        throw new Error('新しいパスワードの設定が必要です。管理者にお問い合わせください。');
-      }
-
       console.log('Authentication failed - no result');
       throw new Error('認証に失敗しました');
     } catch (error) {
       console.error('Simple login error:', error);
+      // Challengeエラーはそのままスロー
+      if ((error as any).message === 'CHALLENGE_REQUIRED') {
+        throw error;
+      }
       throw this.handleAuthError(error);
     }
   }
@@ -289,9 +300,74 @@ class AuthService {
 
       await this.cognitoClient.send(command);
     } catch (error) {
-      console.error('Change password error:', error);
       throw this.handleAuthError(error);
     }
+  }
+
+  /**
+   * NEW_PASSWORD_REQUIRED Challengeに応答
+   */
+  async respondToNewPasswordChallenge(params: {
+    username: string;
+    newPassword: string;
+    session: string;
+  }): Promise<User> {
+    console.log('Responding to NEW_PASSWORD_REQUIRED challenge');
+
+    try {
+      if (!COGNITO_CLIENT_ID) {
+        throw new Error('Cognito Client ID が設定されていません');
+      }
+
+      const command = new RespondToAuthChallengeCommand({
+        ChallengeName: ChallengeNameType.NEW_PASSWORD_REQUIRED,
+        ClientId: COGNITO_CLIENT_ID,
+        ChallengeResponses: {
+          USERNAME: params.username,
+          NEW_PASSWORD: params.newPassword,
+        },
+        Session: params.session,
+      });
+
+      console.log('Sending RespondToAuthChallengeCommand...');
+      const response = await this.cognitoClient.send(command);
+      console.log('Challenge response received:', response);
+
+      if (response.AuthenticationResult) {
+        console.log('Challenge completed successfully, storing tokens...');
+        const tokens: CognitoTokens = {
+          accessToken: response.AuthenticationResult.AccessToken!,
+          idToken: response.AuthenticationResult.IdToken!,
+          refreshToken: response.AuthenticationResult.RefreshToken!,
+        };
+
+        await this.storeTokens(tokens);
+        const user = await this.getUserFromTokens(tokens);
+        console.log('User retrieved after challenge:', user);
+        return user;
+      }
+
+      throw new Error('Challenge応答に失敗しました');
+    } catch (error) {
+      console.error('Respond to challenge error:', error);
+      throw this.handleAuthError(error);
+    }
+  }
+
+  /**
+   * 認証Challengeをハンドリング
+   */
+  handleAuthChallenge(response: any): AuthChallenge | null {
+    if (response.ChallengeName === ChallengeNameType.NEW_PASSWORD_REQUIRED) {
+      console.log('NEW_PASSWORD_REQUIRED challenge detected');
+      return {
+        type: 'NEW_PASSWORD_REQUIRED',
+        session: response.Session || '',
+        username: response.ChallengeParameters?.USER_ID_FOR_SRP || '',
+      };
+    }
+
+    return null;
   }
 
   /**
@@ -400,6 +476,32 @@ class AuthService {
   }
 
   /**
+   * パスワードポリシー違反の詳細を抽出
+   */
+  private extractPasswordPolicyErrors(error: any): string[] {
+    const errors: string[] = [];
+    const message = error.message || '';
+
+    if (message.includes('length')) {
+      errors.push(PASSWORD_POLICY_MESSAGES.minLength);
+    }
+    if (message.includes('lowercase')) {
+      errors.push(PASSWORD_POLICY_MESSAGES.requireLowercase);
+    }
+    if (message.includes('uppercase')) {
+      errors.push(PASSWORD_POLICY_MESSAGES.requireUppercase);
+    }
+    if (message.includes('numeric') || message.includes('digit')) {
+      errors.push(PASSWORD_POLICY_MESSAGES.requireDigits);
+    }
+    if (message.includes('symbol')) {
+      errors.push(PASSWORD_POLICY_MESSAGES.requireSymbols);
+    }
+
+    return errors;
+  }
+
+  /**
    * 認証エラーをハンドリング
    */
   private handleAuthError(error: any): AuthError {
@@ -414,9 +516,19 @@ class AuthService {
         case 'PasswordResetRequiredException':
           return { code: 'PASSWORD_RESET_REQUIRED', message: 'パスワードのリセットが必要です' };
         case 'InvalidPasswordException':
-          return { code: 'INVALID_PASSWORD', message: 'パスワードが要件を満たしていません' };
+          // パスワードポリシー違反の詳細を抽出
+          const policyErrors = this.extractPasswordPolicyErrors(error);
+          return {
+            code: 'INVALID_PASSWORD',
+            message: 'パスワードが要件を満たしていません',
+            details: policyErrors.length > 0 ? policyErrors : undefined,
+          };
+        case 'LimitExceededException':
+          return { code: 'LIMIT_EXCEEDED', message: 'パスワード変更の回数制限に達しました。しばらく待ってから再試行してください' };
         case 'TooManyRequestsException':
           return { code: 'TOO_MANY_REQUESTS', message: 'リクエストが多すぎます。しばらく待ってから再試行してください' };
+        case 'InvalidParameterException':
+          return { code: 'INVALID_PARAMETER', message: '無効なパラメータです' };
         default:
           return { code: 'UNKNOWN_ERROR', message: error.message || '認証エラーが発生しました' };
       }

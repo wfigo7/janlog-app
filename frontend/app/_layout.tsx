@@ -32,6 +32,8 @@ export default function RootLayout() {
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
           <AuthGuard>
             <Stack>
+              <Stack.Screen name="login" options={{ headerShown: false }} />
+              <Stack.Screen name="change-password" options={{ title: 'パスワード変更', headerBackVisible: false }} />
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="rules/create" options={{ title: 'ルール作成' }} />
               <Stack.Screen name="rules/[rulesetId]" options={{ title: 'ルール編集' }} />

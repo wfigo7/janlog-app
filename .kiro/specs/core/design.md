@@ -14,15 +14,18 @@ Janlogは、個人の麻雀成績を記録・管理するモバイルアプリ�
 
 1. **認証画面**
    - ログイン画面
-   - アカウント作成画面（招待リンク経由）
+   - パスワード変更画面（初回/通常共通）
 
 2. **メイン画面（タブナビゲーション）**
    - 統計画面（トップ画面）
    - 履歴画面
    - 対局登録画面
-
-3. **管理画面（管理者のみ）**
    - ルール管理画面
+
+3. **プロフィール画面**
+   - ユーザー情報表示
+   - パスワード変更オプション
+   - ログアウト
 
 #### コンポーネント設計
 
@@ -31,7 +34,7 @@ src/
 ├── components/
 │   ├── auth/
 │   │   ├── LoginScreen.tsx
-│   │   └── SignUpScreen.tsx
+│   │   └── ChangePasswordScreen.tsx
 │   ├── stats/
 │   │   ├── StatsScreen.tsx
 │   │   └── StatsCard.tsx
@@ -926,6 +929,178 @@ const getHeaderRight = (routeName: string) => {
 - AsyncStorage操作の非同期化: UI操作をブロックしない
 - useEffect依存配列の適切な設定: 不要な再レンダリングを防ぐ
 - Animated APIのネイティブドライバー使用: `useNativeDriver: true`でパフォーマンス最適化
+
+## 認証とパスワード管理
+
+### 招待フロー
+
+#### Cognitoカスタムメールテンプレート
+
+管理者がCognito管理画面でユーザーを作成すると、カスタマイズされた招待メールが自動送信されます。
+
+**実装方法:**
+- テンプレートファイルを外部化（`infra/templates/cognito-invitation-email-{environment}.txt`）
+- CDKで環境別テンプレートを読み込み
+- 改行を`<br>`に変換してHTML対応
+
+**テンプレート内容:**
+- ユーザー名と一時パスワード（Cognitoプレースホルダー: `{username}`, `{####}`）
+- アプリへのアクセス方法（環境別）
+- 初回ログイン手順
+
+### 初回ログインフロー
+
+#### NEW_PASSWORD_REQUIRED Challenge対応
+
+```typescript
+// 1. ログイン試行
+const result = await authService.login(credentials);
+
+// 2. Challenge検出
+if (result.challengeName === 'NEW_PASSWORD_REQUIRED') {
+  // 3. パスワード変更画面へ遷移
+  navigation.navigate('ChangePassword', {
+    isInitialSetup: true,
+    session: result.session,
+    username: credentials.email,
+  });
+}
+```
+
+#### ChangePasswordScreen
+
+初回パスワード変更と通常のパスワード変更の両方に対応する共通画面。
+
+**Props:**
+```typescript
+interface ChangePasswordScreenProps {
+  route: {
+    params?: {
+      isInitialSetup?: boolean;  // 初回モードフラグ
+      session?: string;           // Cognito Challenge session
+      username?: string;          // ユーザー名
+    };
+  };
+}
+```
+
+**機能:**
+- パスワードポリシー表示（8文字以上、大文字・小文字・数字を含む）
+- リアルタイムバリデーション
+- パスワード表示/非表示トグル
+- 初回モード: 新しいパスワードのみ入力
+- 通常モード: 現在のパスワード + 新しいパスワード入力
+
+### AuthService拡張
+
+#### 新規メソッド
+
+```typescript
+/**
+ * NEW_PASSWORD_REQUIRED Challengeに応答
+ */
+async respondToNewPasswordChallenge(params: {
+  username: string;
+  newPassword: string;
+  session: string;
+}): Promise<User>
+
+/**
+ * 認証Challengeを検出・処理
+ */
+handleAuthChallenge(response: InitiateAuthCommandOutput): {
+  challengeName: ChallengeNameType | null;
+  session: string | null;
+  username: string;
+}
+```
+
+#### 既存メソッドの修正
+
+```typescript
+/**
+ * ログイン（Challenge対応）
+ * @returns User（通常ログイン）またはAuthChallenge（Challenge発生時）
+ */
+async login(credentials: LoginCredentials): Promise<User | AuthChallenge>
+```
+
+### AuthContext拡張
+
+#### State拡張
+
+```typescript
+interface AuthState {
+  isAuthenticated: boolean;
+  user: User | null;
+  isLoading: boolean;
+  error: string | null;
+  authChallenge: AuthChallenge | null;  // 新規追加
+}
+```
+
+#### 新規メソッド
+
+```typescript
+interface AuthContextValue {
+  // 既存メソッド
+  login: (credentials: LoginCredentials) => Promise<void>;
+  logout: () => Promise<void>;
+  changePassword: (credentials: ChangePasswordCredentials) => Promise<void>;
+  
+  // 新規追加
+  respondToChallenge: (newPassword: string) => Promise<void>;
+  clearChallenge: () => void;
+}
+```
+
+### 通常のパスワード変更
+
+#### ProfileScreen統合
+
+```typescript
+<TouchableOpacity
+  onPress={() => navigation.navigate('ChangePassword', {
+    isInitialSetup: false,
+  })}
+>
+  <Text>パスワード変更</Text>
+</TouchableOpacity>
+```
+
+#### パスワード変更フロー
+
+1. ユーザーがProfileScreenでパスワード変更を選択
+2. ChangePasswordScreenに遷移（`isInitialSetup: false`）
+3. 現在のパスワード、新しいパスワード、確認パスワードを入力
+4. `ChangePasswordCommand`でCognitoに送信
+5. 成功時、ログイン状態を維持したままProfileScreenに戻る
+
+### エラーハンドリング
+
+#### 初回パスワード変更エラー
+
+- `InvalidPasswordException`: パスワードポリシー違反の詳細を表示
+- `NotAuthorizedException`: セッション期限切れ、再ログインを促す
+- `TooManyRequestsException`: リクエスト過多、待機を促す
+
+#### 通常パスワード変更エラー
+
+- `NotAuthorizedException`: 現在のパスワードが間違っている
+- `InvalidPasswordException`: 新しいパスワードがポリシー違反
+- `LimitExceededException`: 変更回数制限に達した
+
+#### バリデーションエラー
+
+- パスワード不一致: 新しいパスワードと確認パスワードが一致しない
+- パスワードポリシー違反: クライアント側で事前チェック
+- 空フィールド: 必須項目の入力漏れ
+
+### 環境別動作
+
+- **local環境**: 静的JWT認証、パスワード変更フローをスキップ
+- **development環境**: 実際のCognito認証、NEW_PASSWORD_REQUIRED Challenge対応
+- **production環境**: 実際のCognito認証、NEW_PASSWORD_REQUIRED Challenge対応
 
 ## ルール管理機能
 

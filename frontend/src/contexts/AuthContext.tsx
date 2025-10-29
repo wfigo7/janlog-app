@@ -3,7 +3,7 @@
  */
 
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { AuthState, User, LoginCredentials, ChangePasswordCredentials } from '../types/auth';
+import { AuthState, User, LoginCredentials, ChangePasswordCredentials, AuthChallenge } from '../types/auth';
 import { authService } from '../services/authService';
 
 // 認証アクション
@@ -12,27 +12,40 @@ type AuthAction =
   | { type: 'AUTH_SUCCESS'; payload: User }
   | { type: 'AUTH_FAILURE'; payload: string }
   | { type: 'AUTH_LOGOUT' }
-  | { type: 'AUTH_CLEAR_ERROR' };
+  | { type: 'AUTH_CLEAR_ERROR' }
+  | { type: 'AUTH_CHALLENGE'; payload: AuthChallenge }
+  | { type: 'AUTH_CHALLENGE_COMPLETE' };
 
 // 認証コンテキストの値
 interface AuthContextValue extends AuthState {
+  authChallenge: AuthChallenge | null;
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
   changePassword: (credentials: ChangePasswordCredentials) => Promise<void>;
   clearError: () => void;
   checkAuthState: () => Promise<void>;
+  respondToChallenge: (
+    newPassword: string,
+    challengeParams?: { username: string; session: string }
+  ) => Promise<void>;
+  clearChallenge: () => void;
 }
 
-// 初期状態
-const initialState: AuthState = {
+// 初期状態（拡張版）
+interface ExtendedAuthState extends AuthState {
+  authChallenge: AuthChallenge | null;
+}
+
+const initialState: ExtendedAuthState = {
   isAuthenticated: false,
   user: null,
   isLoading: true, // 初期化時はローディング状態
   error: null,
+  authChallenge: null,
 };
 
 // リデューサー
-function authReducer(state: AuthState, action: AuthAction): AuthState {
+function authReducer(state: ExtendedAuthState, action: AuthAction): ExtendedAuthState {
   switch (action.type) {
     case 'AUTH_START':
       return {
@@ -47,6 +60,7 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         user: action.payload,
         isLoading: false,
         error: null,
+        authChallenge: null,
       };
     case 'AUTH_FAILURE':
       return {
@@ -63,11 +77,24 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         user: null,
         isLoading: false,
         error: null,
+        authChallenge: null,
       };
     case 'AUTH_CLEAR_ERROR':
       return {
         ...state,
         error: null,
+      };
+    case 'AUTH_CHALLENGE':
+      return {
+        ...state,
+        isLoading: false,
+        authChallenge: action.payload,
+        error: null,
+      };
+    case 'AUTH_CHALLENGE_COMPLETE':
+      return {
+        ...state,
+        authChallenge: null,
       };
     default:
       return state;
@@ -120,6 +147,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const user = await authService.login(credentials);
       dispatch({ type: 'AUTH_SUCCESS', payload: user });
     } catch (error) {
+      // Challengeエラーをチェック
+      if ((error as any).message === 'CHALLENGE_REQUIRED' && (error as any).challenge) {
+        const challenge = (error as any).challenge as AuthChallenge;
+        dispatch({ type: 'AUTH_CHALLENGE', payload: challenge });
+        // Challengeの場合はエラーをスローしない（LoginScreenで処理）
+        return;
+      }
+
       const errorMessage = error instanceof Error ? error.message : '認証に失敗しました';
       dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });
       throw error;
@@ -131,13 +166,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
    */
   const logout = async () => {
     try {
-      console.log('Logout started...');
       await authService.logout();
-      console.log('AuthService logout completed');
       dispatch({ type: 'AUTH_LOGOUT' });
-      console.log('Auth state cleared');
     } catch (error) {
-      console.error('Logout error:', error);
       // ログアウトエラーでも状態はクリア
       dispatch({ type: 'AUTH_LOGOUT' });
     }
@@ -163,6 +194,46 @@ export function AuthProvider({ children }: AuthProviderProps) {
     dispatch({ type: 'AUTH_CLEAR_ERROR' });
   };
 
+  /**
+   * Challengeに応答（初回パスワード変更）
+   */
+  const respondToChallenge = async (
+    newPassword: string,
+    challengeParams?: { username: string; session: string }
+  ) => {
+    try {
+      // パラメータが渡された場合はそれを使用、なければstateから取得
+      const username = challengeParams?.username || state.authChallenge?.username;
+      const session = challengeParams?.session || state.authChallenge?.session;
+
+      if (!username || !session) {
+        throw new Error('Challenge情報がありません');
+      }
+
+      dispatch({ type: 'AUTH_START' });
+
+      const user = await authService.respondToNewPasswordChallenge({
+        username,
+        newPassword,
+        session,
+      });
+
+      dispatch({ type: 'AUTH_SUCCESS', payload: user });
+      dispatch({ type: 'AUTH_CHALLENGE_COMPLETE' });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'パスワード変更に失敗しました';
+      dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });
+      throw error;
+    }
+  };
+
+  /**
+   * Challengeクリア
+   */
+  const clearChallenge = () => {
+    dispatch({ type: 'AUTH_CHALLENGE_COMPLETE' });
+  };
+
   const value: AuthContextValue = {
     ...state,
     login,
@@ -170,6 +241,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     changePassword,
     clearError,
     checkAuthState,
+    respondToChallenge,
+    clearChallenge,
   };
 
   return (

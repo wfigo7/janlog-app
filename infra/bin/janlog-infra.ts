@@ -36,7 +36,7 @@ new S3Stack(app, `JanlogS3Stack-${environment}`, {
 });
 
 // CloudFrontスタック（バケット名を文字列として渡して循環参照を回避）
-new CloudFrontStack(app, `JanlogCloudFrontStack-${environment}`, {
+const cloudFrontStack = new CloudFrontStack(app, `JanlogCloudFrontStack-${environment}`, {
   ...defaultStackProps,
   environment,
   frontendBucketName: `janlog-frontend-${environment}`,
@@ -56,10 +56,11 @@ if (environment !== 'local') {
     environment,
   });
 
-  // Cognitoスタック
+  // Cognitoスタック（CloudFront URLを渡す）
   const cognitoStack = new CognitoStack(app, `JanlogCognitoStack-${environment}`, {
     ...defaultStackProps,
     environment,
+    webAppUrl: `https://${cloudFrontStack.distribution.distributionDomainName}`,
   });
 
   // Lambdaスタック（DynamoDB + Cognito + ECRに依存）

@@ -1,17 +1,23 @@
 import * as cdk from 'aws-cdk-lib';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as logs from 'aws-cdk-lib/aws-logs';
+import * as fs from 'fs';
+import * as path from 'path';
 import { Construct } from 'constructs';
 import { JanlogStackProps } from '../common/stack-props';
+
+export interface CognitoStackProps extends JanlogStackProps {
+  webAppUrl?: string;
+}
 
 export class CognitoStack extends cdk.Stack {
   public readonly userPool: cognito.UserPool;
   public readonly userPoolClient: cognito.UserPoolClient;
 
-  constructor(scope: Construct, id: string, props: JanlogStackProps) {
+  constructor(scope: Construct, id: string, props: CognitoStackProps) {
     super(scope, id, props);
 
-    const { environment } = props;
+    const { environment, webAppUrl } = props;
 
     // CloudWatch Logs用のロググループを作成
     // Cognitoは自動的にこのロググループに認証イベントを書き込む
@@ -57,19 +63,7 @@ export class CognitoStack extends cdk.Stack {
       // 招待メッセージのカスタマイズ
       userInvitation: {
         emailSubject: 'Janlogアプリへの招待',
-        emailBody: `
-こんにちは！
-
-Janlogアプリへの招待です。
-以下の情報でログインしてください：
-
-ユーザー名: {username}
-一時パスワード: {####}
-
-初回ログイン時に新しいパスワードを設定してください。
-
-Janlogアプリ
-        `.trim(),
+        emailBody: this.getInvitationEmailBody(environment, webAppUrl),
       },
       // 削除保護（本番環境では保持）
       removalPolicy: environment === 'production'
@@ -117,5 +111,44 @@ Janlogアプリ
       description: 'Cognito User Pool ARN',
       exportName: `JanlogUserPoolArn-${environment}`,
     });
+  }
+
+  /**
+   * 環境別の招待メールテンプレートを取得
+   */
+  private getInvitationEmailBody(environment: string, webAppUrl?: string): string {
+    const templateFileName = `cognito-invitation-email-${environment}.txt`;
+    const templatePath = path.join(__dirname, '..', '..', 'templates', templateFileName);
+    
+    try {
+      let template = fs.readFileSync(templatePath, 'utf-8').trim();
+      
+      // {{WEB_APP_URL}}プレースホルダーを実際のURLに置換
+      if (webAppUrl) {
+        template = template.replace(/\{\{WEB_APP_URL\}\}/g, webAppUrl);
+      }
+
+      // 改行対応
+      template = template.replace(/\n/g, '<br>');
+      
+      return template;
+    } catch (error) {
+      console.warn(`Warning: Could not load email template from ${templatePath}, using default template`);
+      
+      // フォールバック: デフォルトテンプレート
+      return `
+こんにちは！
+
+Janlogアプリへの招待です。
+以下の情報でログインしてください：
+
+ユーザー名: {username}
+一時パスワード: {####}
+
+初回ログイン時に新しいパスワードを設定していただきます。
+
+Janlogアプリ
+      `.trim();
+    }
   }
 }

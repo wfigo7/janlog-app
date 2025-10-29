@@ -45,6 +45,17 @@ export interface SignUpCredentials {
 export interface ChangePasswordCredentials {
   oldPassword: string;
   newPassword: string;
+  confirmPassword?: string;  // UI用（バリデーションで使用）
+}
+
+/**
+ * 初回パスワード設定用認証情報
+ */
+export interface InitialPasswordSetupCredentials {
+  username: string;
+  temporaryPassword: string;  // sessionから取得
+  newPassword: string;
+  session: string;
 }
 
 /**
@@ -62,4 +73,36 @@ export interface CognitoTokens {
 export interface AuthError {
   code: string;
   message: string;
+  details?: string[];  // パスワードポリシー違反の詳細など
 }
+
+/**
+ * 認証Challenge情報
+ */
+export interface AuthChallenge {
+  type: 'NEW_PASSWORD_REQUIRED';
+  session: string;
+  username: string;
+}
+
+/**
+ * パスワードポリシー
+ */
+export const PASSWORD_POLICY = {
+  minLength: 8,
+  requireLowercase: true,
+  requireUppercase: true,
+  requireDigits: true,
+  requireSymbols: false,
+} as const;
+
+/**
+ * パスワードポリシーメッセージ
+ */
+export const PASSWORD_POLICY_MESSAGES = {
+  minLength: '8文字以上',
+  requireLowercase: '小文字を含む',
+  requireUppercase: '大文字を含む',
+  requireDigits: '数字を含む',
+  requireSymbols: '記号を含む',
+} as const;

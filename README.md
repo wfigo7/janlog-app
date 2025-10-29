@@ -152,6 +152,34 @@ make web-build-deploy-prod
 
 詳細は [.kiro/steering/scripts.md](.kiro/steering/scripts.md#web版デプロイの詳細) を参照してください。
 
+## ユーザー招待フロー
+
+### 管理者による招待
+
+1. **Cognito管理画面でユーザー作成**
+   - User Pool: `janlog-user-pool-development`
+   - "Send an email invitation"を選択
+   - "Eメールアドレスを検証済みとしてマーク"にチェック
+   - パスワードは自動生成を推奨
+
+2. **招待メール送信**
+   - Cognitoが自動的にカスタムテンプレートでメール送信
+   - ユーザー名と一時パスワードが記載される
+
+### ユーザーの初回ログイン
+
+1. 招待メールを受信
+2. アプリを起動してログイン
+3. 一時パスワードでログイン
+4. **新しいパスワードを設定**（初回のみ）
+5. ログイン完了
+
+### 環境別の動作
+
+- **local環境**: 静的JWT認証（パスワード変更フローなし）
+- **development環境**: Cognito認証（初回パスワード変更あり）
+- **production環境**: Cognito認証（初回パスワード変更あり）
+
 ## 開発環境セットアップ
 
 ### 前提条件

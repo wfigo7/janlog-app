@@ -2,10 +2,10 @@
  * 認証ガードコンポーネント
  */
 
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
-import { LoginScreen } from './LoginScreen';
+import { useRouter, useSegments } from 'expo-router';
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -15,7 +15,29 @@ interface AuthGuardProps {
  * 認証が必要なコンポーネントをラップするガード
  */
 export function AuthGuard({ children }: AuthGuardProps) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, authChallenge } = useAuth();
+  const router = useRouter();
+  const segments = useSegments();
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    const inAuthFlow = segments[0] === 'login' || segments[0] === 'change-password';
+
+    // Challenge状態の場合は何もしない（LoginScreenがナビゲーションを処理）
+    if (authChallenge) return;
+
+    // 未認証でauth flow以外にいる場合はログイン画面にリダイレクト
+    if (!isAuthenticated && !inAuthFlow) {
+      router.replace('/login');
+      return;
+    }
+
+    // 認証済みでログイン画面にいる場合はホーム画面にリダイレクト
+    if (isAuthenticated && segments[0] === 'login') {
+      router.replace('/(tabs)');
+    }
+  }, [isAuthenticated, isLoading, authChallenge, segments, router]);
 
   // ローディング中
   if (isLoading) {
@@ -27,12 +49,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     );
   }
 
-  // 未認証の場合はログイン画面を表示
-  if (!isAuthenticated) {
-    return <LoginScreen />;
-  }
-
-  // 認証済みの場合は子コンポーネントを表示
+  // 子コンポーネントを表示
   return <>{children}</>;
 }
 
