@@ -50,7 +50,6 @@ coverage.xml
 README*
 .flake8
 .python-version
-pyproject.toml
 pytest.ini
 Makefile
 run_local.py
