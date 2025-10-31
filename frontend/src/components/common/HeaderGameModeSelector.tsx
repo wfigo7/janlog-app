@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
     left: 0,
     width: 64,
     height: 32,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#FFFFFF',
     borderRadius: 7,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -112,10 +112,13 @@ const styles = StyleSheet.create({
   },
   segmentText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#8E8E93',
+    fontWeight: '500',
+    color: '#202020',
+    opacity: 0.7,
   },
   activeText: {
-    color: '#FFFFFF',
+    color: '#2196F3',
+    fontWeight: '800',
+    opacity: 1,
   },
 });
