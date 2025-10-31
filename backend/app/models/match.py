@@ -66,7 +66,13 @@ class MatchRequest(BaseModel):
 
     @model_validator(mode="after")
     def validate_match_data(self):
-        """複数フィールドの組み合わせバリデーション"""
+        """
+        複数フィールドの組み合わせバリデーション
+        
+        注意: このバリデーションは基本的なチェックのみを行います。
+        ルールセットとの整合性チェックは、APIエンドポイントで
+        MatchValidator.validate()を使用して行います。
+        """
         # 順位のゲームモード別バリデーション
         max_rank = 3 if self.gameMode == "three" else 4
         if self.rank > max_rank:

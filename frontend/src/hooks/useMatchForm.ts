@@ -5,6 +5,7 @@ import { Ruleset, PointCalculationRequest } from '../types/ruleset';
 import { rulesetService } from '../services/rulesetService';
 import { MatchFormData, MatchFormErrors } from '../components/match/MatchForm';
 import { useGameMode } from '../contexts/GameModeContext';
+import { MatchValidator } from '../utils/matchValidator';
 
 export interface UseMatchFormProps {
   initialData?: Partial<MatchFormData>;
@@ -101,16 +102,15 @@ export const useMatchForm = ({ initialData, onSubmit, isEditMode = false }: UseM
 
   const maxRank = formData.gameMode === 'four' ? 4 : 3;
 
-  // バリデーション関数
+  // バリデーション関数（MatchValidatorを使用）
   const validateRawScore = (score: string): { isValid: boolean; message?: string } => {
     if (!score) return { isValid: false };
     const num = parseInt(score);
     if (isNaN(num)) return { isValid: false, message: '数値を入力してください' };
-    if (num < -999900 || num > 999900) {
-      return { isValid: false, message: '6桁までの数値を入力してください（下2桁は00）' };
-    }
-    if (Math.abs(num) % 100 !== 0) {
-      return { isValid: false, message: '6桁までの数値を入力してください（下2桁は00）' };
+    
+    const result = MatchValidator.validateRawScore(num);
+    if (!result.isValid && result.errors.length > 0) {
+      return { isValid: false, message: result.errors[0].message };
     }
     return { isValid: true };
   };
@@ -119,8 +119,10 @@ export const useMatchForm = ({ initialData, onSubmit, isEditMode = false }: UseM
     if (!rankValue) return { isValid: false };
     const num = parseInt(rankValue);
     if (isNaN(num)) return { isValid: false, message: '数値を入力してください' };
-    if (num < 1 || num > maxRank) {
-      return { isValid: false, message: `1〜${maxRank}位で入力してください` };
+    
+    const result = MatchValidator.validateRank(num, formData.gameMode);
+    if (!result.isValid && result.errors.length > 0) {
+      return { isValid: false, message: result.errors[0].message };
     }
     return { isValid: true };
   };
@@ -129,12 +131,10 @@ export const useMatchForm = ({ initialData, onSubmit, isEditMode = false }: UseM
     if (!points) return { isValid: false };
     const num = parseFloat(points);
     if (isNaN(num)) return { isValid: false, message: '数値を入力してください' };
-    if (num < -999.9 || num > 999.9) {
-      return { isValid: false, message: '3桁までの数値を入力してください' };
-    }
-    const decimalPlaces = (points.split('.')[1] || '').length;
-    if (decimalPlaces > 1) {
-      return { isValid: false, message: '3桁までの数値を入力してください' };
+    
+    const result = MatchValidator.validateFinalPoints(num);
+    if (!result.isValid && result.errors.length > 0) {
+      return { isValid: false, message: result.errors[0].message };
     }
     return { isValid: true };
   };
@@ -142,19 +142,26 @@ export const useMatchForm = ({ initialData, onSubmit, isEditMode = false }: UseM
   const validateMatchDate = (dateString: string): { isValid: boolean; message?: string } => {
     if (!dateString) return { isValid: false, message: '対局日を選択してください' };
 
-    const date = new Date(dateString);
-    const now = new Date();
-    const fiveYearsAgo = new Date();
-    fiveYearsAgo.setFullYear(now.getFullYear() - 5);
-
-    if (date > now) {
-      return { isValid: false, message: '未来の日付は選択できません' };
-    }
-    if (date < fiveYearsAgo) {
-      return { isValid: false, message: '5年以上前の日付は選択できません' };
+    const result = MatchValidator.validateDate(dateString);
+    if (!result.isValid && result.errors.length > 0) {
+      return { isValid: false, message: result.errors[0].message };
     }
     return { isValid: true };
   };
+
+  const validateFloatingCountField = (count: string): { isValid: boolean; message?: string } => {
+    if (!count) return { isValid: false, message: '浮き人数を入力してください' };
+    const num = parseInt(count);
+    if (isNaN(num)) return { isValid: false, message: '数値を入力してください' };
+
+    const result = MatchValidator.validateFloatingCount(num, formData.gameMode);
+    if (!result.isValid && result.errors.length > 0) {
+      return { isValid: false, message: result.errors[0].message };
+    }
+    return { isValid: true };
+  };
+
+
 
   const validateFloatingCount = (
     floatingCountValue: string,
@@ -450,62 +457,60 @@ export const useMatchForm = ({ initialData, onSubmit, isEditMode = false }: UseM
       dateError: null,
     };
 
-    const dateValidation = validateMatchDate(formData.matchDate);
-    if (!dateValidation.isValid) {
-      newErrors.dateError = dateValidation.message || null;
-    }
-
     if (!formData.selectedRuleset) {
       showErrorNotification('ルールを選択してください');
       return false;
     }
 
-    const rankValidation = validateRank(formData.rank);
-    if (!rankValidation.isValid) {
-      newErrors.rankError = rankValidation.message || null;
-    }
+    // 包括的バリデーションを実行
+    const validationInput = {
+      date: formData.matchDate,
+      gameMode: formData.gameMode,
+      entryMethod: formData.entryMethod,
+      rank: parseInt(formData.rank) || 0,
+      finalPoints: formData.finalPoints ? parseFloat(formData.finalPoints) : undefined,
+      rawScore: formData.rawScore ? parseInt(formData.rawScore) : undefined,
+      floatingCount: formData.floatingCount ? parseInt(formData.floatingCount) : undefined,
+      chipCount: formData.chipCount ? parseInt(formData.chipCount) : undefined,
+      ruleset: formData.selectedRuleset,
+    };
 
-    if (formData.entryMethod === 'rank_plus_points') {
-      const pointsValidation = validateFinalPoints(formData.finalPoints);
-      if (!pointsValidation.isValid) {
-        newErrors.finalPointsError = pointsValidation.message || null;
-      }
-    } else if (formData.entryMethod === 'rank_plus_raw') {
-      const rawValidation = validateRawScore(formData.rawScore);
-      if (!rawValidation.isValid) {
-        newErrors.rawScoreError = rawValidation.message || null;
-      }
+    const validationResult = MatchValidator.validate(validationInput);
 
-      // 浮きウマルール使用時は浮き人数が必須
-      if (formData.selectedRuleset.useFloatingUma) {
-        const floatingValidation = validateFloatingCount(formData.floatingCount, formData.selectedRuleset);
-        if (!floatingValidation.isValid) {
-          newErrors.floatingCountError = floatingValidation.message || null;
+    // エラーをフォームエラーにマッピング
+    if (!validationResult.isValid) {
+      validationResult.errors.forEach(error => {
+        switch (error.field) {
+          case 'date':
+            newErrors.dateError = error.message;
+            break;
+          case 'rank':
+            newErrors.rankError = error.message;
+            break;
+          case 'finalPoints':
+            newErrors.finalPointsError = error.message;
+            break;
+          case 'rawScore':
+            newErrors.rawScoreError = error.message;
+            break;
+          case 'floatingCount':
+            newErrors.floatingCountError = error.message;
+            break;
         }
-      }
-    } else if (formData.entryMethod === 'provisional_rank_only') {
-      if (provisionalPoints === null) {
-        showErrorNotification('ポイントが計算されていません。順位と素点を正しく入力してください');
-        return false;
-      }
-      
-      // 浮きウマルール使用時は浮き人数が必須
-      if (formData.selectedRuleset.useFloatingUma) {
-        const floatingValidation = validateFloatingCount(formData.floatingCount, formData.selectedRuleset);
-        if (!floatingValidation.isValid) {
-          newErrors.floatingCountError = floatingValidation.message || null;
-        }
-      }
-    }
+      });
 
-    setErrors(newErrors);
-
-    const hasErrors = Object.values(newErrors).some(error => error !== null);
-    if (hasErrors) {
+      setErrors(newErrors);
       showErrorNotification('入力エラーがあります');
       return false;
     }
 
+    // 仮ポイントの場合は計算結果が必要
+    if (formData.entryMethod === 'provisional_rank_only' && provisionalPoints === null) {
+      showErrorNotification('ポイントが計算されていません。順位と浮き人数を正しく入力してください');
+      return false;
+    }
+
+    setErrors(newErrors);
     return true;
   };
 

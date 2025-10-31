@@ -106,8 +106,13 @@
       "node_modules/(?!(react-native|@react-native|@react-navigation|@expo|expo|expo-secure-store|react-native-url-polyfill|react-native-get-random-values|uuid|@aws-sdk|@smithy)/)"
     ],
     "testMatch": [
-      "**/__tests__/**/*.(ts|tsx|js)",
+      "**/__tests__/**/*.(test|spec).(ts|tsx|js)",
       "**/*.(test|spec).(ts|tsx|js)"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/__tests__/fixtures/",
+      "/fixtures/"
     ],
     "moduleNameMapper": {
       "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "identity-obj-proxy"

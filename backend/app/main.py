@@ -141,6 +141,49 @@ async def create_match(
     """
     try:
         logger.info(f"対局登録開始 - user_id: {user_id}")
+        
+        # ルールセットとの整合性バリデーション（Mode 2, 3の場合のみ）
+        if request.entryMethod in ["rank_plus_raw", "provisional_rank_only"] and request.rulesetId:
+            from app.services.ruleset_service import get_ruleset_service
+            from app.utils.match_validator import MatchValidator
+            
+            ruleset_service = get_ruleset_service()
+            ruleset = await ruleset_service.get_ruleset(request.rulesetId, user_id)
+            
+            if ruleset:
+                # MatchValidatorで包括的バリデーション
+                validation_result = MatchValidator.validate(
+                    date=request.date,
+                    game_mode=request.gameMode,
+                    entry_method=request.entryMethod,
+                    rank=request.rank,
+                    ruleset=ruleset,
+                    final_points=request.finalPoints,
+                    raw_score=request.rawScore,
+                    floating_count=request.floatingCount,
+                    chip_count=request.chipCount,
+                )
+                
+                if not validation_result.is_valid:
+                    # バリデーションエラーをJSON形式で返す
+                    error_details = {
+                        "message": "バリデーションエラーが発生しました",
+                        "errors": [
+                            {
+                                "field": error.field,
+                                "code": error.code,
+                                "message": error.message,
+                                "severity": error.severity,
+                                "hint": error.hint,
+                            }
+                            for error in validation_result.errors
+                        ],
+                    }
+                    logger.warning(
+                        f"対局登録バリデーションエラー - user_id: {user_id}, errors: {error_details}"
+                    )
+                    raise HTTPException(status_code=400, detail=error_details)
+        
         match_service = get_match_service()
         match = await match_service.create_match(request, user_id)
         logger.debug(f"対局登録成功 - matchId: {match.matchId}, user_id: {user_id}")
@@ -151,6 +194,8 @@ async def create_match(
             "data": match.to_api_response(),
         }
 
+    except HTTPException:
+        raise
     except ValueError as e:
         logger.warning(
             f"対局登録バリデーションエラー - user_id: {user_id}, error: {str(e)}"
@@ -275,6 +320,49 @@ async def update_match(
     """
     try:
         logger.info(f"対局更新開始 - user_id: {user_id}, match_id: {match_id}")
+        
+        # ルールセットとの整合性バリデーション（Mode 2, 3の場合のみ）
+        if request.entryMethod in ["rank_plus_raw", "provisional_rank_only"] and request.rulesetId:
+            from app.services.ruleset_service import get_ruleset_service
+            from app.utils.match_validator import MatchValidator
+            
+            ruleset_service = get_ruleset_service()
+            ruleset = await ruleset_service.get_ruleset(request.rulesetId, user_id)
+            
+            if ruleset:
+                # MatchValidatorで包括的バリデーション
+                validation_result = MatchValidator.validate(
+                    date=request.date,
+                    game_mode=request.gameMode,
+                    entry_method=request.entryMethod,
+                    rank=request.rank,
+                    ruleset=ruleset,
+                    final_points=request.finalPoints,
+                    raw_score=request.rawScore,
+                    floating_count=request.floatingCount,
+                    chip_count=request.chipCount,
+                )
+                
+                if not validation_result.is_valid:
+                    # バリデーションエラーをJSON形式で返す
+                    error_details = {
+                        "message": "バリデーションエラーが発生しました",
+                        "errors": [
+                            {
+                                "field": error.field,
+                                "code": error.code,
+                                "message": error.message,
+                                "severity": error.severity,
+                                "hint": error.hint,
+                            }
+                            for error in validation_result.errors
+                        ],
+                    }
+                    logger.warning(
+                        f"対局更新バリデーションエラー - user_id: {user_id}, match_id: {match_id}, errors: {error_details}"
+                    )
+                    raise HTTPException(status_code=400, detail=error_details)
+        
         match_service = get_match_service()
         match = await match_service.update_match(user_id, match_id, request)
 
