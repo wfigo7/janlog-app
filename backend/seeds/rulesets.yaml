@@ -79,6 +79,26 @@ rulesets:
     description: 競技麻雀でよく使われるルール
     # ウマが小さく、実力差が出やすい
     
+  - name: 日本プロ麻雀連盟公式ルール
+    gameMode: four
+    startingPoints: 30000
+    basePoints: 30000
+    useFloatingUma: true
+    uma: [30, 10, -10, -30]  # 標準ウマ（使用されない）
+    umaMatrix:
+      "0": [0, 0, 0, 0]
+      "1": [12, -1, -3, -8]
+      "2": [8, 4, -4, -8]
+      "3": [8, 3, 1, -12]
+      "4": [0, 0, 0, 0]
+    oka: 0
+    useChips: false
+    isGlobal: true
+    description: 日本プロ麻雀連盟の公式ルール（浮き人数に応じてウマが変動）
+    # 30000点持ち30000点返し（オカなし）
+    # 浮き人数1〜4でウマが変動
+    # 例: 浮き2人の場合、ウマは [8, 4, -4, -8]
+    
   # 3人麻雀ルール
   
   - name: 3人麻雀標準
@@ -104,6 +124,26 @@ rulesets:
     description: 一般的なフリー雀荘ルール
     # 25000点持ち35000点返し
     # チップあり
+    
+  - name: 3人麻雀浮きウマルール
+    gameMode: three
+    startingPoints: 30000
+    basePoints: 35000
+    useFloatingUma: true
+    uma: [20, 0, -20]  # 標準ウマ（使用されない）
+    umaMatrix:
+      "0": [0, 0, 0]
+      "1": [40, -20, -20]
+      "2": [20, 0, -20]
+      "3": [0, 0, 0]
+      "4": [0, 0, 0]
+    oka: 15
+    useChips: false
+    isGlobal: true
+    description: 3人麻雀の浮きウマルール（浮き人数に応じてウマが変動）
+    # 30000点持ち35000点返し
+    # 浮き人数0〜2でウマが変動
+    # 例: 浮き1人の場合、ウマは [40, -20, -20]
 
 # よく使われるウマパターン（参考情報）
 common_uma_patterns:

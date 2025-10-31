@@ -32,6 +32,9 @@ class MatchService:
         # チップなしルールの場合はchipCountをnullに設定
         match_request = await self._adjust_chip_count_by_ruleset(match_request, user_id)
         
+        # 浮きウマルール使用時のバリデーション
+        await self._validate_floating_uma_requirements(match_request, user_id)
+        
         # リクエストから対局データを作成
         match = Match.from_request(match_request, user_id)
         
@@ -121,6 +124,50 @@ class MatchService:
                 pass
         
         return match_request
+
+    async def _validate_floating_uma_requirements(self, match_request: MatchRequest, user_id: str) -> None:
+        """浮きウマルール使用時のバリデーション"""
+        if not match_request.rulesetId:
+            return
+        
+        try:
+            from app.services.ruleset_service import get_ruleset_service
+            from app.utils.floating_uma_validator import FloatingUmaValidator
+            
+            ruleset_service = get_ruleset_service()
+            ruleset = await ruleset_service.get_ruleset(match_request.rulesetId, user_id)
+            
+            if not ruleset:
+                return
+            
+            # 浮きウマルール使用時のチェック
+            if ruleset.useFloatingUma:
+                # 順位+最終ポイント方式の場合は浮き人数不要
+                if match_request.entryMethod == "rank_plus_points":
+                    match_request.floatingCount = None
+                    return
+                
+                # 順位+素点または順位のみの場合は浮き人数必須
+                if match_request.floatingCount is None:
+                    raise ValueError("浮きウマルール使用時は浮き人数が必須です")
+                
+                # 浮き人数の範囲チェック
+                errors = FloatingUmaValidator.validate_floating_count(
+                    match_request.floatingCount,
+                    ruleset.startingPoints,
+                    ruleset.basePoints,
+                    ruleset.gameMode
+                )
+                
+                if errors:
+                    raise ValueError(f"浮き人数のバリデーションエラー: {', '.join(errors)}")
+        
+        except ValueError:
+            # バリデーションエラーは再スロー
+            raise
+        except Exception:
+            # その他のエラーは無視（ルールセット取得失敗など）
+            pass
 
     async def get_matches(
         self,

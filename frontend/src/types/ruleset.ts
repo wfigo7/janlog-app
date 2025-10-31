@@ -2,6 +2,13 @@
  * ルールセット関連の型定義
  */
 
+/**
+ * 浮き人数別ウマ表の型定義
+ * キー: 浮き人数（"0"〜"4"）
+ * 値: ウマ配列（3人麻雀: 3要素、4人麻雀: 4要素）
+ */
+export type FloatingUmaMatrix = Record<string, number[]>;
+
 export interface Ruleset {
   rulesetId: string;
   ruleName: string;
@@ -10,7 +17,7 @@ export interface Ruleset {
   basePoints: number;
   useFloatingUma: boolean;
   uma: number[];
-  umaMatrix?: Record<string, number[]>;
+  umaMatrix?: FloatingUmaMatrix;
   oka: number;
   useChips: boolean;
   memo?: string;
@@ -38,6 +45,7 @@ export interface PointCalculationRequest {
   rulesetId: string;
   rank: number;
   rawScore: number;
+  floatingCount?: number;
 }
 
 export interface PointCalculationResponse {

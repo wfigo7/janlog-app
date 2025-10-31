@@ -23,6 +23,12 @@ const MatchRegistrationScreen: React.FC = () => {
       finalPointsValue = undefined;
     }
 
+    // 浮き人数の処理（順位+最終ポイント以外で浮きウマルール使用時のみ）
+    let floatingCountValue: number | undefined;
+    if (formData.entryMethod !== 'rank_plus_points' && formData.selectedRuleset?.useFloatingUma) {
+      floatingCountValue = formData.floatingCount ? parseInt(formData.floatingCount) : undefined;
+    }
+
     const matchData: MatchInput = {
       date: formData.matchDate,
       gameMode: formData.gameMode,
@@ -31,6 +37,7 @@ const MatchRegistrationScreen: React.FC = () => {
       rank: parseInt(formData.rank),
       finalPoints: finalPointsValue,
       rawScore: formData.entryMethod === 'rank_plus_raw' ? parseInt(formData.rawScore) : undefined,
+      floatingCount: floatingCountValue,
       chipCount: formData.chipCount ? parseInt(formData.chipCount) : undefined,
       venueName: formData.venueName || undefined,
       memo: formData.memo || undefined,
@@ -51,6 +58,7 @@ const MatchRegistrationScreen: React.FC = () => {
         rank: '',
         finalPoints: '',
         rawScore: '',
+        floatingCount: '',
         chipCount: '',
         venueName: '',
         memo: '',
@@ -82,6 +90,8 @@ const MatchRegistrationScreen: React.FC = () => {
     handleRankChange,
     handleFinalPointsChange,
     handleRawScoreChange,
+    handleFloatingCountChange,
+    handleFloatingCountBlur,
     handleChipCountChange,
     handleVenueNameChange,
     handleMemoChange,
@@ -114,6 +124,8 @@ const MatchRegistrationScreen: React.FC = () => {
         onRankChange={handleRankChange}
         onFinalPointsChange={handleFinalPointsChange}
         onRawScoreChange={handleRawScoreChange}
+        onFloatingCountChange={handleFloatingCountChange}
+        onFloatingCountBlur={handleFloatingCountBlur}
         onChipCountChange={handleChipCountChange}
         onVenueNameChange={handleVenueNameChange}
         onMemoChange={handleMemoChange}

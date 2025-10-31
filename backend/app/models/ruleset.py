@@ -2,7 +2,7 @@
 ルールセットデータモデル
 """
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import Optional, Literal, Dict, List, Any
 import uuid
 from .base import BaseEntity
@@ -60,6 +60,39 @@ class RulesetRequest(BaseModel):
         
         return v
 
+    @field_validator("umaMatrix")
+    @classmethod
+    def validate_uma_matrix(cls, v, info):
+        """浮き人数別ウマ表のバリデーション"""
+        # umaMatrixがNoneまたは空の場合はスキップ
+        if v is None or not v:
+            return v
+        
+        # useFloatingUmaがTrueの場合のみバリデーション
+        use_floating_uma = info.data.get("useFloatingUma", False)
+        if not use_floating_uma:
+            return v
+        
+        # FloatingUmaValidatorを使用してバリデーション
+        from app.utils.floating_uma_validator import FloatingUmaValidator
+        
+        game_mode = info.data.get("gameMode")
+        starting_points = info.data.get("startingPoints")
+        base_points = info.data.get("basePoints")
+        
+        if not all([game_mode, starting_points, base_points]):
+            # 必要な情報が揃っていない場合はスキップ
+            return v
+        
+        errors = FloatingUmaValidator.validate_uma_matrix(
+            v, game_mode, starting_points, base_points
+        )
+        
+        if errors:
+            raise ValueError(f"浮き人数別ウマ表のバリデーションエラー: {', '.join(errors)}")
+        
+        return v
+
     @field_validator("basePoints")
     @classmethod
     def validate_base_points(cls, v, info):
@@ -70,6 +103,15 @@ class RulesetRequest(BaseModel):
             raise ValueError("基準点は開始点以上である必要があります")
         
         return v
+
+    @model_validator(mode="after")
+    def validate_floating_uma_requirements(self):
+        """浮きウマ使用時の必須項目チェック"""
+        if self.useFloatingUma:
+            if not self.umaMatrix:
+                raise ValueError("浮きウマを使用する場合、浮き人数別ウマ表は必須です")
+        
+        return self
 
 
 class Ruleset(BaseEntity):
@@ -184,6 +226,7 @@ class PointCalculationRequest(BaseModel):
     rulesetId: str = Field(..., description="ルールセットID")
     rank: int = Field(..., ge=1, le=4, description="順位")
     rawScore: int = Field(..., description="素点")
+    floatingCount: Optional[int] = Field(None, ge=0, le=4, description="浮き人数（浮きウマルール使用時のみ）")
 
 
 class PointCalculationResponse(BaseModel):

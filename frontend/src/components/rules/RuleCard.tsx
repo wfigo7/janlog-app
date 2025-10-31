@@ -19,6 +19,11 @@ export default function RuleCard({ rule, onEdit, onDelete, editable }: RuleCardP
     return uma.map(formatNumber).join(' / ');
   };
 
+  const formatFloatingUma = (floatingCount: number, uma: number[]) => {
+    const formatNumber = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
+    return uma.map(formatNumber).join(' / ');
+  };
+
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
@@ -33,7 +38,28 @@ export default function RuleCard({ rule, onEdit, onDelete, editable }: RuleCardP
       <View style={styles.cardDetails}>
         <DetailRow label="開始点" value={`${rule.startingPoints}点`} />
         <DetailRow label="基準点" value={`${rule.basePoints}点`} />
-        <DetailRow label="ウマ" value={formatUma(rule.uma)} />
+        
+        {/* 浮きウマ使用時は浮きウマ表を表示、それ以外は通常のウマを表示 */}
+        {rule.useFloatingUma && rule.umaMatrix ? (
+          <>
+            <View style={styles.floatingUmaSection}>
+              <Text style={styles.floatingUmaLabel}>ウマ</Text>
+              {[1, 2, 3].map((floatingCount) => {
+                const uma = rule.umaMatrix![floatingCount.toString()];
+                if (!uma) return null;
+                return (
+                  <View key={floatingCount} style={styles.floatingUmaRow}>
+                    <Text style={styles.floatingUmaCount}>{floatingCount}人浮き:</Text>
+                    <Text style={styles.floatingUmaValue}>{formatFloatingUma(floatingCount, uma)}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          </>
+        ) : (
+          <DetailRow label="ウマ" value={formatUma(rule.uma)} />
+        )}
+        
         <DetailRow label="オカ" value={`+${rule.oka}`} />
         <DetailRow label="チップ" value={rule.useChips ? 'あり' : 'なし'} />
         {rule.memo && <DetailRow label="メモ" value={rule.memo} />}
@@ -123,6 +149,31 @@ const styles = StyleSheet.create({
   },
   detailValue: {
     fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+  },
+  floatingUmaSection: {
+    paddingVertical: 4,
+    marginBottom: 4,
+  },
+  floatingUmaLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
+  floatingUmaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 2,
+    paddingLeft: 8,
+  },
+  floatingUmaCount: {
+    fontSize: 13,
+    color: '#666',
+    minWidth: 80,
+  },
+  floatingUmaValue: {
+    fontSize: 13,
     color: '#333',
     fontWeight: '500',
   },

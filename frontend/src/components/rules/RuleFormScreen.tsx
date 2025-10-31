@@ -20,6 +20,8 @@ import { Ruleset } from '@/src/types/ruleset';
 import { useCustomAlert } from '@/src/hooks/useCustomAlert';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { useGameMode } from '@/src/contexts/GameModeContext';
+import { FloatingUmaToggle } from './FloatingUmaToggle';
+import { FloatingUmaMatrixInput } from './FloatingUmaMatrixInput';
 
 interface RuleFormScreenProps {
     mode: 'create' | 'edit';
@@ -73,6 +75,14 @@ export default function RuleFormScreen({ mode, rulesetId }: RuleFormScreenProps)
     const [basePoints, setBasePoints] = useState(initialValues.basePoints);
     const [uma, setUma] = useState<string[]>(initialValues.uma);
     const [oka, setOka] = useState(initialValues.oka);
+    const [useFloatingUma, setUseFloatingUma] = useState(false);
+    const [umaMatrix, setUmaMatrix] = useState<Record<string, number[]>>({
+        '0': [0, 0, 0, 0],
+        '1': [0, 0, 0, 0],
+        '2': [0, 0, 0, 0],
+        '3': [0, 0, 0, 0],
+        '4': [0, 0, 0, 0],
+    });
     const [useChips, setUseChips] = useState(false);
     const [memo, setMemo] = useState('');
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -148,6 +158,10 @@ export default function RuleFormScreen({ mode, rulesetId }: RuleFormScreenProps)
             setBasePoints(rule.basePoints.toString());
             setUma(rule.uma.map(u => u.toString()));
             setOka(rule.oka.toString());
+            setUseFloatingUma(rule.useFloatingUma || false);
+            if (rule.umaMatrix) {
+                setUmaMatrix(rule.umaMatrix);
+            }
             setUseChips(rule.useChips);
             setMemo(rule.memo || '');
         } catch (error) {
@@ -239,8 +253,9 @@ export default function RuleFormScreen({ mode, rulesetId }: RuleFormScreenProps)
                 gameMode,
                 startingPoints: parseInt(startingPoints, 10),
                 basePoints: parseInt(basePoints, 10),
-                useFloatingUma: false,
+                useFloatingUma,
                 uma: uma.map(u => parseInt(u, 10)),
+                umaMatrix: useFloatingUma ? umaMatrix : undefined,
                 oka: parseInt(oka, 10),
                 useChips,
                 memo: memo.trim() || undefined,
@@ -361,31 +376,55 @@ export default function RuleFormScreen({ mode, rulesetId }: RuleFormScreenProps)
                         {errors.basePoints && <Text style={styles.errorText}>{errors.basePoints}</Text>}
                     </View>
 
-                    {/* ウマ */}
-                    <View style={styles.formGroup}>
-                        <Text style={styles.label}>ウマ *</Text>
-                        <Text style={styles.hint}>
-                            {gameMode === 'three' ? '1位 / 2位 / 3位' : '1位 / 2位 / 3位 / 4位'}
-                        </Text>
-                        <View style={styles.umaContainer}>
-                            {uma.map((value, index) => (
-                                <TextInput
-                                    key={index}
-                                    style={[styles.umaInput, errors.uma && styles.inputError]}
-                                    value={value}
-                                    onChangeText={(text) => {
-                                        const newUma = [...uma];
-                                        newUma[index] = text;
-                                        setUma(newUma);
-                                    }}
-                                    placeholder={index === 0 ? '+30' : index === 1 ? '+10' : '-10'}
-                                    placeholderTextColor="#999"
-                                    keyboardType="numeric"
-                                />
-                            ))}
+                    {/* ウマ（浮きウマ使用時は非表示） */}
+                    {!useFloatingUma && (
+                        <View style={styles.formGroup}>
+                            <Text style={styles.label}>ウマ *</Text>
+                            <Text style={styles.hint}>
+                                {gameMode === 'three' ? '1位 / 2位 / 3位' : '1位 / 2位 / 3位 / 4位'}
+                            </Text>
+                            <View style={styles.umaContainer}>
+                                {uma.map((value, index) => (
+                                    <TextInput
+                                        key={index}
+                                        style={[styles.umaInput, errors.uma && styles.inputError]}
+                                        value={value}
+                                        onChangeText={(text) => {
+                                            const newUma = [...uma];
+                                            newUma[index] = text;
+                                            setUma(newUma);
+                                        }}
+                                        placeholder={index === 0 ? '+30' : index === 1 ? '+10' : '-10'}
+                                        placeholderTextColor="#999"
+                                        keyboardType="numeric"
+                                    />
+                                ))}
+                            </View>
+                            {errors.uma && <Text style={styles.errorText}>{errors.uma}</Text>}
                         </View>
-                        {errors.uma && <Text style={styles.errorText}>{errors.uma}</Text>}
+                    )}
+
+                    {/* 浮きウマ使用フラグ */}
+                    <View style={styles.formGroup}>
+                        <FloatingUmaToggle
+                            value={useFloatingUma}
+                            onChange={setUseFloatingUma}
+                        />
                     </View>
+
+                    {/* 浮き人数別ウマ表 */}
+                    {useFloatingUma && (
+                        <View style={styles.formGroup}>
+                            <FloatingUmaMatrixInput
+                                gameMode={gameMode}
+                                startingPoints={parseInt(startingPoints, 10) || 0}
+                                basePoints={parseInt(basePoints, 10) || 0}
+                                value={umaMatrix}
+                                onChange={setUmaMatrix}
+                                errors={{}}
+                            />
+                        </View>
+                    )}
 
                     {/* オカ */}
                     <View style={styles.formGroup}>

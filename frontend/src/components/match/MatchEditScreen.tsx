@@ -49,6 +49,7 @@ const MatchEditScreen: React.FC = () => {
           rank: match.rank.toString(),
           finalPoints: match.finalPoints?.toString() || '',
           rawScore: match.rawScore?.toString() || '',
+          floatingCount: match.floatingCount?.toString() || '',
           chipCount: match.chipCount?.toString() || '',
           venueName: match.venueName || '',
           memo: match.memo || '',
@@ -96,6 +97,7 @@ const MatchEditScreen: React.FC = () => {
       rulesetId: formData.selectedRuleset!.rulesetId,
       finalPoints: finalPointsValue,
       rawScore: formData.entryMethod === 'rank_plus_raw' ? parseInt(formData.rawScore) : undefined,
+      floatingCount: formData.floatingCount ? parseInt(formData.floatingCount) : undefined,
       chipCount: formData.chipCount ? parseInt(formData.chipCount) : undefined,
       venueName: formData.venueName || undefined,
       memo: formData.memo || undefined,
@@ -133,6 +135,8 @@ const MatchEditScreen: React.FC = () => {
     handleRankChange,
     handleFinalPointsChange,
     handleRawScoreChange,
+    handleFloatingCountChange,
+    handleFloatingCountBlur,
     handleChipCountChange,
     handleVenueNameChange,
     handleMemoChange,
@@ -183,6 +187,8 @@ const MatchEditScreen: React.FC = () => {
         onRankChange={handleRankChange}
         onFinalPointsChange={handleFinalPointsChange}
         onRawScoreChange={handleRawScoreChange}
+        onFloatingCountChange={handleFloatingCountChange}
+        onFloatingCountBlur={handleFloatingCountBlur}
         onChipCountChange={handleChipCountChange}
         onVenueNameChange={handleVenueNameChange}
         onMemoChange={handleMemoChange}

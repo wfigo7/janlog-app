@@ -379,6 +379,14 @@ components:
           }
         rawScore: { type: integer, nullable: true }
         chipCount: { type: integer, nullable: true }
+        floatingCount:
+          {
+            type: integer,
+            nullable: true,
+            minimum: 0,
+            maximum: 4,
+            description: "浮き人数（浮きウマルール使用時のみ記録）",
+          }
         venueId: { type: string, nullable: true }
         memo: { type: string, nullable: true }
         createdAt: { type: string, format: date-time }
@@ -400,6 +408,14 @@ components:
         finalPoints: { type: number, nullable: true }
         rawScore: { type: integer, nullable: true }
         chipCount: { type: integer, nullable: true }
+        floatingCount:
+          {
+            type: integer,
+            nullable: true,
+            minimum: 0,
+            maximum: 4,
+            description: "浮き人数（浮きウマルール使用時のみ）",
+          }
         venueId: { type: string, nullable: true }
         memo: { type: string, nullable: true }
 

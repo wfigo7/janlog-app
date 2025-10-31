@@ -25,6 +25,7 @@ class MatchRequest(BaseModel):
     venueId: Optional[str] = Field(None, description="会場ID")
     venueName: Optional[str] = Field(None, description="会場名（新規入力用）")
     memo: Optional[str] = Field(None, description="メモ")
+    floatingCount: Optional[int] = Field(None, ge=0, le=4, description="浮き人数（浮きウマルール使用時のみ）")
 
     @field_validator("date")
     @classmethod
@@ -125,6 +126,7 @@ class Match(BaseEntity):
     venueId: Optional[str] = Field(None, description="会場ID")
     venueName: Optional[str] = Field(None, description="会場名（表示用）")
     memo: Optional[str] = Field(None, description="メモ")
+    floatingCount: Optional[int] = Field(None, description="浮き人数（浮きウマルール使用時のみ）")
 
     def __init__(self, **data):
         # entityTypeを自動設定
@@ -165,6 +167,7 @@ class Match(BaseEntity):
             venueId=request.venueId,
             venueName=request.venueName,
             memo=request.memo,
+            floatingCount=request.floatingCount,
         )
 
     def to_api_response(self) -> dict:
@@ -182,6 +185,7 @@ class Match(BaseEntity):
             "venueId": self.venueId,
             "venueName": self.venueName,
             "memo": self.memo,
+            "floatingCount": self.floatingCount,
         }
 
 

@@ -117,13 +117,10 @@ const RuleSelector: React.FC<RuleSelectorProps> = ({
           {item.startingPoints}点持ち{item.basePoints}点返し
         </Text>
         <Text style={styles.rulesetDetail}>
-          ウマ: {item.uma.join('/')} | オカ: {item.oka}
+          ウマ: {item.useFloatingUma ? '浮き人数により変動' : item.uma.join('/')} | オカ: {item.oka}
         </Text>
       </View>
 
-      {item.memo && (
-        <Text style={styles.rulesetMemo}>{item.memo}</Text>
-      )}
     </TouchableOpacity>
   );
 

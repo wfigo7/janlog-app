@@ -15,6 +15,7 @@ export interface Match {
   venueId?: string;
   venueName?: string;
   memo?: string;
+  floatingCount?: number;  // 浮き人数（浮きウマルール使用時のみ記録）
   createdAt: string;
   updatedAt: string;
 }
@@ -31,4 +32,5 @@ export interface MatchInput {
   venueId?: string;
   venueName?: string;
   memo?: string;
+  floatingCount?: number;  // 浮き人数（浮きウマルール使用時のみ）
 }

@@ -114,10 +114,12 @@ src/
 - **useFloatingUma=false**: 固定ウマ配列を使用（Mリーグ、フリー雀荘など）
 - **useFloatingUma=true**: 浮き人数（基準点以上の人数）によってウマが変動（日本プロ麻雀連盟）
 
-**将来拡張（浮きウマルール）:**
+**浮きウマルール（実装済み）:**
 - 浮き人数を計算: 基準点以上の素点を持つ人数をカウント
 - useFloatingUma=trueの場合、umaMatrixから該当する浮き人数のウマ配列を取得
 - useFloatingUma=falseの場合、標準のuma配列を使用
+- 3人麻雀・4人麻雀の両方に対応
+- 既存データとの完全な互換性を保持
 
 **ルール管理API拡張:**
 - **GET /rulesets/templates**: よく使われるルールセットのテンプレート一覧
@@ -219,6 +221,7 @@ Attributes:
 - finalPoints (number, nullable) # 小数点第1位まで（例：+50.0, +11.2）
 - rawScore (integer, nullable)
 - chipCount (integer, nullable)
+- floatingCount (integer, nullable) # 浮き人数（浮きウマルール使用時のみ記録、0-4）
 - venueId (string, nullable)
 - memo (string, nullable)
 - createdAt (ISO datetime) # データ作成日時（システム自動設定）
@@ -369,14 +372,25 @@ Attributes:
 - updatedAt (ISO datetime)
 ```
 
-**umaMatrix構造例（将来拡張用）:**
+**umaMatrix構造例（実装済み）:**
 ```json
 {
-  "0": [0, 0, 0, 0],      // 浮き0人
+  "0": [0, 0, 0, 0],      // 浮き0人（開始点<基準点の場合のみ使用）
   "1": [12, -1, -3, -8],  // 浮き1人
   "2": [8, 4, -4, -8],    // 浮き2人
   "3": [8, 3, 1, -12],    // 浮き3人
-  "4": [0, 0, 0, 0]       // 浮き4人
+  "4": [0, 0, 0, 0]       // 浮き4人（開始点=基準点の場合のみ使用）
+}
+```
+
+**3人麻雀の例:**
+```json
+{
+  "0": [0, 0, 0],         // 浮き0人（開始点<基準点の場合のみ使用）
+  "1": [40, -20, -20],    // 浮き1人
+  "2": [20, 0, -20],      // 浮き2人
+  "3": [0, 0, 0],         // 浮き3人（開始点=基準点の場合のみ使用）
+  "4": [0, 0, 0]          // 未使用
 }
 ```
 
@@ -443,6 +457,7 @@ interface Match extends BaseEntity {
   finalPoints?: number;
   rawScore?: number;
   chipCount?: number;
+  floatingCount?: number; // 浮き人数（浮きウマルール使用時のみ記録、0-4）
   venueId?: string;
   memo?: string;
 }

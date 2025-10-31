@@ -17,6 +17,7 @@ import RuleSelector from './RuleSelector';
 import EntryMethodSelector from './EntryMethodSelector';
 import { MatchDatePicker } from './MatchDatePicker';
 import { VenueSelector } from './VenueSelector';
+import { FloatingCountInput } from './FloatingCountInput';
 
 export interface MatchFormData {
   gameMode: GameMode;
@@ -26,6 +27,7 @@ export interface MatchFormData {
   rank: string;
   finalPoints: string;
   rawScore: string;
+  floatingCount: string;
   chipCount: string;
   venueName: string;
   memo: string;
@@ -35,6 +37,7 @@ export interface MatchFormErrors {
   rankError: string | null;
   finalPointsError: string | null;
   rawScoreError: string | null;
+  floatingCountError: string | null;
   dateError: string | null;
 }
 
@@ -65,6 +68,8 @@ export interface MatchFormProps {
   onRankChange: (value: string) => void;
   onFinalPointsChange: (value: string) => void;
   onRawScoreChange: (value: string) => void;
+  onFloatingCountChange: (value: string) => void;
+  onFloatingCountBlur?: () => void;
   onChipCountChange: (value: string) => void;
   onVenueNameChange: (value: string | undefined) => void;
   onMemoChange: (value: string) => void;
@@ -96,6 +101,8 @@ const MatchForm: React.FC<MatchFormProps> = ({
   onRankChange,
   onFinalPointsChange,
   onRawScoreChange,
+  onFloatingCountChange,
+  onFloatingCountBlur,
   onChipCountChange,
   onVenueNameChange,
   onMemoChange,
@@ -201,6 +208,21 @@ const MatchForm: React.FC<MatchFormProps> = ({
           {errors.rankError && <Text style={styles.errorText}>{errors.rankError}</Text>}
         </View>
 
+        {/* 浮き人数入力（浮きウマルール使用時のみ、順位のみ方式） */}
+        {formData.entryMethod === 'provisional_rank_only' && formData.selectedRuleset?.useFloatingUma && (
+          <View style={styles.section}>
+            <FloatingCountInput
+              value={formData.floatingCount}
+              onChange={onFloatingCountChange}
+              onBlur={onFloatingCountBlur}
+              gameMode={formData.gameMode}
+              startingPoints={formData.selectedRuleset.startingPoints}
+              basePoints={formData.selectedRuleset.basePoints}
+              error={errors.floatingCountError || undefined}
+            />
+          </View>
+        )}
+
         {/* 入力方式別フィールド */}
         {formData.entryMethod === 'rank_plus_points' && (
           <View style={styles.section}>
@@ -241,6 +263,22 @@ const MatchForm: React.FC<MatchFormProps> = ({
           </View>
         )}
 
+        {/* 浮き人数入力（浮きウマルール使用時のみ、順位+素点方式） */}
+        {formData.entryMethod === 'rank_plus_raw' && formData.selectedRuleset?.useFloatingUma && (
+          <View style={styles.section}>
+            <FloatingCountInput
+              value={formData.floatingCount}
+              onChange={onFloatingCountChange}
+              onBlur={onFloatingCountBlur}
+              gameMode={formData.gameMode}
+              startingPoints={formData.selectedRuleset.startingPoints}
+              basePoints={formData.selectedRuleset.basePoints}
+              rawScore={formData.rawScore ? parseInt(formData.rawScore) : undefined}
+              error={errors.floatingCountError || undefined}
+            />
+          </View>
+        )}
+
         {/* 計算結果表示（順位+素点方式） */}
         {formData.entryMethod === 'rank_plus_raw' && showCalculation && calculationDetails && (
           <View style={styles.section}>
@@ -267,13 +305,13 @@ const MatchForm: React.FC<MatchFormProps> = ({
               <View style={styles.calculationRow}>
                 <Text style={styles.calculationLabel}>ウマ</Text>
                 <Text style={styles.calculationValue}>
-                  {calculationDetails.uma >= 0 ? '+' : ''}{calculationDetails.uma}pt
+                  {calculationDetails.umaPoints >= 0 ? '+' : ''}{calculationDetails.umaPoints}pt
                 </Text>
               </View>
               <View style={styles.calculationRow}>
                 <Text style={styles.calculationLabel}>オカ</Text>
                 <Text style={styles.calculationValue}>
-                  {calculationDetails.oka >= 0 ? '+' : ''}{calculationDetails.oka}pt
+                  {calculationDetails.okaPoints >= 0 ? '+' : ''}{calculationDetails.okaPoints}pt
                 </Text>
               </View>
               <View style={[styles.calculationRow, styles.calculationTotal]}>

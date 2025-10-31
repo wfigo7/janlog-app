@@ -237,17 +237,68 @@ class RulesetService:
         if not ruleset:
             raise ValueError("指定されたルールセットが見つかりません")
         
-        # ポイント計算を実行
-        result = self.point_calculator.calculate_final_points(
-            ruleset=ruleset,
-            rank=request.rank,
-            raw_score=request.rawScore
-        )
-        
-        return PointCalculationResponse(
-            finalPoints=result["finalPoints"],
-            calculation=result["calculation"]
-        )
+        # 浮きウマルール使用時のバリデーション
+        if ruleset.useFloatingUma:
+            if request.floatingCount is None:
+                raise ValueError("浮きウマルール使用時は浮き人数が必須です")
+            
+            # 浮き人数の範囲チェック
+            from ..utils.floating_uma_validator import FloatingUmaValidator
+            errors = FloatingUmaValidator.validate_floating_count(
+                request.floatingCount,
+                ruleset.startingPoints,
+                ruleset.basePoints,
+                ruleset.gameMode
+            )
+            if errors:
+                raise ValueError(f"浮き人数のバリデーションエラー: {', '.join(errors)}")
+            
+            # 浮きウマを使用したポイント計算
+            from ..utils.floating_uma_calculator import FloatingUmaCalculator
+            final_points = FloatingUmaCalculator.calculate_points(
+                request.rawScore,
+                request.rank,
+                request.floatingCount,
+                ruleset
+            )
+            
+            # 計算詳細を作成
+            basic_calculation = (request.rawScore - ruleset.basePoints) / 1000
+            uma_array = FloatingUmaCalculator.get_uma_for_floating_count(
+                request.floatingCount, ruleset.umaMatrix
+            )
+            uma_points = uma_array[request.rank - 1]
+            oka_points = ruleset.oka if request.rank == 1 else 0
+            
+            calculation = {
+                "rawScore": request.rawScore,
+                "basePoints": ruleset.basePoints,
+                "baseCalculation": round(basic_calculation, 1),
+                "rank": request.rank,
+                "umaPoints": uma_points,
+                "okaPoints": oka_points,
+                "finalPoints": final_points,
+                "floatingCount": request.floatingCount,
+                "umaArray": uma_array,
+                "formula": f"({request.rawScore} - {ruleset.basePoints}) / 1000 + {uma_points} + {oka_points} = {final_points}"
+            }
+            
+            return PointCalculationResponse(
+                finalPoints=final_points,
+                calculation=calculation
+            )
+        else:
+            # 標準ウマを使用したポイント計算
+            result = self.point_calculator.calculate_final_points(
+                ruleset=ruleset,
+                rank=request.rank,
+                raw_score=request.rawScore
+            )
+            
+            return PointCalculationResponse(
+                finalPoints=result["finalPoints"],
+                calculation=result["calculation"]
+            )
     
     async def get_rule_templates(self) -> RuleTemplateResponse:
         """

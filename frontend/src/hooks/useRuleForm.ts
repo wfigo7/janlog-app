@@ -17,7 +17,9 @@ export interface RuleFormData {
     gameMode: 'three' | 'four';
     startingPoints: string;
     basePoints: string;
+    useFloatingUma: boolean;
     uma: string[];
+    umaMatrix: Record<string, number[]>;
     oka: string;
     useChips: boolean;
     memo: string;
@@ -25,13 +27,21 @@ export interface RuleFormData {
 
 export function useRuleForm({ initialRule, onSubmit, isEditMode = false }: UseRuleFormProps) {
     const { gameMode: globalGameMode } = useGameMode();
-    
+
     const [formData, setFormData] = useState<RuleFormData>({
         ruleName: '',
         gameMode: isEditMode ? 'four' : globalGameMode, // 新規作成時はグローバルなgameModeを使用
         startingPoints: '25000',
         basePoints: '30000',
+        useFloatingUma: false,
         uma: ['30', '10', '-10', '-30'],
+        umaMatrix: {
+            '0': [0, 0, 0, 0],
+            '1': [0, 0, 0, 0],
+            '2': [0, 0, 0, 0],
+            '3': [0, 0, 0, 0],
+            '4': [0, 0, 0, 0],
+        },
         oka: '20',
         useChips: false,
         memo: '',
@@ -45,6 +55,15 @@ export function useRuleForm({ initialRule, onSubmit, isEditMode = false }: UseRu
      */
     const handleGameModeChange = (mode: 'three' | 'four') => {
         console.log('handleGameModeChange called with:', mode);
+        const playerCount = mode === 'three' ? 3 : 4;
+        const defaultUmaMatrix: Record<string, number[]> = {
+            '0': Array(playerCount).fill(0),
+            '1': Array(playerCount).fill(0),
+            '2': Array(playerCount).fill(0),
+            '3': Array(playerCount).fill(0),
+            '4': Array(playerCount).fill(0),
+        };
+
         if (mode === 'three') {
             setFormData({
                 ...formData,
@@ -52,6 +71,7 @@ export function useRuleForm({ initialRule, onSubmit, isEditMode = false }: UseRu
                 startingPoints: '35000',
                 basePoints: '40000',
                 uma: ['20', '0', '-20'],
+                umaMatrix: defaultUmaMatrix,
                 oka: '15',
             });
         } else {
@@ -61,6 +81,7 @@ export function useRuleForm({ initialRule, onSubmit, isEditMode = false }: UseRu
                 startingPoints: '25000',
                 basePoints: '30000',
                 uma: ['30', '10', '-10', '-30'],
+                umaMatrix: defaultUmaMatrix,
                 oka: '20',
             });
         }
@@ -78,12 +99,23 @@ export function useRuleForm({ initialRule, onSubmit, isEditMode = false }: UseRu
     // 初期データの読み込み
     useEffect(() => {
         if (initialRule) {
+            const playerCount = initialRule.gameMode === 'three' ? 3 : 4;
+            const defaultUmaMatrix: Record<string, number[]> = {
+                '0': Array(playerCount).fill(0),
+                '1': Array(playerCount).fill(0),
+                '2': Array(playerCount).fill(0),
+                '3': Array(playerCount).fill(0),
+                '4': Array(playerCount).fill(0),
+            };
+
             setFormData({
                 ruleName: initialRule.ruleName,
                 gameMode: initialRule.gameMode,
                 startingPoints: initialRule.startingPoints.toString(),
                 basePoints: initialRule.basePoints.toString(),
+                useFloatingUma: initialRule.useFloatingUma || false,
                 uma: initialRule.uma.map(u => u.toString()),
+                umaMatrix: initialRule.umaMatrix || defaultUmaMatrix,
                 oka: initialRule.oka.toString(),
                 useChips: initialRule.useChips,
                 memo: initialRule.memo || '',
@@ -179,6 +211,41 @@ export function useRuleForm({ initialRule, onSubmit, isEditMode = false }: UseRu
         const okaNum = parseInt(formData.oka, 10);
         if (isNaN(okaNum)) {
             newErrors.oka = 'オカは数値で入力してください';
+        }
+
+        // 浮きウマのバリデーション
+        if (formData.useFloatingUma) {
+            const playerCount = formData.gameMode === 'three' ? 3 : 4;
+            const startNum = parseInt(formData.startingPoints, 10);
+            const baseNum = parseInt(formData.basePoints, 10);
+
+            // 有効な浮き人数範囲を計算
+            let minFloating = 1;
+            let maxFloating = playerCount;
+
+            if (startNum === baseNum) {
+                minFloating = 1;
+                maxFloating = playerCount;
+            } else if (startNum < baseNum) {
+                minFloating = 0;
+                maxFloating = playerCount - 1;
+            }
+
+            // 各浮き人数のウマ配列をバリデーション
+            for (let i = minFloating; i <= maxFloating; i++) {
+                const key = String(i);
+                const umaArray = formData.umaMatrix[key];
+
+                if (!umaArray || umaArray.length !== playerCount) {
+                    newErrors[`umaMatrix_${key}`] = `浮き${i}人のウマ配列は${playerCount}要素である必要があります`;
+                    continue;
+                }
+
+                const sum = umaArray.reduce((acc, val) => acc + val, 0);
+                if (sum !== 0) {
+                    newErrors[`umaMatrix_${key}`] = `浮き${i}人のウマ配列の合計は0である必要があります（現在: ${sum > 0 ? '+' : ''}${sum}）`;
+                }
+            }
         }
 
         setErrors(newErrors);

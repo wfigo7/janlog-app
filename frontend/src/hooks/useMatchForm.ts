@@ -14,7 +14,7 @@ export interface UseMatchFormProps {
 
 export const useMatchForm = ({ initialData, onSubmit, isEditMode = false }: UseMatchFormProps) => {
   const { gameMode } = useGameMode();
-  
+
   // フォームデータ
   const [formData, setFormData] = useState<MatchFormData>(() => {
     const defaultData = {
@@ -31,16 +31,17 @@ export const useMatchForm = ({ initialData, onSubmit, isEditMode = false }: UseM
       rank: '',
       finalPoints: '',
       rawScore: '',
+      floatingCount: '',
       chipCount: '',
       venueName: '',
       memo: '',
     };
-    
+
     // 初期データが提供されている場合は、それを優先して使用
     if (initialData) {
       return { ...defaultData, ...initialData };
     }
-    
+
     return defaultData;
   });
 
@@ -54,6 +55,7 @@ export const useMatchForm = ({ initialData, onSubmit, isEditMode = false }: UseM
         rank: '',
         finalPoints: '',
         rawScore: '',
+        floatingCount: '',
       }));
       clearCalculations();
     }
@@ -73,7 +75,13 @@ export const useMatchForm = ({ initialData, onSubmit, isEditMode = false }: UseM
     rankError: null,
     finalPointsError: null,
     rawScoreError: null,
+    floatingCountError: null,
     dateError: null,
+  });
+
+  // タッチ状態（フィールドがフォーカスされたかどうか）
+  const [touched, setTouched] = useState({
+    floatingCount: false,
   });
 
   // 計算結果
@@ -133,7 +141,7 @@ export const useMatchForm = ({ initialData, onSubmit, isEditMode = false }: UseM
 
   const validateMatchDate = (dateString: string): { isValid: boolean; message?: string } => {
     if (!dateString) return { isValid: false, message: '対局日を選択してください' };
-    
+
     const date = new Date(dateString);
     const now = new Date();
     const fiveYearsAgo = new Date();
@@ -148,11 +156,51 @@ export const useMatchForm = ({ initialData, onSubmit, isEditMode = false }: UseM
     return { isValid: true };
   };
 
+  const validateFloatingCount = (
+    floatingCountValue: string,
+    ruleset: Ruleset | null
+  ): { isValid: boolean; message?: string } => {
+    if (!ruleset?.useFloatingUma) {
+      return { isValid: true }; // 浮きウマ使用しない場合はバリデーション不要
+    }
+
+    if (!floatingCountValue) {
+      return { isValid: false, message: '浮き人数を入力してください' };
+    }
+
+    const num = parseInt(floatingCountValue);
+    if (isNaN(num)) {
+      return { isValid: false, message: '数値を入力してください' };
+    }
+
+    // 有効範囲を計算
+    const playerCount = formData.gameMode === 'three' ? 3 : 4;
+    let minCount: number;
+    let maxCount: number;
+
+    if (ruleset.startingPoints === ruleset.basePoints) {
+      minCount = 1;
+      maxCount = playerCount;
+    } else if (ruleset.startingPoints < ruleset.basePoints) {
+      minCount = 0;
+      maxCount = playerCount - 1;
+    } else {
+      return { isValid: false, message: '開始点は基準点以下である必要があります' };
+    }
+
+    if (num < minCount || num > maxCount) {
+      return { isValid: false, message: `${minCount}〜${maxCount}人の範囲で入力してください` };
+    }
+
+    return { isValid: true };
+  };
+
   // 自動計算ロジック
   const calculatePointsAutomatically = async (
     ruleset: Ruleset,
     rankValue: string,
-    rawScoreValue: string
+    rawScoreValue: string,
+    floatingCountValue?: string
   ) => {
     const rankNum = parseInt(rankValue);
 
@@ -173,6 +221,23 @@ export const useMatchForm = ({ initialData, onSubmit, isEditMode = false }: UseM
     }
 
     setErrors(prev => ({ ...prev, rawScoreError: null }));
+
+    // 浮きウマルール使用時は浮き人数のバリデーション（タッチされている場合のみエラー表示）
+    if (ruleset.useFloatingUma) {
+      const floatingValidation = validateFloatingCount(floatingCountValue || '', ruleset);
+      if (!floatingValidation.isValid) {
+        setCalculatedPoints(null);
+        setCalculationDetails(null);
+        setShowCalculation(false);
+        // タッチされている場合のみエラーを表示
+        if (touched.floatingCount) {
+          setErrors(prev => ({ ...prev, floatingCountError: floatingValidation.message || null }));
+        }
+        return;
+      }
+      setErrors(prev => ({ ...prev, floatingCountError: null }));
+    }
+
     const rawScoreNum = parseInt(rawScoreValue);
 
     setIsCalculating(true);
@@ -181,6 +246,7 @@ export const useMatchForm = ({ initialData, onSubmit, isEditMode = false }: UseM
         rulesetId: ruleset.rulesetId,
         rank: rankNum,
         rawScore: rawScoreNum,
+        floatingCount: floatingCountValue ? parseInt(floatingCountValue) : undefined,
       };
 
       const response = await rulesetService.calculatePoints(request);
@@ -199,7 +265,8 @@ export const useMatchForm = ({ initialData, onSubmit, isEditMode = false }: UseM
 
   const calculateProvisionalPointsAutomatically = async (
     ruleset: Ruleset,
-    rankValue: string
+    rankValue: string,
+    floatingCountValue?: string
   ) => {
     const rankNum = parseInt(rankValue);
 
@@ -208,6 +275,22 @@ export const useMatchForm = ({ initialData, onSubmit, isEditMode = false }: UseM
       setProvisionalDetails(null);
       setShowProvisionalCalculation(false);
       return;
+    }
+
+    // 浮きウマルール使用時は浮き人数のバリデーション（タッチされている場合のみエラー表示）
+    if (ruleset.useFloatingUma) {
+      const floatingValidation = validateFloatingCount(floatingCountValue || '', ruleset);
+      if (!floatingValidation.isValid) {
+        setProvisionalPoints(null);
+        setProvisionalDetails(null);
+        setShowProvisionalCalculation(false);
+        // タッチされている場合のみエラーを表示
+        if (touched.floatingCount) {
+          setErrors(prev => ({ ...prev, floatingCountError: floatingValidation.message || null }));
+        }
+        return;
+      }
+      setErrors(prev => ({ ...prev, floatingCountError: null }));
     }
 
     setIsCalculating(true);
@@ -238,6 +321,7 @@ export const useMatchForm = ({ initialData, onSubmit, isEditMode = false }: UseM
         rulesetId: ruleset.rulesetId,
         rank: rankNum,
         rawScore: provisionalRawScore,
+        floatingCount: floatingCountValue ? parseInt(floatingCountValue) : undefined,
       };
 
       const response = await rulesetService.calculatePoints(request);
@@ -262,22 +346,22 @@ export const useMatchForm = ({ initialData, onSubmit, isEditMode = false }: UseM
   useEffect(() => {
     if (formData.entryMethod === 'rank_plus_raw' && formData.selectedRuleset) {
       const timeoutId = setTimeout(() => {
-        calculatePointsAutomatically(formData.selectedRuleset!, formData.rank, formData.rawScore);
+        calculatePointsAutomatically(formData.selectedRuleset!, formData.rank, formData.rawScore, formData.floatingCount);
       }, 500);
 
       return () => clearTimeout(timeoutId);
     }
-  }, [formData.selectedRuleset, formData.rank, formData.rawScore, formData.entryMethod, maxRank]);
+  }, [formData.selectedRuleset, formData.rank, formData.rawScore, formData.floatingCount, formData.entryMethod, maxRank]);
 
   useEffect(() => {
     if (formData.entryMethod === 'provisional_rank_only' && formData.selectedRuleset) {
       const timeoutId = setTimeout(() => {
-        calculateProvisionalPointsAutomatically(formData.selectedRuleset!, formData.rank);
+        calculateProvisionalPointsAutomatically(formData.selectedRuleset!, formData.rank, formData.floatingCount);
       }, 300);
 
       return () => clearTimeout(timeoutId);
     }
-  }, [formData.selectedRuleset, formData.rank, formData.entryMethod, maxRank]);
+  }, [formData.selectedRuleset, formData.rank, formData.floatingCount, formData.entryMethod, maxRank]);
 
   // イベントハンドラー
   const handleRulesetSelect = (ruleset: Ruleset) => {
@@ -286,14 +370,16 @@ export const useMatchForm = ({ initialData, onSubmit, isEditMode = false }: UseM
   };
 
   const handleEntryMethodChange = (method: EntryMethod) => {
-    setFormData(prev => ({ 
-      ...prev, 
+    setFormData(prev => ({
+      ...prev,
       entryMethod: method,
       finalPoints: '',
-      rawScore: ''
+      rawScore: '',
+      floatingCount: '',
     }));
     clearCalculations();
-    setErrors(prev => ({ ...prev, rawScoreError: null, finalPointsError: null }));
+    setErrors(prev => ({ ...prev, rawScoreError: null, finalPointsError: null, floatingCountError: null }));
+    setTouched(prev => ({ ...prev, floatingCount: false }));
   };
 
   const handleRankChange = (value: string) => {
@@ -360,6 +446,7 @@ export const useMatchForm = ({ initialData, onSubmit, isEditMode = false }: UseM
       rankError: null,
       finalPointsError: null,
       rawScoreError: null,
+      floatingCountError: null,
       dateError: null,
     };
 
@@ -388,10 +475,26 @@ export const useMatchForm = ({ initialData, onSubmit, isEditMode = false }: UseM
       if (!rawValidation.isValid) {
         newErrors.rawScoreError = rawValidation.message || null;
       }
+
+      // 浮きウマルール使用時は浮き人数が必須
+      if (formData.selectedRuleset.useFloatingUma) {
+        const floatingValidation = validateFloatingCount(formData.floatingCount, formData.selectedRuleset);
+        if (!floatingValidation.isValid) {
+          newErrors.floatingCountError = floatingValidation.message || null;
+        }
+      }
     } else if (formData.entryMethod === 'provisional_rank_only') {
       if (provisionalPoints === null) {
         showErrorNotification('ポイントが計算されていません。順位と素点を正しく入力してください');
         return false;
+      }
+      
+      // 浮きウマルール使用時は浮き人数が必須
+      if (formData.selectedRuleset.useFloatingUma) {
+        const floatingValidation = validateFloatingCount(formData.floatingCount, formData.selectedRuleset);
+        if (!floatingValidation.isValid) {
+          newErrors.floatingCountError = floatingValidation.message || null;
+        }
       }
     }
 
@@ -440,6 +543,25 @@ export const useMatchForm = ({ initialData, onSubmit, isEditMode = false }: UseM
     handleRankChange,
     handleFinalPointsChange,
     handleRawScoreChange,
+    handleFloatingCountChange: (value: string) => {
+      setFormData(prev => ({ ...prev, floatingCount: value }));
+      // タッチされた後のみバリデーション
+      if (touched.floatingCount) {
+        if (value) {
+          const validation = validateFloatingCount(value, formData.selectedRuleset);
+          setErrors(prev => ({ ...prev, floatingCountError: validation.isValid ? null : validation.message || null }));
+        } else {
+          const validation = validateFloatingCount(value, formData.selectedRuleset);
+          setErrors(prev => ({ ...prev, floatingCountError: validation.message || null }));
+        }
+      }
+    },
+    handleFloatingCountBlur: () => {
+      setTouched(prev => ({ ...prev, floatingCount: true }));
+      // ブラー時にバリデーション実行
+      const validation = validateFloatingCount(formData.floatingCount, formData.selectedRuleset);
+      setErrors(prev => ({ ...prev, floatingCountError: validation.isValid ? null : validation.message || null }));
+    },
     handleChipCountChange: (value: string) => setFormData(prev => ({ ...prev, chipCount: value })),
     handleVenueNameChange: (value: string | undefined) => setFormData(prev => ({ ...prev, venueName: value || '' })),
     handleMemoChange: (value: string) => setFormData(prev => ({ ...prev, memo: value })),

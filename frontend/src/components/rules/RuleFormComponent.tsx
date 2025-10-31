@@ -14,6 +14,8 @@ import {
     Modal,
 } from 'react-native';
 import { RuleFormData } from '@/src/hooks/useRuleForm';
+import { FloatingUmaToggle } from './FloatingUmaToggle';
+import { FloatingUmaMatrixInput } from './FloatingUmaMatrixInput';
 
 interface RuleFormComponentProps {
     formData: RuleFormData;
@@ -95,27 +97,51 @@ export default function RuleFormComponent({
                     {errors.basePoints && <Text style={styles.errorText}>{errors.basePoints}</Text>}
                 </View>
 
-                {/* ウマ */}
-                <View style={styles.formGroup}>
-                    <Text style={styles.label}>ウマ *</Text>
-                    <Text style={styles.hint}>
-                        {formData.gameMode === 'three' ? '1位 / 2位 / 3位' : '1位 / 2位 / 3位 / 4位'}
-                    </Text>
-                    <View style={styles.umaContainer}>
-                        {formData.uma.map((value, index) => (
-                            <TextInput
-                                key={index}
-                                style={[styles.umaInput, errors.uma && styles.inputError]}
-                                value={value}
-                                onChangeText={(text) => onUmaChange(index, text)}
-                                placeholder={index === 0 ? '+30' : index === 1 ? '+10' : '-10'}
-                                placeholderTextColor="#999"
-                                keyboardType="numeric"
-                            />
-                        ))}
+                {/* ウマ（浮きウマ使用時は非表示） */}
+                {!formData.useFloatingUma && (
+                    <View style={styles.formGroup}>
+                        <Text style={styles.label}>ウマ *</Text>
+                        <Text style={styles.hint}>
+                            {formData.gameMode === 'three' ? '1位 / 2位 / 3位' : '1位 / 2位 / 3位 / 4位'}
+                        </Text>
+                        <View style={styles.umaContainer}>
+                            {formData.uma.map((value, index) => (
+                                <TextInput
+                                    key={index}
+                                    style={[styles.umaInput, errors.uma && styles.inputError]}
+                                    value={value}
+                                    onChangeText={(text) => onUmaChange(index, text)}
+                                    placeholder={index === 0 ? '+30' : index === 1 ? '+10' : '-10'}
+                                    placeholderTextColor="#999"
+                                    keyboardType="numeric"
+                                />
+                            ))}
+                        </View>
+                        {errors.uma && <Text style={styles.errorText}>{errors.uma}</Text>}
                     </View>
-                    {errors.uma && <Text style={styles.errorText}>{errors.uma}</Text>}
+                )}
+
+                {/* 浮きウマ使用フラグ */}
+                <View style={styles.formGroup}>
+                    <FloatingUmaToggle
+                        value={formData.useFloatingUma}
+                        onChange={(value) => onFieldChange('useFloatingUma', value)}
+                    />
                 </View>
+
+                {/* 浮き人数別ウマ表 */}
+                {formData.useFloatingUma && (
+                    <View style={styles.formGroup}>
+                        <FloatingUmaMatrixInput
+                            gameMode={formData.gameMode}
+                            startingPoints={parseInt(formData.startingPoints, 10) || 0}
+                            basePoints={parseInt(formData.basePoints, 10) || 0}
+                            value={formData.umaMatrix}
+                            onChange={(value) => onFieldChange('umaMatrix', value)}
+                            errors={errors}
+                        />
+                    </View>
+                )}
 
                 {/* オカ */}
                 <View style={styles.formGroup}>

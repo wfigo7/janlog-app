@@ -251,6 +251,13 @@ const MatchDetailScreen: React.FC = () => {
               <Text style={styles.infoValue}>{match.chipCount}枚</Text>
             </View>
           )}
+
+          {match.floatingCount !== undefined && match.floatingCount !== null && (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>浮き人数</Text>
+              <Text style={styles.infoValue}>{match.floatingCount}人</Text>
+            </View>
+          )}
         </View>
       </View>
 

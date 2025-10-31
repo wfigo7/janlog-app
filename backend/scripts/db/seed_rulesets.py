@@ -127,6 +127,10 @@ def create_ruleset_item(ruleset_data: Dict) -> Dict:
     ruleset_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, name_key))
     now = datetime.now(timezone.utc).isoformat()
 
+    # 浮きウマ設定の取得
+    use_floating_uma = ruleset_data.get("useFloatingUma", False)
+    uma_matrix = ruleset_data.get("umaMatrix", None)
+
     item = {
         "PK": "GLOBAL",
         "SK": f"RULESET#{ruleset_id}",
@@ -136,9 +140,9 @@ def create_ruleset_item(ruleset_data: Dict) -> Dict:
         "gameMode": ruleset_data["gameMode"],
         "startingPoints": ruleset_data["startingPoints"],
         "basePoints": ruleset_data["basePoints"],
-        "useFloatingUma": False,  # 固定ウマのみサポート
+        "useFloatingUma": use_floating_uma,
         "uma": ruleset_data["uma"],
-        "umaMatrix": None,  # 変動ウマは未使用
+        "umaMatrix": uma_matrix,
         "oka": ruleset_data["oka"],
         "useChips": ruleset_data.get("useChips", False),
         "memo": ruleset_data.get("description"),
