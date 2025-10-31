@@ -106,8 +106,8 @@ export const ERROR_MESSAGES: Record<
     hint: '直近5年以内の日付を選択してください',
   },
   [ValidationErrorCode.INVALID_RANK]: {
-    message: '順位が範囲外です',
-    hint: '1から{maxRank}の範囲で入力してください',
+    message: '順位を選択してください',
+    hint: '1から{maxRank}の範囲で選択してください',
   },
   [ValidationErrorCode.INVALID_FINAL_POINTS_RANGE]: {
     message: '最終ポイントが範囲外です',

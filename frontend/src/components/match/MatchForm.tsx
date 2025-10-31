@@ -18,6 +18,7 @@ import EntryMethodSelector from './EntryMethodSelector';
 import { MatchDatePicker } from './MatchDatePicker';
 import { VenueSelector } from './VenueSelector';
 import { FloatingCountInput } from './FloatingCountInput';
+import RankSelector from './RankSelector';
 
 export interface MatchFormData {
   gameMode: GameMode;
@@ -193,19 +194,12 @@ const MatchForm: React.FC<MatchFormProps> = ({
               順位のみで仮のポイントを計算します。開始点からの増減: {formData.gameMode === 'three' ? '1位(+15000), 2位(+0), 3位(-15000)' : '1位(+15000), 2位(+5000), 3位(-5000), 4位(-15000)'}
             </Text>
           )}
-          <TextInput
-            style={[styles.input, errors.rankError ? styles.inputError : null]}
-            value={formData.rank}
-            onChangeText={onRankChange}
-            placeholder={`1〜${maxRank}位`}
-            placeholderTextColor="#999"
-            keyboardType="numeric"
-            maxLength={1}
-            autoComplete="off"
-            autoCorrect={false}
-            autoCapitalize="none"
+          <RankSelector
+            gameMode={formData.gameMode}
+            selectedRank={formData.rank}
+            onRankChange={onRankChange}
+            error={errors.rankError}
           />
-          {errors.rankError && <Text style={styles.errorText}>{errors.rankError}</Text>}
         </View>
 
         {/* 浮き人数入力（浮きウマルール使用時のみ、順位のみ方式） */}

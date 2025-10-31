@@ -127,10 +127,13 @@ describe('MatchRegistrationScreen', () => {
   });
 
   it('デフォルト状態が正しく設定されている', () => {
-    const { getByPlaceholderText, getByText } = renderWithProvider(<MatchRegistrationScreen />);
+    const { getByText } = renderWithProvider(<MatchRegistrationScreen />);
 
-    // 4人麻雀がデフォルト選択
-    expect(getByPlaceholderText('1〜4位')).toBeTruthy();
+    // 4人麻雀がデフォルト選択（順位ボタンが4つ表示される）
+    expect(getByText('1着')).toBeTruthy();
+    expect(getByText('2着')).toBeTruthy();
+    expect(getByText('3着')).toBeTruthy();
+    expect(getByText('4着')).toBeTruthy();
 
     // 順位+最終ポイントがデフォルト選択
     expect(getByText('最終ポイント')).toBeTruthy();
@@ -154,7 +157,7 @@ describe('MatchRegistrationScreen', () => {
     const { rulesetService } = require('../../../src/services/rulesetService');
     rulesetService.calculatePoints.mockResolvedValue(mockCalculationResponse);
 
-    const { getByText, getByPlaceholderText, getByTestId } = renderWithProvider(<MatchRegistrationScreen />);
+    const { getByText, getByTestId } = renderWithProvider(<MatchRegistrationScreen />);
 
     // 順位のみ方式を選択
     fireEvent.press(getByText('順位のみ'));
@@ -162,9 +165,9 @@ describe('MatchRegistrationScreen', () => {
     // ルールセットを選択
     fireEvent.press(getByTestId('mock-rule-selector'));
 
-    // 順位を入力
-    const rankInput = getByPlaceholderText('1〜4位');
-    fireEvent.changeText(rankInput, '1');
+    // 順位ボタンをタップ（1着を選択）
+    const rankButton = getByText('1着');
+    fireEvent.press(rankButton);
 
     // 計算結果が表示されるまで待機
     await waitFor(() => {
@@ -183,7 +186,7 @@ describe('MatchRegistrationScreen', () => {
   it('順位のみ方式で各順位の仮素点が正しく設定される', async () => {
     const { rulesetService } = require('../../../src/services/rulesetService');
 
-    const { getByText, getByPlaceholderText, getByTestId } = renderWithProvider(<MatchRegistrationScreen />);
+    const { getByText, getByTestId } = renderWithProvider(<MatchRegistrationScreen />);
 
     // 順位のみ方式を選択
     fireEvent.press(getByText('順位のみ'));
@@ -191,14 +194,12 @@ describe('MatchRegistrationScreen', () => {
     // ルールセットを選択
     fireEvent.press(getByTestId('mock-rule-selector'));
 
-    const rankInput = getByPlaceholderText('1〜4位');
-
     // 1位の場合（25000 + 15000 = 40000）
     rulesetService.calculatePoints.mockResolvedValue({
       ...mockCalculationResponse,
       calculation: { ...mockCalculationResponse.calculation, provisionalRawScore: 40000 }
     });
-    fireEvent.changeText(rankInput, '1');
+    fireEvent.press(getByText('1着'));
     await waitFor(() => {
       expect(rulesetService.calculatePoints).toHaveBeenLastCalledWith({
         rulesetId: 'test-ruleset-1',
@@ -212,7 +213,7 @@ describe('MatchRegistrationScreen', () => {
       ...mockCalculationResponse,
       calculation: { ...mockCalculationResponse.calculation, provisionalRawScore: 30000 }
     });
-    fireEvent.changeText(rankInput, '2');
+    fireEvent.press(getByText('2着'));
     await waitFor(() => {
       expect(rulesetService.calculatePoints).toHaveBeenLastCalledWith({
         rulesetId: 'test-ruleset-1',
@@ -226,7 +227,7 @@ describe('MatchRegistrationScreen', () => {
       ...mockCalculationResponse,
       calculation: { ...mockCalculationResponse.calculation, provisionalRawScore: 20000 }
     });
-    fireEvent.changeText(rankInput, '3');
+    fireEvent.press(getByText('3着'));
     await waitFor(() => {
       expect(rulesetService.calculatePoints).toHaveBeenLastCalledWith({
         rulesetId: 'test-ruleset-1',
@@ -240,7 +241,7 @@ describe('MatchRegistrationScreen', () => {
       ...mockCalculationResponse,
       calculation: { ...mockCalculationResponse.calculation, provisionalRawScore: 10000 }
     });
-    fireEvent.changeText(rankInput, '4');
+    fireEvent.press(getByText('4着'));
     await waitFor(() => {
       expect(rulesetService.calculatePoints).toHaveBeenLastCalledWith({
         rulesetId: 'test-ruleset-1',
@@ -254,7 +255,7 @@ describe('MatchRegistrationScreen', () => {
     const { rulesetService } = require('../../../src/services/rulesetService');
     rulesetService.calculatePoints.mockResolvedValue(mockCalculationResponse);
 
-    const { getByText, getByPlaceholderText, getByTestId } = renderWithProvider(<MatchRegistrationScreen />);
+    const { getByText, getByTestId, queryByText } = renderWithProvider(<MatchRegistrationScreen />);
 
     // 3人麻雀を選択
     fireEvent.press(getByText('3人麻雀'));
@@ -262,15 +263,17 @@ describe('MatchRegistrationScreen', () => {
     // 順位のみ方式を選択
     fireEvent.press(getByText('順位のみ'));
 
-    // プレースホルダーが3人麻雀用に変更される
-    expect(getByPlaceholderText('1〜3位')).toBeTruthy();
+    // 順位ボタンが3つ表示される（4着ボタンは表示されない）
+    expect(getByText('1着')).toBeTruthy();
+    expect(getByText('2着')).toBeTruthy();
+    expect(getByText('3着')).toBeTruthy();
+    expect(queryByText('4着')).toBeNull();
 
     // ルールセットを選択
     fireEvent.press(getByTestId('mock-rule-selector'));
 
-    // 順位を入力（3位まで）
-    const rankInput = getByPlaceholderText('1〜3位');
-    fireEvent.changeText(rankInput, '3');
+    // 順位ボタンをタップ（3位まで）
+    fireEvent.press(getByText('3着'));
 
     // 計算が実行される
     await waitFor(() => {
@@ -286,7 +289,7 @@ describe('MatchRegistrationScreen', () => {
     const { rulesetService } = require('../../../src/services/rulesetService');
     rulesetService.calculatePoints.mockRejectedValue(new Error('計算エラー'));
 
-    const { getByText, getByPlaceholderText, getByTestId, queryByText } = renderWithProvider(<MatchRegistrationScreen />);
+    const { getByText, getByTestId, queryByText } = renderWithProvider(<MatchRegistrationScreen />);
 
     // 順位のみ方式を選択
     fireEvent.press(getByText('順位のみ'));
@@ -294,9 +297,8 @@ describe('MatchRegistrationScreen', () => {
     // ルールセットを選択
     fireEvent.press(getByTestId('mock-rule-selector'));
 
-    // 順位を入力
-    const rankInput = getByPlaceholderText('1〜4位');
-    fireEvent.changeText(rankInput, '1');
+    // 順位ボタンをタップ
+    fireEvent.press(getByText('1着'));
 
     // エラー時は計算結果が表示されない
     await waitFor(() => {
@@ -308,12 +310,12 @@ describe('MatchRegistrationScreen', () => {
     const { rulesetService } = require('../../../src/services/rulesetService');
     rulesetService.calculatePoints.mockResolvedValue(mockCalculationResponse);
 
-    const { getByText, getByPlaceholderText, getByTestId, queryByText } = renderWithProvider(<MatchRegistrationScreen />);
+    const { getByText, getByTestId, queryByText } = renderWithProvider(<MatchRegistrationScreen />);
 
     // 順位のみ方式を選択して計算結果を表示
     fireEvent.press(getByText('順位のみ'));
     fireEvent.press(getByTestId('mock-rule-selector'));
-    fireEvent.changeText(getByPlaceholderText('1〜4位'), '1');
+    fireEvent.press(getByText('1着'));
 
     await waitFor(() => {
       expect(getByText('計算結果（順位のみ）')).toBeTruthy();
