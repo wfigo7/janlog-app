@@ -178,7 +178,6 @@ const MatchForm: React.FC<MatchFormProps> = ({
 
         {/* 入力方式選択 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>入力方式</Text>
           <EntryMethodSelector
             selectedMethod={formData.entryMethod}
             gameMode={formData.gameMode}
@@ -189,11 +188,6 @@ const MatchForm: React.FC<MatchFormProps> = ({
         {/* 順位入力 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>順位</Text>
-          {formData.entryMethod === 'provisional_rank_only' && (
-            <Text style={styles.provisionalDescription}>
-              順位のみで仮のポイントを計算します。開始点からの増減: {formData.gameMode === 'three' ? '1位(+15000), 2位(+0), 3位(-15000)' : '1位(+15000), 2位(+5000), 3位(-5000), 4位(-15000)'}
-            </Text>
-          )}
           <RankSelector
             gameMode={formData.gameMode}
             selectedRank={formData.rank}
@@ -475,7 +469,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 12,
   },
   sectionTitle: {
     fontSize: 16,

@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable } from 'react-native';
 import { EntryMethod } from '../../types/match';
 import { GameMode } from '../../types/common';
 
@@ -14,15 +14,17 @@ const EntryMethodSelector: React.FC<EntryMethodSelectorProps> = ({
   gameMode,
   onMethodChange,
 }) => {
+  const [showHelpModal, setShowHelpModal] = useState(false);
+
   const entryMethods = [
     {
       value: 'rank_plus_points' as EntryMethod,
-      title: '順位+最終ポイント',
+      title: '最終ポイント',
       description: '順位と最終ポイントを直接入力します。計算済みのポイントがある場合に便利です。',
     },
     {
       value: 'rank_plus_raw' as EntryMethod,
-      title: '順位+素点',
+      title: '素点計算',
       description: '順位と素点を入力し、選択されたルールに基づいて自動でポイント計算を行います。',
     },
     {
@@ -38,7 +40,19 @@ const EntryMethodSelector: React.FC<EntryMethodSelectorProps> = ({
 
   return (
     <View style={styles.container}>
-      <View style={styles.methodContainer}>
+      {/* ラベル + ヘルプアイコン */}
+      <View style={styles.labelRow}>
+        <Text style={styles.sectionTitle}>入力方式</Text>
+        <TouchableOpacity
+          style={styles.helpButton}
+          onPress={() => setShowHelpModal(true)}
+        >
+          <Text style={styles.helpIcon}>?</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* 入力方式選択（1行レイアウト） */}
+      <View style={styles.methodRow}>
         {entryMethods.map((method) => (
           <TouchableOpacity
             key={method.value}
@@ -48,92 +62,156 @@ const EntryMethodSelector: React.FC<EntryMethodSelectorProps> = ({
             ]}
             onPress={() => onMethodChange(method.value)}
           >
-            <View style={styles.methodContent}>
-              <Text
-                style={[
-                  styles.methodTitle,
-                  selectedMethod === method.value && styles.activeMethodTitle,
-                ]}
-              >
-                {method.title}
-              </Text>
-              <Text
-                style={[
-                  styles.methodDescription,
-                  selectedMethod === method.value && styles.activeMethodDescription,
-                ]}
-              >
-                {method.description}
-              </Text>
-            </View>
-            {selectedMethod === method.value && (
-              <View style={styles.selectedIndicator} />
-            )}
+            <Text
+              style={[
+                styles.methodTitle,
+                selectedMethod === method.value && styles.activeMethodTitle,
+              ]}
+            >
+              {method.title}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
+
+      {/* ヘルプモーダル */}
+      <Modal
+        visible={showHelpModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowHelpModal(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setShowHelpModal(false)}
+        >
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>入力方式について</Text>
+            
+            {entryMethods.map((method) => (
+              <View key={method.value} style={styles.helpItem}>
+                <Text style={styles.helpItemTitle}>■ {method.title}</Text>
+                <Text style={styles.helpItemDescription}>{method.description}</Text>
+              </View>
+            ))}
+
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setShowHelpModal(false)}
+            >
+              <Text style={styles.closeButtonText}>閉じる</Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 24,
+    marginBottom: 16,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginRight: 8,
   },
-  sectionDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 12,
-  },
-  methodContainer: {
-    gap: 12,
+  methodRow: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
   },
   methodButton: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 2,
-    borderColor: '#e0e0e0',
-    position: 'relative',
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+    alignItems: 'center',
   },
   activeMethod: {
-    borderColor: '#2196F3',
-    backgroundColor: '#f3f8ff',
-  },
-  methodContent: {
-    flex: 1,
+    borderColor: '#007AFF',
+    backgroundColor: '#F0F8FF',
   },
   methodTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 6,
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333333',
+    textAlign: 'center',
   },
   activeMethodTitle: {
-    color: '#2196F3',
+    color: '#007AFF',
+    fontWeight: '600',
   },
-  methodDescription: {
-    fontSize: 13,
-    color: '#666',
-    lineHeight: 18,
+  helpButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  activeMethodDescription: {
-    color: '#1976D2',
+  helpIcon: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
-  selectedIndicator: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#2196F3',
+  // モーダルスタイル
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 20,
+    width: '100%',
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  helpItem: {
+    marginBottom: 16,
+  },
+  helpItemTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333333',
+    marginBottom: 4,
+  },
+  helpItemDescription: {
+    fontSize: 14,
+    color: '#666666',
+    lineHeight: 20,
+  },
+  closeButton: {
+    backgroundColor: '#007AFF',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  closeButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

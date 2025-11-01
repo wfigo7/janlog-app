@@ -119,8 +119,10 @@ describe('MatchRegistrationScreen', () => {
     expect(getByText('対局日')).toBeTruthy();
     expect(getByTestId('mock-match-date-picker')).toBeTruthy();
     expect(getByText('入力方式')).toBeTruthy(); // セクションタイトルのみ
-    expect(getByText('順位+最終ポイント')).toBeTruthy();
-    expect(getByText('順位+素点')).toBeTruthy();
+    // 複数の「最終ポイント」があるので getAllByText を使用
+    const finalPointsElements = screen.getAllByText('最終ポイント');
+    expect(finalPointsElements.length).toBeGreaterThan(0);
+    expect(getByText('素点計算')).toBeTruthy();
     expect(getByText('順位のみ')).toBeTruthy();
     expect(getByText('順位')).toBeTruthy();
     expect(getByText('登録')).toBeTruthy();
@@ -135,8 +137,9 @@ describe('MatchRegistrationScreen', () => {
     expect(getByText('3着')).toBeTruthy();
     expect(getByText('4着')).toBeTruthy();
 
-    // 順位+最終ポイントがデフォルト選択
-    expect(getByText('最終ポイント')).toBeTruthy();
+    // 最終ポイントがデフォルト選択（複数あるので getAllByText を使用）
+    const finalPointsElements = screen.getAllByText('最終ポイント');
+    expect(finalPointsElements.length).toBeGreaterThan(0);
   });
 
   it('順位のみ入力方式を選択できる', () => {
@@ -146,11 +149,8 @@ describe('MatchRegistrationScreen', () => {
     const provisionalButton = getByText('順位のみ');
     fireEvent.press(provisionalButton);
 
-    // 順位のみ入力の説明が表示される
-    expect(getByText(/順位のみで仮のポイントを計算します。開始点からの増減:/)).toBeTruthy();
-    // 複数の場所に同じテキストがあるため、getAllByTextを使用
-    const descriptions = screen.getAllByText(/1位\(\+15000\), 2位\(\+5000\), 3位\(-5000\), 4位\(-15000\)/);
-    expect(descriptions.length).toBeGreaterThan(0);
+    // 順位のみ方式が選択されたことを確認（説明文は削除されたのでヘルプモーダルで確認）
+    expect(getByText('?')).toBeTruthy(); // ヘルプボタンが表示される
   });
 
   it('順位のみ方式で仮ポイント計算が実行される', async () => {
@@ -321,8 +321,10 @@ describe('MatchRegistrationScreen', () => {
       expect(getByText('計算結果（順位のみ）')).toBeTruthy();
     });
 
-    // 別の入力方式に変更
-    fireEvent.press(getByText('順位+最終ポイント'));
+    // 別の入力方式に変更（複数の「最終ポイント」があるので、入力方式セクション内のものを選択）
+    const finalPointsButtons = screen.getAllByText('最終ポイント');
+    // 入力方式選択ボタンの方をタップ（通常は最初の要素）
+    fireEvent.press(finalPointsButtons[0]);
 
     // 計算結果がクリアされる
     expect(queryByText('計算結果（順位のみ）')).toBeNull();

@@ -20,8 +20,8 @@ describe('EntryMethodSelector', () => {
             />
         );
 
-        expect(getByText('順位+最終ポイント')).toBeTruthy();
-        expect(getByText('順位+素点')).toBeTruthy();
+        expect(getByText('最終ポイント')).toBeTruthy();
+        expect(getByText('素点計算')).toBeTruthy();
         expect(getByText('順位のみ')).toBeTruthy();
     });
 
@@ -35,7 +35,7 @@ describe('EntryMethodSelector', () => {
         );
 
         // 選択されたボタンのテキストが青色になることを確認
-        const selectedTitle = getByText('順位+素点');
+        const selectedTitle = getByText('素点計算');
         expect(selectedTitle).toBeTruthy();
     });
 
@@ -48,11 +48,11 @@ describe('EntryMethodSelector', () => {
             />
         );
 
-        fireEvent.press(getByText('順位+素点'));
+        fireEvent.press(getByText('素点計算'));
         expect(mockOnMethodChange).toHaveBeenCalledWith('rank_plus_raw');
     });
 
-    it('4人麻雀の場合、順位のみ方式の説明が正しく表示される', () => {
+    it('ヘルプボタンが表示される', () => {
         const { getByText } = render(
             <EntryMethodSelector
                 selectedMethod="provisional_rank_only"
@@ -61,22 +61,26 @@ describe('EntryMethodSelector', () => {
             />
         );
 
-        expect(getByText(/1位\(\+15000\), 2位\(\+5000\), 3位\(-5000\), 4位\(-15000\)/)).toBeTruthy();
+        expect(getByText('?')).toBeTruthy();
     });
 
-    it('3人麻雀の場合、順位のみ方式の説明が正しく表示される', () => {
+    it('ヘルプボタンをタップするとモーダルが表示される', () => {
         const { getByText } = render(
             <EntryMethodSelector
                 selectedMethod="provisional_rank_only"
-                gameMode="three"
+                gameMode="four"
                 onMethodChange={mockOnMethodChange}
             />
         );
 
-        expect(getByText(/1位\(\+15000\), 2位\(±0\), 3位\(-15000\)/)).toBeTruthy();
+        fireEvent.press(getByText('?'));
+        expect(getByText('入力方式について')).toBeTruthy();
+        expect(getByText('■ 最終ポイント')).toBeTruthy();
+        expect(getByText('■ 素点計算')).toBeTruthy();
+        expect(getByText('■ 順位のみ')).toBeTruthy();
     });
 
-    it('各方式の説明文が表示される', () => {
+    it('ヘルプモーダル内で各方式の説明文が表示される', () => {
         const { getByText } = render(
             <EntryMethodSelector
                 selectedMethod="rank_plus_points"
@@ -85,11 +89,14 @@ describe('EntryMethodSelector', () => {
             />
         );
 
+        // ヘルプボタンをタップしてモーダルを開く
+        fireEvent.press(getByText('?'));
+        
         expect(getByText('順位と最終ポイントを直接入力します。計算済みのポイントがある場合に便利です。')).toBeTruthy();
         expect(getByText('順位と素点を入力し、選択されたルールに基づいて自動でポイント計算を行います。')).toBeTruthy();
     });
 
-    it('選択インジケーターが表示される', () => {
+    it('入力方式ラベルが表示される', () => {
         const { getByText } = render(
             <EntryMethodSelector
                 selectedMethod="rank_plus_points"
@@ -98,8 +105,6 @@ describe('EntryMethodSelector', () => {
             />
         );
 
-        // 選択された方式のタイトルが表示されることを確認
-        expect(getByText('順位+最終ポイント')).toBeTruthy();
-        expect(getByText('順位と最終ポイントを直接入力します。計算済みのポイントがある場合に便利です。')).toBeTruthy();
+        expect(getByText('入力方式')).toBeTruthy();
     });
 });
