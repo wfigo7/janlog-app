@@ -137,7 +137,7 @@ const RuleSelector: React.FC<RuleSelectorProps> = ({
           <>
             <Text style={[styles.selectorText, !selectedRuleset && styles.placeholderText]}>
               {selectedRuleset
-                ? rulesetService.formatRulesetForDisplay(selectedRuleset)
+                ? selectedRuleset.ruleName
                 : 'ルールを選択してください'
               }
             </Text>

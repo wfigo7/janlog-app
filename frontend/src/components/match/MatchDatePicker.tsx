@@ -10,6 +10,7 @@ import {
   StyleSheet,
   Modal,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -19,6 +20,144 @@ interface MatchDatePickerProps {
   onChange: (date: string) => void;
   error?: string | null;
 }
+
+interface WebCalendarProps {
+  selectedDate: Date;
+  onDateSelect: (date: Date) => void;
+  minDate: Date;
+  maxDate: Date;
+}
+
+// Web用カレンダーコンポーネント
+const WebCalendar: React.FC<WebCalendarProps> = ({
+  selectedDate,
+  onDateSelect,
+  minDate,
+  maxDate,
+}) => {
+  const [currentMonth, setCurrentMonth] = useState(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
+
+  // 月の日数を取得
+  const getDaysInMonth = (date: Date): number => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  };
+
+  // 月の最初の日の曜日を取得（0=日曜日）
+  const getFirstDayOfMonth = (date: Date): number => {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  };
+
+  // 日付が選択可能かチェック
+  const isDateSelectable = (date: Date): boolean => {
+    return date >= minDate && date <= maxDate;
+  };
+
+  // 日付が選択されているかチェック
+  const isDateSelected = (date: Date): boolean => {
+    return date.getFullYear() === selectedDate.getFullYear() &&
+           date.getMonth() === selectedDate.getMonth() &&
+           date.getDate() === selectedDate.getDate();
+  };
+
+  // 今日かどうかチェック
+  const isToday = (date: Date): boolean => {
+    const today = new Date();
+    return date.getFullYear() === today.getFullYear() &&
+           date.getMonth() === today.getMonth() &&
+           date.getDate() === today.getDate();
+  };
+
+  // 前月に移動
+  const goToPreviousMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+  };
+
+  // 翌月に移動
+  const goToNextMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+  };
+
+  // カレンダーの日付を生成
+  const generateCalendarDays = () => {
+    const daysInMonth = getDaysInMonth(currentMonth);
+    const firstDay = getFirstDayOfMonth(currentMonth);
+    const days = [];
+
+    // 前月の空白セル
+    for (let i = 0; i < firstDay; i++) {
+      days.push(null);
+    }
+
+    // 当月の日付
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+      days.push(date);
+    }
+
+    // 6週間（42セル）になるまで空白セルを追加
+    while (days.length < 42) {
+      days.push(null);
+    }
+
+    return days;
+  };
+
+  const calendarDays = generateCalendarDays();
+  const monthYear = `${currentMonth.getFullYear()}年${currentMonth.getMonth() + 1}月`;
+
+  return (
+    <View style={styles.calendar}>
+      {/* カレンダーヘッダー */}
+      <View style={styles.calendarHeader}>
+        <TouchableOpacity onPress={goToPreviousMonth} style={styles.calendarNavButton}>
+          <Text style={styles.calendarNavText}>‹</Text>
+        </TouchableOpacity>
+        <Text style={styles.calendarTitle}>{monthYear}</Text>
+        <TouchableOpacity onPress={goToNextMonth} style={styles.calendarNavButton}>
+          <Text style={styles.calendarNavText}>›</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* 曜日ヘッダー */}
+      <View style={styles.calendarWeekHeader}>
+        {['日', '月', '火', '水', '木', '金', '土'].map((day, index) => (
+          <Text key={index} style={styles.calendarWeekDay}>{day}</Text>
+        ))}
+      </View>
+
+      {/* カレンダーグリッド */}
+      <View style={styles.calendarGrid}>
+        {Array.from({ length: Math.ceil(calendarDays.length / 7) }, (_, weekIndex) => (
+          <View key={weekIndex} style={styles.calendarWeek}>
+            {calendarDays.slice(weekIndex * 7, (weekIndex + 1) * 7).map((date, dayIndex) => (
+              <TouchableOpacity
+                key={dayIndex}
+                style={[
+                  styles.calendarDay,
+                  !date && styles.calendarDayEmpty,
+                  date && !isDateSelectable(date) && styles.calendarDayDisabled,
+                  date && isDateSelected(date) && styles.calendarDaySelected,
+                  date && isToday(date) && !isDateSelected(date) && styles.calendarDayToday,
+                ]}
+                onPress={() => date && isDateSelectable(date) && onDateSelect(date)}
+                disabled={!date || !isDateSelectable(date)}
+              >
+                <Text style={[
+                  styles.calendarDayText,
+                  date && !isDateSelectable(date) && styles.calendarDayTextDisabled,
+                  date && isDateSelected(date) && styles.calendarDayTextSelected,
+                  date && isToday(date) && !isDateSelected(date) && styles.calendarDayTextToday,
+                ]}>
+                  {date ? date.getDate() : ''}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+};
 
 export const MatchDatePicker: React.FC<MatchDatePickerProps> = ({
   value,
@@ -185,13 +324,15 @@ export const MatchDatePicker: React.FC<MatchDatePickerProps> = ({
                   <Text style={styles.doneButton}>完了</Text>
                 </TouchableOpacity>
               </View>
-              <View style={styles.webDatePickerContainer}>
+              <ScrollView style={styles.webDatePickerContainer}>
                 <Text style={styles.webDatePickerLabel}>日付を選択してください</Text>
                 <View style={styles.webDateDisplay}>
                   <Text style={styles.webDateText}>
                     {formatDisplayDate(selectedDate)}
                   </Text>
                 </View>
+                
+                {/* クイック選択ボタン（上部に移動） */}
                 <View style={styles.webDateControls}>
                   <TouchableOpacity
                     style={styles.webDateButton}
@@ -226,7 +367,15 @@ export const MatchDatePicker: React.FC<MatchDatePickerProps> = ({
                     <Text style={styles.webDateButtonText}>翌日</Text>
                   </TouchableOpacity>
                 </View>
-              </View>
+                
+                {/* カレンダー表示（下部に移動） */}
+                <WebCalendar
+                  selectedDate={selectedDate}
+                  onDateSelect={setSelectedDate}
+                  minDate={fiveYearsAgo}
+                  maxDate={today}
+                />
+              </ScrollView>
             </View>
           </View>
         </Modal>
@@ -268,7 +417,7 @@ export const MatchDatePicker: React.FC<MatchDatePickerProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create<any>({
   container: {
     marginBottom: 8,
   },
@@ -338,6 +487,7 @@ const styles = StyleSheet.create({
   },
   webDatePickerContainer: {
     padding: 20,
+    maxHeight: 600,
   },
   webDatePickerLabel: {
     fontSize: 16,
@@ -377,6 +527,92 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     textAlign: 'center',
+  },
+  // カレンダースタイル
+  calendar: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 16,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  calendarHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  calendarNavButton: {
+    padding: 8,
+    borderRadius: 4,
+    backgroundColor: '#f8f9fa',
+  },
+  calendarNavText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2196F3',
+  },
+  calendarTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  calendarWeekHeader: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  calendarWeekDay: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#666',
+    paddingVertical: 4,
+  },
+  calendarGrid: {
+    gap: 1,
+  },
+  calendarWeek: {
+    flexDirection: 'row',
+    gap: 1,
+  },
+  calendarDay: {
+    flex: 1,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 4,
+    backgroundColor: '#f8f9fa',
+  },
+  calendarDayEmpty: {
+    backgroundColor: 'transparent',
+  },
+  calendarDayDisabled: {
+    backgroundColor: '#e9ecef',
+  },
+  calendarDaySelected: {
+    backgroundColor: '#2196F3',
+  },
+  calendarDayToday: {
+    backgroundColor: '#fff3cd',
+    borderWidth: 1,
+    borderColor: '#ffc107',
+  },
+  calendarDayText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  calendarDayTextDisabled: {
+    color: '#adb5bd',
+  },
+  calendarDayTextSelected: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  calendarDayTextToday: {
+    color: '#856404',
+    fontWeight: '500',
   },
 });
 
