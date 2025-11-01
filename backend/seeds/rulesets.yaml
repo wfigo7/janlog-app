@@ -53,33 +53,23 @@ rulesets:
     oka: 20
     useChips: false
     isGlobal: true
-    description: プロリーグで使用される標準ルール
+    description: Mリーグで使用される標準ルール
     # 計算例: 1位 35000点の場合
     # (35000 - 30000) / 1000 + 30 + 20 = 55.0pt
     
-  - name: フリー雀荘標準（4人麻雀）
+  - name: 最高位戦ルール
     gameMode: four
-    startingPoints: 25000
+    startingPoints: 30000
     basePoints: 30000
-    uma: [20, 10, -10, -20]
-    oka: 20
-    useChips: true
-    isGlobal: true
-    description: 一般的なフリー雀荘ルール
-    # チップあり（役満、ドラ等でチップ加算）
-    
-  - name: 競技麻雀（4人麻雀）
-    gameMode: four
-    startingPoints: 25000
-    basePoints: 30000
-    uma: [15, 5, -5, -15]
-    oka: 20
+    uma: [30, 10, -10, -30]
+    oka: 0
     useChips: false
     isGlobal: true
-    description: 競技麻雀でよく使われるルール
-    # ウマが小さく、実力差が出やすい
+    description: 最高位戦日本プロ麻雀協会の順位戦ルール
+    # 計算例: 1位 35000点の場合
+    # (35000 - 30000) / 1000 + 30 = 35.0pt
     
-  - name: 日本プロ麻雀連盟公式ルール
+  - name: 連盟公式ルール
     gameMode: four
     startingPoints: 30000
     basePoints: 30000
@@ -94,10 +84,21 @@ rulesets:
     oka: 0
     useChips: false
     isGlobal: true
-    description: 日本プロ麻雀連盟の公式ルール（浮き人数に応じてウマが変動）
+    description: 日本プロ麻雀連盟の公式ルール
     # 30000点持ち30000点返し（オカなし）
     # 浮き人数1〜4でウマが変動
     # 例: 浮き2人の場合、ウマは [8, 4, -4, -8]
+    
+  - name: フリー雀荘標準
+    gameMode: four
+    startingPoints: 25000
+    basePoints: 30000
+    uma: [30, 10, -10, -30]
+    oka: 20
+    useChips: true
+    isGlobal: true
+    description: 一般的なフリー雀荘ルール（チップあり）
+    # チップあり（役満、ドラ等でチップ加算）
     
   # 3人麻雀ルール
   
@@ -113,22 +114,22 @@ rulesets:
     # 35000点持ち40000点返し
     # 2位はウマ±0
     
-  - name: フリー雀荘標準（3人麻雀）
+  - name: 3人麻雀フリー雀荘標準
     gameMode: three
-    startingPoints: 25000
-    basePoints: 35000
-    uma: [30, 0, -30]
-    oka: 30
+    startingPoints: 35000
+    basePoints: 40000
+    uma: [20, 0, -20]
+    oka: 15
     useChips: true
     isGlobal: true
-    description: 一般的なフリー雀荘ルール
+    description: 一般的なフリー雀荘ルール（チップあり）
     # 25000点持ち35000点返し
     # チップあり
     
-  - name: 3人麻雀浮きウマルール
+  - name: 3人麻雀沈みウマルール
     gameMode: three
-    startingPoints: 30000
-    basePoints: 35000
+    startingPoints: 35000
+    basePoints: 40000
     useFloatingUma: true
     uma: [20, 0, -20]  # 標準ウマ（使用されない）
     umaMatrix:
@@ -140,7 +141,7 @@ rulesets:
     oka: 15
     useChips: false
     isGlobal: true
-    description: 3人麻雀の浮きウマルール（浮き人数に応じてウマが変動）
+    description: 浮き人数に応じてウマが変動
     # 30000点持ち35000点返し
     # 浮き人数0〜2でウマが変動
     # 例: 浮き1人の場合、ウマは [40, -20, -20]
