@@ -51,8 +51,16 @@ describe('HeaderGameModeSelector', () => {
 
     await waitFor(() => {
       const fourModeText = getByText('4人麻雀');
+      const threeModeText = getByText('3人麻雀');
+      
+      // 4人麻雀が選択状態（activeText）
       expect(fourModeText.props.style).toContainEqual(
-        expect.objectContaining({ color: '#FFFFFF' })
+        expect.objectContaining({ fontWeight: '800', opacity: 1 })
+      );
+      
+      // 3人麻雀が非選択状態（通常のsegmentText）
+      expect(threeModeText.props.style).toContainEqual(
+        expect.objectContaining({ fontWeight: '500', opacity: 0.7 })
       );
     });
   });
@@ -72,6 +80,22 @@ describe('HeaderGameModeSelector', () => {
       expect(AsyncStorage.setItem).toHaveBeenCalledWith(
         '@janlog:gameMode',
         'three'
+      );
+    });
+
+    // 切り替え後の状態を確認
+    await waitFor(() => {
+      const threeModeText = getByText('3人麻雀');
+      const fourModeText = getByText('4人麻雀');
+      
+      // 3人麻雀が選択状態になる
+      expect(threeModeText.props.style).toContainEqual(
+        expect.objectContaining({ fontWeight: '800', opacity: 1 })
+      );
+      
+      // 4人麻雀が非選択状態になる
+      expect(fourModeText.props.style).toContainEqual(
+        expect.objectContaining({ fontWeight: '500', opacity: 0.7 })
       );
     });
   });
@@ -94,6 +118,22 @@ describe('HeaderGameModeSelector', () => {
       expect(AsyncStorage.setItem).toHaveBeenCalledWith(
         '@janlog:gameMode',
         'four'
+      );
+    });
+
+    // 切り替え後の状態を確認
+    await waitFor(() => {
+      const fourModeText = getByText('4人麻雀');
+      const threeModeText = getByText('3人麻雀');
+      
+      // 4人麻雀が選択状態になる
+      expect(fourModeText.props.style).toContainEqual(
+        expect.objectContaining({ fontWeight: '800', opacity: 1 })
+      );
+      
+      // 3人麻雀が非選択状態になる
+      expect(threeModeText.props.style).toContainEqual(
+        expect.objectContaining({ fontWeight: '500', opacity: 0.7 })
       );
     });
   });
@@ -121,8 +161,16 @@ describe('HeaderGameModeSelector', () => {
 
     await waitFor(() => {
       const threeModeText = getByText('3人麻雀');
+      const fourModeText = getByText('4人麻雀');
+      
+      // 3人麻雀が選択状態（activeText）
       expect(threeModeText.props.style).toContainEqual(
-        expect.objectContaining({ color: '#FFFFFF' })
+        expect.objectContaining({ fontWeight: '800', opacity: 1 })
+      );
+      
+      // 4人麻雀が非選択状態（通常のsegmentText）
+      expect(fourModeText.props.style).toContainEqual(
+        expect.objectContaining({ fontWeight: '500', opacity: 0.7 })
       );
     });
   });
