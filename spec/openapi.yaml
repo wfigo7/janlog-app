@@ -370,6 +370,7 @@ components:
             enum: [rank_plus_points, rank_plus_raw, provisional_rank_only],
           }
         rulesetId: { type: string, nullable: true }
+        rulesetName: { type: string, nullable: true, description: "ルール名（表示用）" }
         rank: { type: integer, minimum: 1, maximum: 4 }
         finalPoints:
           {

@@ -8,6 +8,7 @@ export interface Match {
   gameMode: GameMode;
   entryMethod: EntryMethod;
   rulesetId: string;
+  rulesetName?: string;  // ルール名（表示用）
   rank: number;
   finalPoints?: number;
   rawScore?: number;

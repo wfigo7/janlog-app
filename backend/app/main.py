@@ -299,8 +299,22 @@ async def get_match(
             )
             raise HTTPException(status_code=404, detail="対局が見つかりません")
 
+        # ルール名を取得
+        ruleset_name = None
+        if match.rulesetId:
+            try:
+                ruleset_service = get_ruleset_service()
+                ruleset = await ruleset_service.get_ruleset(match.rulesetId, user_id)
+                if ruleset:
+                    ruleset_name = ruleset.ruleName
+            except Exception as e:
+                logger.warning(f"ルールセット取得失敗 - ruleset_id: {match.rulesetId}, error: {str(e)}")
+
         logger.debug(f"対局詳細取得成功 - user_id: {user_id}, match_id: {match_id}")
-        return {"success": True, "data": match.to_api_response()}
+        response_data = match.to_api_response()
+        if ruleset_name:
+            response_data["rulesetName"] = ruleset_name
+        return {"success": True, "data": response_data}
 
     except HTTPException:
         raise

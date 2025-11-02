@@ -202,6 +202,12 @@ const MatchDetailScreen: React.FC = () => {
               {match.gameMode === 'three' ? '3人麻雀' : '4人麻雀'}
             </Text>
           </View>
+          {match.rulesetName && (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>ルール</Text>
+              <Text style={styles.infoValue}>{match.rulesetName}</Text>
+            </View>
+          )}
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>入力方式</Text>
             <Text style={styles.infoValue}>{getEntryMethodText(match.entryMethod)}</Text>
