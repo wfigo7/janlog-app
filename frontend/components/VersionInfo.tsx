@@ -13,16 +13,16 @@ export function VersionInfo() {
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>バージョン情報</Text>
+      <Text style={styles.sectionTitle}>アプリ情報</Text>
+
+      <View style={styles.infoItem}>
+          <Text style={styles.infoLabel}>アプリ名</Text>
+          <Text style={styles.infoValue}>Janlog</Text>
+      </View>
 
       <View style={styles.infoItem}>
         <Text style={styles.infoLabel}>アプリバージョン</Text>
         <Text style={styles.infoValue}>v{appVersion}</Text>
-      </View>
-
-      <View style={styles.infoItem}>
-        <Text style={styles.infoLabel}>ビルド番号</Text>
-        <Text style={styles.infoValue}>{buildNumber}</Text>
       </View>
 
       <View style={styles.infoItem}>
@@ -31,6 +31,12 @@ export function VersionInfo() {
           {serverVersion ? `v${serverVersion}` : '不明'}
         </Text>
       </View>
+      
+      <View style={styles.infoItem}>
+        <Text style={styles.infoLabel}>ビルド番号</Text>
+        <Text style={styles.infoValue}>{buildNumber}</Text>
+      </View>
+
     </View>
   );
 }
@@ -59,7 +65,7 @@ const styles = StyleSheet.create({
   infoLabel: {
     fontSize: 16,
     color: '#666',
-    flex: 1,
+    flex: 2,
   },
   infoValue: {
     fontSize: 16,

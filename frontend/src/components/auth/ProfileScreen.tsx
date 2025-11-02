@@ -8,11 +8,9 @@ import {
     Text,
     TouchableOpacity,
     StyleSheet,
-    Alert,
     ScrollView,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
-import { authService } from '../../services/authService';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
 import { VersionInfo } from '../../../components/VersionInfo';
 import Constants from 'expo-constants';
@@ -20,7 +18,7 @@ import { useRouter } from 'expo-router';
 
 export function ProfileScreen() {
     const router = useRouter();
-    const { user, logout, isLoading, checkAuthState } = useAuth();
+    const { user, logout, isLoading } = useAuth();
     const { showAlert, AlertComponent } = useCustomAlert();
 
     // 環境変数を取得
@@ -81,10 +79,13 @@ export function ProfileScreen() {
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>ユーザー情報</Text>
 
-                        <View style={styles.infoItem}>
-                            <Text style={styles.infoLabel}>表示名</Text>
-                            <Text style={styles.infoValue}>{user.displayName}</Text>
-                        </View>
+                        {/* 表示名とメールアドレスが異なる場合のみ表示名を表示 */}
+                        {user.displayName && user.displayName !== user.email && (
+                            <View style={styles.infoItem}>
+                                <Text style={styles.infoLabel}>表示名</Text>
+                                <Text style={styles.infoValue}>{user.displayName}</Text>
+                            </View>
+                        )}
 
                         <View style={styles.infoItem}>
                             <Text style={styles.infoLabel}>メールアドレス</Text>
@@ -142,15 +143,6 @@ export function ProfileScreen() {
                     </View>
 
                     {/* アプリ情報 */}
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>アプリ情報</Text>
-
-                        <View style={styles.infoItem}>
-                            <Text style={styles.infoLabel}>アプリ名</Text>
-                            <Text style={styles.infoValue}>Janlog</Text>
-                        </View>
-                    </View>
-
                     {/* バージョン情報 */}
                     <VersionInfo />
                 </View>
