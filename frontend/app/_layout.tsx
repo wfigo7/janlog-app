@@ -2,6 +2,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import 'react-native-reanimated';
 import 'react-native-get-random-values';
 import 'react-native-url-polyfill/auto';
@@ -27,22 +28,24 @@ export default function RootLayout() {
   }
 
   return (
-    <GameModeProvider>
-      <AuthProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <AuthGuard>
-            <Stack>
-              <Stack.Screen name="login" options={{ headerShown: false }} />
-              <Stack.Screen name="change-password" options={{ title: 'パスワード変更', headerBackVisible: false }} />
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="rules/create" options={{ title: 'ルール作成' }} />
-              <Stack.Screen name="rules/[rulesetId]" options={{ title: 'ルール編集' }} />
-              <Stack.Screen name="+not-found" />
-            </Stack>
-          </AuthGuard>
-          <StatusBar style="auto" />
-        </ThemeProvider>
-      </AuthProvider>
-    </GameModeProvider>
+    <SafeAreaProvider>
+      <GameModeProvider>
+        <AuthProvider>
+          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+            <AuthGuard>
+              <Stack>
+                <Stack.Screen name="login" options={{ headerShown: false }} />
+                <Stack.Screen name="change-password" options={{ title: 'パスワード変更', headerBackVisible: false }} />
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="rules/create" options={{ title: 'ルール作成' }} />
+                <Stack.Screen name="rules/[rulesetId]" options={{ title: 'ルール編集' }} />
+                <Stack.Screen name="+not-found" />
+              </Stack>
+            </AuthGuard>
+            <StatusBar style="auto" />
+          </ThemeProvider>
+        </AuthProvider>
+      </GameModeProvider>
+    </SafeAreaProvider>
   );
 }

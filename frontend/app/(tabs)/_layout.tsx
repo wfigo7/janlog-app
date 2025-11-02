@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HapticTab } from '@/components/HapticTab';
 import { IconSymbol } from '@/components/ui/IconSymbol';
@@ -11,6 +12,10 @@ import { HeaderGameModeSelector } from '@/src/components/common/HeaderGameModeSe
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const insets = useSafeAreaInsets();
+
+  // Web環境では insets.bottom が0になるため、最小限の余白を確保
+  const bottomInset = Math.max(insets.bottom, 8);
 
   // ゲームモード切り替えを表示する画面
   const screensWithGameMode = ['index', 'history', 'register', 'rules'];
@@ -43,13 +48,13 @@ export default function TabLayout() {
           ios: {
             // Use a transparent background on iOS to show the blur effect
             position: 'absolute',
-            height: 75,
-            paddingBottom: 8,
+            height: 70 + bottomInset,
+            paddingBottom: bottomInset,
             paddingTop: 8,
           },
           default: {
-            height: 75,
-            paddingBottom: 8,
+            height: 70 + bottomInset,
+            paddingBottom: bottomInset,
             paddingTop: 8,
           },
         }),
