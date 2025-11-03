@@ -46,22 +46,14 @@ const MatchRegistrationScreen: React.FC = () => {
     const result = await MatchService.createMatch(matchData);
 
     if (result.success) {
-      // フォームをリセット（ルールセットは保持）
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = (today.getMonth() + 1).toString().padStart(2, '0');
-      const day = today.getDate().toString().padStart(2, '0');
-
+      // フォームをリセット（対局日・ルール・入力方式・会場・メモは保持）
       setFormData(prev => ({
         ...prev,
-        matchDate: `${year}-${month}-${day}T00:00:00+09:00`,
         rank: '',
         finalPoints: '',
         rawScore: '',
         floatingCount: '',
         chipCount: '',
-        venueName: '',
-        memo: '',
       }));
 
       showSuccessNotification('対局を登録しました');
