@@ -51,26 +51,39 @@ export default function StatsScreen() {
         rulesetId: filters.rulesetId,
       };
 
-      // 統計データとチャートデータを並行取得
+      // 統計データとチャートデータを並行取得（個別にエラーハンドリング）
       const [statsResponse, chartResponse] = await Promise.all([
         StatsService.getStatsSummary(apiFilters),
         StatsService.getChartData(apiFilters),
       ]);
 
-      if (statsResponse.success) {
+      const errors: string[] = [];
+
+      if (statsResponse.success && statsResponse.data) {
         setStats(statsResponse.data);
       } else {
-        throw new Error('統計データの取得に失敗しました');
+        errors.push(`統計データ: ${statsResponse.message || '取得失敗'}`);
       }
 
-      if (chartResponse.success) {
+      if (chartResponse.success && chartResponse.data) {
         setChartData(chartResponse.data.matches || []);
+      } else {
+        errors.push(`チャートデータ: ${chartResponse.message || '取得失敗'}`);
+      }
+
+      // エラーがある場合は表示
+      if (errors.length > 0) {
+        console.error('データ取得エラー:', errors);
+        showAlert({
+          title: 'データ取得エラー',
+          message: errors.join('\n'),
+        });
       }
     } catch (error) {
-      console.error('データ取得エラー:', error);
+      console.error('予期しないエラー:', error);
       showAlert({
         title: 'エラー',
-        message: 'データの取得に失敗しました',
+        message: error instanceof Error ? error.message : 'データの取得に失敗しました',
       });
     } finally {
       setLoading(false);
@@ -112,6 +125,7 @@ export default function StatsScreen() {
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#007AFF" />
         <Text style={styles.loadingText}>統計データを読み込み中...</Text>
+        <Text style={styles.loadingSubtext}>初回起動時は少し時間がかかる場合があります</Text>
       </View>
     );
   }
@@ -382,6 +396,11 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
     color: '#666666',
+  },
+  loadingSubtext: {
+    marginTop: 8,
+    fontSize: 12,
+    color: '#999999',
   },
   emptyContainer: {
     flex: 1,

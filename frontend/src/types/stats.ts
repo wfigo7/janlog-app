@@ -35,7 +35,8 @@ export interface StatsSummary {
 
 export interface StatsResponse {
   success: boolean;
-  data: StatsSummary;
+  data?: StatsSummary;
+  message?: string;
 }
 
 import { GameMode } from './common';
@@ -51,7 +52,8 @@ export interface StatsFilters {
 
 export interface ChartDataResponse {
   success: boolean;
-  data: {
+  data?: {
     matches: Match[];
   };
+  message?: string;
 }

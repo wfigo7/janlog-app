@@ -30,11 +30,18 @@ export class StatsService {
         params.ruleset_id = filters.rulesetId;
       }
       
-      return await apiClient.get<StatsResponse>('/stats/summary', params);
+      const response = await apiClient.get<StatsResponse>('/stats/summary', params);
+      return {
+        success: true,
+        data: response.data,
+      };
       
     } catch (error) {
       console.error('統計データ取得エラー:', error);
-      throw error;
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : '統計データの取得に失敗しました',
+      };
     }
   }
 
@@ -63,11 +70,18 @@ export class StatsService {
         params.ruleset_id = filters.rulesetId;
       }
       
-      return await apiClient.get<ChartDataResponse>('/stats/chart-data', params);
+      const response = await apiClient.get<ChartDataResponse>('/stats/chart-data', params);
+      return {
+        success: true,
+        data: response.data,
+      };
       
     } catch (error) {
       console.error('チャートデータ取得エラー:', error);
-      throw error;
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'チャートデータの取得に失敗しました',
+      };
     }
   }
 }
