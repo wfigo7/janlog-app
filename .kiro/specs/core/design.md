@@ -47,6 +47,7 @@ src/
 │   │   ├── EntryMethodSelector.tsx
 │   │   ├── RuleSelector.tsx
 │   │   ├── MatchDatePicker.tsx
+│   │   ├── MatchTypeSelector.tsx
 │   │   └── PointCalculationDisplay.tsx
 │   ├── admin/
 │   │   ├── RuleManagementScreen.tsx
@@ -55,7 +56,9 @@ src/
 │       ├── DatePicker.tsx
 │       ├── LoadingSpinner.tsx
 │       ├── ErrorMessage.tsx
-│       └── HeaderGameModeSelector.tsx
+│       ├── HeaderGameModeSelector.tsx
+│       ├── FilterBar.tsx
+│       └── MatchTypeBadge.tsx
 ├── contexts/
 │   └── GameModeContext.tsx
 ├── services/
@@ -217,6 +220,7 @@ Attributes:
 - gameMode (three | four)
 - entryMethod (rank_plus_points | rank_plus_raw | provisional_rank_only)
 - rulesetId (ルールセットID)
+- matchType (free | set | competition, nullable) # 対局種別（フリー/セット/競技）
 - rank (1-4)
 - finalPoints (number, nullable) # 小数点第1位まで（例：+50.0, +11.2）
 - rawScore (integer, nullable)
@@ -1355,3 +1359,90 @@ entityType: RULESET
 - 対局データはrulesetIdのみを保持し、ルール内容は保持しない
 - ルールが削除された場合、対局詳細画面では「削除されたルール」と表示
 - ユーザーは柔軟にルール設定を変更できる
+
+
+## 対局種別管理
+
+### 概要
+
+対局種別（matchType）フィールドにより、フリー雀荘、セット麻雀、競技麻雀を区別して成績を管理・分析できます。
+
+### データモデル
+
+```typescript
+// フロントエンド型定義
+type MatchType = 'free' | 'set' | 'competition';
+
+interface Match {
+  matchId: string;
+  // ... 既存フィールド
+  matchType: MatchType | null;  // 対局種別（任意）
+}
+```
+
+```python
+# バックエンドモデル
+MatchType = Literal["free", "set", "competition"]
+
+class MatchRequest(BaseModel):
+    # ... 既存フィールド
+    matchType: Optional[MatchType] = Field(None, description="対局種別")
+```
+
+### コンポーネント
+
+#### MatchTypeSelector
+
+対局登録・編集画面で使用する対局種別選択コンポーネント。
+
+- 3つのボタン（フリー/セット/競技）
+- 選択済みボタンの再タップで選択解除（null設定）
+- 順位選択ボタンと同じデザインパターン
+
+#### MatchTypeBadge
+
+対局詳細画面で使用する対局種別表示バッジ。
+
+- フリー: 緑色バッジ
+- セット: 青色バッジ
+- 競技: オレンジ色バッジ
+- null: 非表示
+
+#### FilterBar（対局種別フィルタ統合）
+
+統計画面・履歴画面で使用するフィルタバー。対局種別フィルタを統合。
+
+- 「すべての対局種別」: matchType指定なし（nullを含む全対局）
+- 「フリー」: matchType = 'free'
+- 「セット」: matchType = 'set'
+- 「競技」: matchType = 'competition'
+
+### API仕様
+
+```yaml
+# GET /matches, GET /stats/summary
+parameters:
+  - name: match_type
+    in: query
+    schema:
+      type: string
+      enum: [free, set, competition]
+    description: 対局種別フィルタ（指定しない場合は全ての対局種別を含む）
+```
+
+### DynamoDBスキーマ
+
+```json
+{
+  "PK": "USER#user-001",
+  "SK": "MATCH#match-001",
+  "matchType": "free",  // 新規追加（null許容、nullの場合はAttributeを保存しない）
+  // ... 既存フィールド
+}
+```
+
+### 後方互換性
+
+- 既存データ（matchType Attributeなし）は読み込み時にnullとして扱う
+- 「すべての対局種別」フィルタでnullの対局も表示
+- データマイグレーション不要
