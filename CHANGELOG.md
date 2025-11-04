@@ -22,4 +22,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cognito User Pool認証
 - 環境分離戦略（local/development/production）
 
-[0.1.0]: https://github.com/notubo/janlog-app/releases/tag/v0.1.0
+[0.1.0]: https://github.com/wfigo7/janlog-app/releases/tag/v0.1.0
+

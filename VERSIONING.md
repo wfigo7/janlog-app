@@ -236,7 +236,32 @@ git log --oneline v0.1.0..HEAD
 # infra/package.json の version を更新
 ```
 
-#### 3. Gitタグの作成
+#### 3. CHANGELOG.mdの更新
+
+新しいバージョンのエントリをCHANGELOG.mdに追加します。
+
+```markdown
+## [0.2.0] - 2025-01-20
+
+### Added
+- 会場管理機能の追加
+
+### Changed
+- 統計画面のパフォーマンス向上
+
+### Fixed
+- 対局登録時のバリデーションエラー
+```
+
+#### 4. コミット
+
+```bash
+# 変更をコミット
+git add .
+git commit -m "chore: bump version to 0.2.0"
+```
+
+#### 5. Gitタグの作成
 
 ```bash
 # アプリケーションバージョンのタグを作成
@@ -252,19 +277,32 @@ git tag -a backend/v0.2.0 -m "Backend version 0.2.0"
 git tag -a infra/v0.1.0 -m "Infrastructure version 0.1.0"
 ```
 
-#### 4. コミット・プッシュ
+#### 6. プッシュ
 
 ```bash
-# 変更をコミット
-git add .
-git commit -m "chore: bump version to 0.2.0"
-
 # コミットとタグをプッシュ
 git push origin main
 git push origin --tags
 ```
 
-#### 5. CI/CDによる自動デプロイ
+#### 7. GitHubリリースの作成
+
+`.github/RELEASE_NOTES_TEMPLATE.md`を使用してGitHubリリースを作成します。
+
+1. GitHubのリリースページにアクセス
+2. 「Draft a new release」をクリック
+3. タグ（v0.2.0）を選択
+4. テンプレートを参考にリリースノートを作成
+5. CHANGELOG.mdの内容を反映
+6. 「Publish release」をクリック
+
+または、Kiroに依頼してリリースノートを生成することもできます：
+
+```
+「v0.2.0のGitHubリリースノートを作成して」
+```
+
+#### 8. CI/CDによる自動デプロイ
 
 GitHub Actionsが自動的に以下を実行します：
 
@@ -273,7 +311,7 @@ GitHub Actionsが自動的に以下を実行します：
 - Lambda関数の更新
 - フロントエンドのビルド（必要に応じて）
 
-#### 6. リリース完了の確認
+#### 9. リリース完了の確認
 
 - デプロイが成功したことを確認
 - `/health`エンドポイントで新しいバージョンが返されることを確認
@@ -354,9 +392,9 @@ git checkout v0.1.0
 
 ### 変更ログの管理
 
-- `CHANGELOG.md`でバージョンごとの変更を記録
-- GitHub Releasesで自動生成
-- ユーザー向けのリリースノートを作成
+- `CHANGELOG.md`でバージョンごとの変更を記録（開発者・ユーザー両方向け）
+- `.github/RELEASE_NOTES_TEMPLATE.md`を使用してGitHubリリースを作成
+- リリースノートはCHANGELOG.mdの内容をベースに、ユーザー向けに詳細化
 
 ### バージョン互換性の確認
 
