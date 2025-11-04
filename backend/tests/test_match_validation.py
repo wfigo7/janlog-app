@@ -258,3 +258,108 @@ class TestMatchRequestValidation:
             rawScore=-999900  # 下限
         )
         assert request4.rawScore == -999900
+
+
+class TestMatchTypeValidation:
+    """対局種別（matchType）のバリデーションテスト"""
+
+    def test_valid_match_type_free(self):
+        """有効な対局種別: free"""
+        request = MatchRequest(
+            date="2024-01-01T10:00:00Z",
+            gameMode="four",
+            entryMethod="rank_plus_points",
+            rank=2,
+            finalPoints=25.0,
+            matchType="free"
+        )
+        assert request.matchType == "free"
+
+    def test_valid_match_type_set(self):
+        """有効な対局種別: set"""
+        request = MatchRequest(
+            date="2024-01-01T10:00:00Z",
+            gameMode="four",
+            entryMethod="rank_plus_points",
+            rank=2,
+            finalPoints=25.0,
+            matchType="set"
+        )
+        assert request.matchType == "set"
+
+    def test_valid_match_type_competition(self):
+        """有効な対局種別: competition"""
+        request = MatchRequest(
+            date="2024-01-01T10:00:00Z",
+            gameMode="four",
+            entryMethod="rank_plus_points",
+            rank=2,
+            finalPoints=25.0,
+            matchType="competition"
+        )
+        assert request.matchType == "competition"
+
+    def test_valid_match_type_null(self):
+        """有効な対局種別: null（未指定）"""
+        request = MatchRequest(
+            date="2024-01-01T10:00:00Z",
+            gameMode="four",
+            entryMethod="rank_plus_points",
+            rank=2,
+            finalPoints=25.0,
+            matchType=None
+        )
+        assert request.matchType is None
+
+    def test_valid_match_type_omitted(self):
+        """有効な対局種別: フィールド省略（デフォルトでnull）"""
+        request = MatchRequest(
+            date="2024-01-01T10:00:00Z",
+            gameMode="four",
+            entryMethod="rank_plus_points",
+            rank=2,
+            finalPoints=25.0
+        )
+        assert request.matchType is None
+
+    def test_invalid_match_type(self):
+        """無効な対局種別"""
+        with pytest.raises(ValidationError) as exc_info:
+            MatchRequest(
+                date="2024-01-01T10:00:00Z",
+                gameMode="four",
+                entryMethod="rank_plus_points",
+                rank=2,
+                finalPoints=25.0,
+                matchType="invalid"  # 無効な値
+            )
+        
+        error = exc_info.value.errors()[0]
+        assert error["loc"] == ("matchType",)
+        # Pydanticのバリデーションエラーメッセージを確認
+        assert "Input should be 'free', 'set' or 'competition'" in error["msg"]
+
+    def test_match_type_with_rank_plus_raw(self):
+        """対局種別と順位+素点方式の組み合わせ"""
+        request = MatchRequest(
+            date="2024-01-01T10:00:00Z",
+            gameMode="four",
+            entryMethod="rank_plus_raw",
+            rank=2,
+            rawScore=32400,
+            matchType="free"
+        )
+        assert request.matchType == "free"
+        assert request.rawScore == 32400
+
+    def test_match_type_with_provisional_rank_only(self):
+        """対局種別と仮ポイント方式の組み合わせ"""
+        request = MatchRequest(
+            date="2024-01-01T10:00:00Z",
+            gameMode="three",
+            entryMethod="provisional_rank_only",
+            rank=1,
+            matchType="competition"
+        )
+        assert request.matchType == "competition"
+        assert request.rank == 1

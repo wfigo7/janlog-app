@@ -14,17 +14,20 @@ import { EntryMethod } from '../../types/match';
 import { GameMode } from '../../types/common';
 import { Ruleset } from '../../types/ruleset';
 import RuleSelector from './RuleSelector';
+import MatchTypeSelector from './MatchTypeSelector';
 import EntryMethodSelector from './EntryMethodSelector';
 import { MatchDatePicker } from './MatchDatePicker';
 import { VenueSelector } from './VenueSelector';
 import { FloatingCountInput } from './FloatingCountInput';
 import RankSelector from './RankSelector';
+import { MatchType } from '../../types/match';
 
 export interface MatchFormData {
   gameMode: GameMode;
   selectedRuleset: Ruleset | null;
   entryMethod: EntryMethod;
   matchDate: string;
+  matchType: MatchType | null;
   rank: string;
   finalPoints: string;
   rawScore: string;
@@ -66,6 +69,7 @@ export interface MatchFormProps {
   onRulesetSelect: (ruleset: Ruleset) => void;
   onEntryMethodChange: (method: EntryMethod) => void;
   onMatchDateChange: (date: string) => void;
+  onMatchTypeChange: (type: MatchType | null) => void;
   onRankChange: (value: string) => void;
   onFinalPointsChange: (value: string) => void;
   onRawScoreChange: (value: string) => void;
@@ -99,6 +103,7 @@ const MatchForm: React.FC<MatchFormProps> = ({
   onRulesetSelect,
   onEntryMethodChange,
   onMatchDateChange,
+  onMatchTypeChange,
   onRankChange,
   onFinalPointsChange,
   onRawScoreChange,
@@ -173,6 +178,14 @@ const MatchForm: React.FC<MatchFormProps> = ({
             gameMode={formData.gameMode}
             selectedRulesetId={formData.selectedRuleset?.rulesetId}
             onRulesetSelect={onRulesetSelect}
+          />
+        </View>
+
+        {/* 対局種別選択 */}
+        <View style={styles.section}>
+          <MatchTypeSelector
+            selectedType={formData.matchType}
+            onTypeChange={onMatchTypeChange}
           />
         </View>
 

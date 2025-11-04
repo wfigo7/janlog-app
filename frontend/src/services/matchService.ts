@@ -12,6 +12,7 @@ export interface MatchFilters {
   to?: string;
   venueId?: string;
   rulesetId?: string;
+  matchType?: string;
   limit?: number;
   nextKey?: string;
 }
@@ -83,6 +84,10 @@ export class MatchService {
 
       if (filters.rulesetId) {
         params.ruleset_id = filters.rulesetId;
+      }
+
+      if (filters.matchType) {
+        params.match_type = filters.matchType;
       }
 
       if (filters.limit) {

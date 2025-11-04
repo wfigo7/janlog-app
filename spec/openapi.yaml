@@ -64,6 +64,10 @@ paths:
         - in: query
           name: mode
           schema: { type: string, enum: [three, four] }
+        - in: query
+          name: matchType
+          schema: { type: string, enum: [free, set, competition] }
+          description: "対局種別フィルタ（指定しない場合は全ての対局種別を含む）"
       responses:
         "200":
           description: OK
@@ -136,6 +140,10 @@ paths:
         - in: query
           name: mode
           schema: { type: string, enum: [three, four], default: four }
+        - in: query
+          name: matchType
+          schema: { type: string, enum: [free, set, competition] }
+          description: "対局種別フィルタ（指定しない場合は全ての対局種別を含む）"
       responses:
         "200":
           description: OK
@@ -371,6 +379,7 @@ components:
           }
         rulesetId: { type: string, nullable: true }
         rulesetName: { type: string, nullable: true, description: "ルール名（表示用）" }
+        matchType: { type: string, enum: [free, set, competition], nullable: true, description: "対局種別（フリー/セット/競技）" }
         rank: { type: integer, minimum: 1, maximum: 4 }
         finalPoints:
           {
@@ -405,6 +414,7 @@ components:
             enum: [rank_plus_points, rank_plus_raw, provisional_rank_only],
           }
         rulesetId: { type: string, nullable: true }
+        matchType: { type: string, enum: [free, set, competition], nullable: true, description: "対局種別（フリー/セット/競技）" }
         rank: { type: integer, minimum: 1, maximum: 4 }
         finalPoints: { type: number, nullable: true }
         rawScore: { type: integer, nullable: true }

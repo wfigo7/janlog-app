@@ -169,6 +169,19 @@ const MatchDetailScreen: React.FC = () => {
     }
   };
 
+  const getMatchTypeText = (matchType: string) => {
+    switch (matchType) {
+      case 'free':
+        return 'フリー';
+      case 'set':
+        return 'セット';
+      case 'competition':
+        return '競技';
+      default:
+        return matchType;
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -206,6 +219,12 @@ const MatchDetailScreen: React.FC = () => {
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>ルール</Text>
               <Text style={styles.infoValue}>{match.rulesetName}</Text>
+            </View>
+          )}
+          {match.matchType && (
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>対局種別</Text>
+              <Text style={styles.infoValue}>{getMatchTypeText(match.matchType)}</Text>
             </View>
           )}
           <View style={styles.infoRow}>

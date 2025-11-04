@@ -50,6 +50,7 @@ const HistoryScreen: React.FC = () => {
         to: filters.dateRange?.to,
         venueId: filters.venueId,
         rulesetId: filters.rulesetId,
+        matchType: filters.matchType,
       });
 
       if (response.success && response.data) {
@@ -207,6 +208,7 @@ const HistoryScreen: React.FC = () => {
             gameMode={gameMode}
             showVenueFilter={true}
             showRulesetFilter={true}
+            showMatchTypeFilter={true}
           />
 
           <View style={styles.spacer} />

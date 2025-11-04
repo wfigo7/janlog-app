@@ -40,7 +40,7 @@ export interface StatsResponse {
 }
 
 import { GameMode } from './common';
-import { Match } from './match';
+import { Match, MatchType } from './match';
 
 export interface StatsFilters {
   from?: string;      // 開始日（YYYY-MM-DD）
@@ -48,6 +48,7 @@ export interface StatsFilters {
   mode: GameMode;     // ゲームモード
   venueId?: string;   // 会場ID
   rulesetId?: string; // ルールセットID
+  matchType?: MatchType; // 対局種別フィルタ（'free' | 'set' | 'competition'）
 }
 
 export interface ChartDataResponse {

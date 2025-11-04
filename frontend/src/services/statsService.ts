@@ -29,6 +29,10 @@ export class StatsService {
       if (filters.rulesetId) {
         params.ruleset_id = filters.rulesetId;
       }
+
+      if (filters.matchType) {
+        params.match_type = filters.matchType;
+      }
       
       const response = await apiClient.get<StatsResponse>('/stats/summary', params);
       return {
@@ -68,6 +72,10 @@ export class StatsService {
 
       if (filters.rulesetId) {
         params.ruleset_id = filters.rulesetId;
+      }
+
+      if (filters.matchType) {
+        params.match_type = filters.matchType;
       }
       
       const response = await apiClient.get<ChartDataResponse>('/stats/chart-data', params);

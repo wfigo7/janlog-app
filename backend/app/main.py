@@ -216,6 +216,7 @@ async def get_matches(
         None, alias="to", description="終了日（YYYY-MM-DD形式）"
     ),
     mode: Optional[str] = Query("all", description="ゲームモード（three/four/all）"),
+    match_type: Optional[str] = Query(None, description="対局種別（free/set/competition）"),
     venue_id: Optional[str] = Query(None, description="会場ID"),
     ruleset_id: Optional[str] = Query(None, description="ルールセットID"),
     limit: Optional[int] = Query(20, description="取得件数上限"),
@@ -247,6 +248,7 @@ async def get_matches(
             from_date=from_date,
             to_date=to_date,
             game_mode=mode,
+            match_type=match_type,
             venue_id=venue_id,
             ruleset_id=ruleset_id,
             limit=limit,
@@ -448,6 +450,7 @@ async def get_stats_summary(
         None, alias="to", description="終了日（YYYY-MM-DD形式）"
     ),
     mode: Optional[str] = Query("four", description="ゲームモード（three/four）"),
+    match_type: Optional[str] = Query(None, description="対局種別（free/set/competition）"),
     venue_id: Optional[str] = Query(None, description="会場ID"),
     ruleset_id: Optional[str] = Query(None, description="ルールセットID"),
 ) -> Dict[str, Any]:
@@ -462,6 +465,7 @@ async def get_stats_summary(
             from_date=from_date,
             to_date=to_date,
             game_mode=mode,
+            match_type=match_type,
             venue_id=venue_id,
             ruleset_id=ruleset_id,
         )

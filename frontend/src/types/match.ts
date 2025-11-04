@@ -2,6 +2,8 @@ import { GameMode, EntryMethod } from './common';
 
 export { EntryMethod };
 
+export type MatchType = 'free' | 'set' | 'competition';
+
 export interface Match {
   matchId: string;
   date: string;
@@ -9,6 +11,7 @@ export interface Match {
   entryMethod: EntryMethod;
   rulesetId: string;
   rulesetName?: string;  // ルール名（表示用）
+  matchType?: MatchType;  // 対局種別（フリー/セット/競技）
   rank: number;
   finalPoints?: number;
   rawScore?: number;
@@ -26,6 +29,7 @@ export interface MatchInput {
   gameMode: GameMode;
   entryMethod: EntryMethod;
   rulesetId: string;
+  matchType?: MatchType;  // 対局種別（フリー/セット/競技）
   rank: number;
   finalPoints?: number;
   rawScore?: number;

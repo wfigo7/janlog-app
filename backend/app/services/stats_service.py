@@ -23,6 +23,7 @@ class StatsService:
         from_date: Optional[str] = None,
         to_date: Optional[str] = None,
         game_mode: Optional[str] = None,
+        match_type: Optional[str] = None,
         venue_id: Optional[str] = None,
         ruleset_id: Optional[str] = None,
     ) -> StatsSummary:
@@ -34,6 +35,7 @@ class StatsService:
                 from_date=from_date,
                 to_date=to_date,
                 game_mode=game_mode,
+                match_type=match_type,
                 venue_id=venue_id,
                 ruleset_id=ruleset_id,
                 limit=1000,  # 統計計算用に大きな値を設定

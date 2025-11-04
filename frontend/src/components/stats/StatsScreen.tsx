@@ -49,6 +49,7 @@ export default function StatsScreen() {
         to: filters.dateRange?.to,
         venueId: filters.venueId,
         rulesetId: filters.rulesetId,
+        matchType: filters.matchType,
       };
 
       // 統計データとチャートデータを並行取得（個別にエラーハンドリング）
@@ -167,6 +168,7 @@ export default function StatsScreen() {
             gameMode={gameMode}
             showVenueFilter={true}
             showRulesetFilter={true}
+            showMatchTypeFilter={true}
           />
 
           <TouchableOpacity

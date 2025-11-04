@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { EntryMethod, Match } from '../types/match';
+import { EntryMethod, Match, MatchType } from '../types/match';
 import { GameMode } from '../types/common';
 import { Ruleset, PointCalculationRequest } from '../types/ruleset';
 import { rulesetService } from '../services/rulesetService';
@@ -29,6 +29,7 @@ export const useMatchForm = ({ initialData, onSubmit, isEditMode = false }: UseM
         const day = today.getDate().toString().padStart(2, '0');
         return `${year}-${month}-${day}T00:00:00+09:00`;
       })(),
+      matchType: null,
       rank: '',
       finalPoints: '',
       rawScore: '',
@@ -545,6 +546,7 @@ export const useMatchForm = ({ initialData, onSubmit, isEditMode = false }: UseM
     handleRulesetSelect,
     handleEntryMethodChange,
     handleMatchDateChange,
+    handleMatchTypeChange: (type: MatchType | null) => setFormData(prev => ({ ...prev, matchType: type })),
     handleRankChange,
     handleFinalPointsChange,
     handleRawScoreChange,

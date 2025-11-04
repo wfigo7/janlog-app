@@ -34,6 +34,7 @@ const MatchRegistrationScreen: React.FC = () => {
       gameMode: formData.gameMode,
       entryMethod: formData.entryMethod,
       rulesetId: formData.selectedRuleset!.rulesetId,
+      matchType: formData.matchType || undefined,
       rank: parseInt(formData.rank),
       finalPoints: finalPointsValue,
       rawScore: formData.entryMethod === 'rank_plus_raw' ? parseInt(formData.rawScore) : undefined,
@@ -79,6 +80,7 @@ const MatchRegistrationScreen: React.FC = () => {
     handleRulesetSelect,
     handleEntryMethodChange,
     handleMatchDateChange,
+    handleMatchTypeChange,
     handleRankChange,
     handleFinalPointsChange,
     handleRawScoreChange,
@@ -113,6 +115,7 @@ const MatchRegistrationScreen: React.FC = () => {
         onRulesetSelect={handleRulesetSelect}
         onEntryMethodChange={handleEntryMethodChange}
         onMatchDateChange={handleMatchDateChange}
+        onMatchTypeChange={handleMatchTypeChange}
         onRankChange={handleRankChange}
         onFinalPointsChange={handleFinalPointsChange}
         onRawScoreChange={handleRawScoreChange}

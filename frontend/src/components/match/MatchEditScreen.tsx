@@ -46,6 +46,7 @@ const MatchEditScreen: React.FC = () => {
           selectedRuleset,
           entryMethod: match.entryMethod,
           matchDate: match.date,
+          matchType: match.matchType || null,
           rank: match.rank.toString(),
           finalPoints: match.finalPoints?.toString() || '',
           rawScore: match.rawScore?.toString() || '',
@@ -95,6 +96,7 @@ const MatchEditScreen: React.FC = () => {
       date: formData.matchDate,
       rank: parseInt(formData.rank),
       rulesetId: formData.selectedRuleset!.rulesetId,
+      matchType: formData.matchType || undefined,
       finalPoints: finalPointsValue,
       rawScore: formData.entryMethod === 'rank_plus_raw' ? parseInt(formData.rawScore) : undefined,
       floatingCount: formData.floatingCount ? parseInt(formData.floatingCount) : undefined,
@@ -132,6 +134,7 @@ const MatchEditScreen: React.FC = () => {
     handleRulesetSelect,
     handleEntryMethodChange,
     handleMatchDateChange,
+    handleMatchTypeChange,
     handleRankChange,
     handleFinalPointsChange,
     handleRawScoreChange,
@@ -184,6 +187,7 @@ const MatchEditScreen: React.FC = () => {
         onRulesetSelect={handleRulesetSelect}
         onEntryMethodChange={handleEntryMethodChange}
         onMatchDateChange={handleMatchDateChange}
+        onMatchTypeChange={handleMatchTypeChange}
         onRankChange={handleRankChange}
         onFinalPointsChange={handleFinalPointsChange}
         onRawScoreChange={handleRawScoreChange}

@@ -8,6 +8,9 @@ from datetime import datetime
 import uuid
 from .base import BaseEntity
 
+# 対局種別の型定義
+MatchType = Literal["free", "set", "competition"]
+
 
 class MatchRequest(BaseModel):
     """対局登録リクエスト（個人成績用）"""
@@ -18,6 +21,7 @@ class MatchRequest(BaseModel):
         "rank_plus_points", "rank_plus_raw", "provisional_rank_only"
     ] = Field(..., description="入力方式")
     rulesetId: Optional[str] = Field(None, description="ルールセットID")
+    matchType: Optional[MatchType] = Field(None, description="対局種別（フリー/セット/競技）")
     rank: int = Field(..., ge=1, le=4, description="自分の順位（1-4）")
     finalPoints: Optional[float] = Field(None, description="最終ポイント")
     rawScore: Optional[int] = Field(None, description="素点")
@@ -125,6 +129,7 @@ class Match(BaseEntity):
         "rank_plus_points", "rank_plus_raw", "provisional_rank_only"
     ] = Field(..., description="入力方式")
     rulesetId: Optional[str] = Field(None, description="ルールセットID")
+    matchType: Optional[MatchType] = Field(None, description="対局種別（フリー/セット/競技）")
     rank: int = Field(..., ge=1, le=4, description="自分の順位（1-4）")
     finalPoints: Optional[float] = Field(None, description="最終ポイント")
     rawScore: Optional[int] = Field(None, description="素点")
@@ -166,6 +171,7 @@ class Match(BaseEntity):
             gameMode=request.gameMode,
             entryMethod=request.entryMethod,
             rulesetId=request.rulesetId,
+            matchType=request.matchType,
             rank=request.rank,
             finalPoints=request.finalPoints,
             rawScore=request.rawScore,
@@ -184,6 +190,7 @@ class Match(BaseEntity):
             "gameMode": self.gameMode,
             "entryMethod": self.entryMethod,
             "rulesetId": self.rulesetId,
+            "matchType": self.matchType,
             "rank": self.rank,
             "finalPoints": self.finalPoints,
             "rawScore": self.rawScore,

@@ -18,11 +18,15 @@ import { rulesetService } from '../../services/rulesetService';
 import { Venue, VenueListResponse } from '../../types/venue';
 import { Ruleset, RulesetListResponse } from '../../types/ruleset';
 import { GameMode } from '../../types/common';
+import { MatchType } from '../../types/match';
+
+export type MatchTypeFilterValue = 'free' | 'set' | 'competition';
 
 export interface FilterOptions {
   dateRange?: DateRange;
   venueId?: string;
   rulesetId?: string;
+  matchType?: MatchTypeFilterValue;
 }
 
 interface FilterBarProps {
@@ -31,6 +35,7 @@ interface FilterBarProps {
   gameMode: GameMode;
   showVenueFilter?: boolean;
   showRulesetFilter?: boolean;
+  showMatchTypeFilter?: boolean;
 }
 
 export const FilterBar: React.FC<FilterBarProps> = ({
@@ -39,6 +44,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   gameMode,
   showVenueFilter = true,
   showRulesetFilter = true,
+  showMatchTypeFilter = true,
 }) => {
   const [showModal, setShowModal] = useState(false);
   const [venues, setVenues] = useState<Venue[]>([]);
@@ -51,7 +57,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     value.dateRange?.from ||
     value.dateRange?.to ||
     value.venueId ||
-    value.rulesetId
+    value.rulesetId ||
+    value.matchType
   );
 
   // アクティブなフィルター数をカウント
@@ -59,6 +66,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     value.dateRange?.from || value.dateRange?.to,
     value.venueId,
     value.rulesetId,
+    value.matchType,
   ].filter(Boolean).length;
 
   useEffect(() => {
@@ -127,6 +135,13 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     onChange({
       ...value,
       rulesetId,
+    });
+  };
+
+  const handleMatchTypeChange = (matchType: MatchTypeFilterValue | 'all') => {
+    onChange({
+      ...value,
+      matchType: matchType === 'all' ? undefined : matchType,
     });
   };
 
@@ -283,6 +298,84 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                       )}
                     </TouchableOpacity>
                   ))}
+                </View>
+              </View>
+            )}
+
+            {/* 対局種別フィルター */}
+            {showMatchTypeFilter && (
+              <View style={styles.filterSection}>
+                <Text style={styles.filterSectionTitle}>対局種別</Text>
+                <View style={styles.optionsList}>
+                  <TouchableOpacity
+                    style={[
+                      styles.optionItem,
+                      !value.matchType && styles.optionItemSelected
+                    ]}
+                    onPress={() => handleMatchTypeChange('all')}
+                  >
+                    <Text style={[
+                      styles.optionText,
+                      !value.matchType && styles.optionTextSelected
+                    ]}>
+                      すべての対局種別
+                    </Text>
+                    {!value.matchType && (
+                      <Ionicons name="checkmark" size={20} color="#007AFF" />
+                    )}
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.optionItem,
+                      value.matchType === 'free' && styles.optionItemSelected
+                    ]}
+                    onPress={() => handleMatchTypeChange('free')}
+                  >
+                    <Text style={[
+                      styles.optionText,
+                      value.matchType === 'free' && styles.optionTextSelected
+                    ]}>
+                      フリー
+                    </Text>
+                    {value.matchType === 'free' && (
+                      <Ionicons name="checkmark" size={20} color="#007AFF" />
+                    )}
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.optionItem,
+                      value.matchType === 'set' && styles.optionItemSelected
+                    ]}
+                    onPress={() => handleMatchTypeChange('set')}
+                  >
+                    <Text style={[
+                      styles.optionText,
+                      value.matchType === 'set' && styles.optionTextSelected
+                    ]}>
+                      セット
+                    </Text>
+                    {value.matchType === 'set' && (
+                      <Ionicons name="checkmark" size={20} color="#007AFF" />
+                    )}
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.optionItem,
+                      value.matchType === 'competition' && styles.optionItemSelected
+                    ]}
+                    onPress={() => handleMatchTypeChange('competition')}
+                  >
+                    <Text style={[
+                      styles.optionText,
+                      value.matchType === 'competition' && styles.optionTextSelected
+                    ]}>
+                      競技
+                    </Text>
+                    {value.matchType === 'competition' && (
+                      <Ionicons name="checkmark" size={20} color="#007AFF" />
+                    )}
+                  </TouchableOpacity>
+
                 </View>
               </View>
             )}

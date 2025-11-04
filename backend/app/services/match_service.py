@@ -175,6 +175,7 @@ class MatchService:
         from_date: Optional[str] = None,
         to_date: Optional[str] = None,
         game_mode: Optional[str] = None,
+        match_type: Optional[str] = None,
         venue_id: Optional[str] = None,
         ruleset_id: Optional[str] = None,
         limit: Optional[int] = 100,
@@ -206,6 +207,12 @@ class MatchService:
             if game_mode and game_mode != "all":
                 filter_expressions.append("gameMode = :mode")
                 expression_attribute_values[":mode"] = game_mode
+            
+            # matchTypeフィルタ処理
+            if match_type:
+                # 特定のmatchType値の対局のみ（free/set/competition）
+                filter_expressions.append("matchType = :match_type")
+                expression_attribute_values[":match_type"] = match_type
             
             if venue_id:
                 filter_expressions.append("venueId = :venue_id")
